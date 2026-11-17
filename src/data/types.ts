@@ -140,9 +140,8 @@ export interface DerivedMainState {
   sevenDayStats: DailyBlockStat[];
   categoryBreakdown: CategoryBreakdown[];
   triggerBreakdown: TriggerBreakdown[];
-  installedApps: InstalledAppInfo[];
-  testQueryInput: string;
-  testMatchResult: BlockMatchResult | null;
+  domainLookupQuery: string;
+  domainLookupResult: BlockMatchResult | null;
   statusBannerMessage: string | null;
   builtInDomainCount: number;
   currentTimeMs: number;

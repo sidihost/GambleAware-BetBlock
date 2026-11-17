@@ -83,7 +83,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               GambleAware
             </span>
             <span className="hidden font-mono text-[10px] tracking-wider whitespace-nowrap text-[var(--accent-ink)] uppercase sm:block">
-              Nigeria · Free Guard
+              Zero-VPN Protection
             </span>
           </div>
         </button>

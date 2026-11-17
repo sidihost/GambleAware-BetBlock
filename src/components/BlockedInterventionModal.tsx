@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Lock, Shield, Wind } from 'lucide-react';
+import { Anchor, LockKeyhole, Wind } from 'lucide-react';
 import { InterventionPayload } from '../data/types';
 import { LiquidGlassBackdrop, LiquidGlassCard } from './LiquidGlass';
 
@@ -62,9 +62,9 @@ export const BlockedInterventionModal: React.FC<{
 
               <div className="mt-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[var(--active-fill)] text-[var(--active-content)]">
                 {payload.isAntiTamper ? (
-                  <Lock className="h-8 w-8" />
+                  <LockKeyhole className="h-8 w-8" />
                 ) : (
-                  <Shield className="h-8 w-8" />
+                  <Anchor className="h-8 w-8" />
                 )}
               </div>
 

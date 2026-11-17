@@ -97,13 +97,13 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
           type="button"
           onClick={onSignInGoogle}
           disabled={cloudSyncStatus === 'connecting'}
-          className="mt-3.5 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-sm font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90 disabled:opacity-65"
+          className="mt-3.5 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 disabled:opacity-65 sm:text-sm"
         >
-          <Cloud className="h-4 w-4" />
+          <Cloud className="h-4 w-4 shrink-0" />
           <span>
             {cloudSyncStatus === 'connecting'
-              ? 'Connecting Google Account…'
-              : 'Continue with Google (Free Sync)'}
+              ? 'Connecting Google…'
+              : 'Sync with Google'}
           </span>
         </button>
       )}

@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Anchor,
   Ban,
   CheckCircle2,
   Download,
   Globe,
-  Lock,
+  LockKeyhole,
   NotebookPen,
-  Shield,
   Smartphone,
   Trash2,
   Wind,
@@ -51,7 +51,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
   const pad2 = (n: number) => String(n).padStart(2, '0');
 
   return (
-    <div className="mx-auto flex w-full max-w-[600px] flex-col gap-3.5 px-4 pt-3 pb-28">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
       {/* Header & Betting-Free Hero Card */}
       <div className="flex items-center justify-between gap-3 px-1">
         <div className="min-w-0 flex-1">
@@ -59,7 +59,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             Recovery Progress
           </h1>
           <p className="text-xs text-[var(--ink-muted)]">
-            Betting-free streak, savings & shield telemetry
+            Betting-free streak, savings &amp; intercept history
           </p>
         </div>
         {state.recentEvents.length > 0 ? (
@@ -93,7 +93,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           </div>
         </div>
 
-        {/* Monochrome Milestone Progress Bar */}
+        {/* Pink & Obsidian Milestone Progress Bar */}
         <div className="mt-3.5 h-2 w-full overflow-hidden rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)]">
           <div
             className="h-full rounded-full bg-[var(--active-fill)] transition-all duration-300"
@@ -131,7 +131,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
                 : 'border-[var(--subtle-border)] bg-[var(--surface)]/60 text-[var(--ink-muted)]'
             }`}
           >
-            Days & Savings
+            Days &amp; Savings
           </button>
           <button
             type="button"
@@ -160,6 +160,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         </div>
       </LiquidGlassCard>
 
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Recovery Milestone Badges */}
       <LiquidGlassCard className="p-4 sm:p-5">
         <LiquidSectionHeader
@@ -181,7 +182,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
                 {unlocked ? (
                   <CheckCircle2 className="h-3.5 w-3.5" />
                 ) : (
-                  <Lock className="h-3.5 w-3.5" />
+                  <LockKeyhole className="h-3.5 w-3.5" />
                 )}
                 <span>
                   {milestone.label} • {milestone.title}
@@ -196,7 +197,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       <LiquidGlassCard className="p-4 sm:p-5">
         <LiquidSectionHeader
           title="Urge Journal & Triggers"
-          subtitle={`${state.totalUrgeResistedCount} urge victories recorded on-device`}
+          subtitle={`${state.totalUrgeResistedCount} urge victories recorded`}
         />
         {state.triggerBreakdown.length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -236,6 +237,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           </button>
         </div>
       </LiquidGlassCard>
+      </div>
 
       {/* Blocked by Category */}
       {state.categoryBreakdown.length > 0 ? (
@@ -279,8 +281,8 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       {/* Event List or Empty State */}
       {filteredEvents.length === 0 ? (
         <LiquidGlassCard className="p-7 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[var(--muted-fill)] text-[var(--ink)]">
-            <Shield className="h-7 w-7" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[var(--muted-fill)] text-[var(--accent-ink)]">
+            <Anchor className="h-7 w-7" />
           </div>
           <h3 className="mt-3.5 font-display text-base font-semibold text-[var(--ink)]">
             All Quiet Here

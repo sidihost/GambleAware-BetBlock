@@ -8,7 +8,6 @@ import {
   hashPinSync,
   loadStore,
   PersistedStore,
-  SAMPLE_INSTALLED_APPS,
   saveStore,
 } from '../data/storage';
 import {
@@ -103,7 +102,7 @@ export function useGambleAwareState() {
   storeRef.current = store;
 
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
-  const [testQueryInput, setTestQueryInput] = useState<string>('');
+  const [domainLookupQuery, setDomainLookupQuery] = useState<string>('');
   const [statusBannerMessage, setStatusBannerMessage] = useState<string | null>(null);
 
   const [cloudUser, setCloudUser] = useState<CloudAccountInfo | null>(null);
@@ -288,10 +287,10 @@ export function useGambleAwareState() {
     [store.settings, store.domains, store.blockedApps],
   );
 
-  const testMatchResult: BlockMatchResult | null = useMemo(() => {
-    if (!testQueryInput.trim()) return null;
-    return BlocklistMatcher.matchDomainOrUrl(testQueryInput, filterConfig);
-  }, [testQueryInput, filterConfig]);
+  const domainLookupResult: BlockMatchResult | null = useMemo(() => {
+    if (!domainLookupQuery.trim()) return null;
+    return BlocklistMatcher.matchDomainOrUrl(domainLookupQuery, filterConfig);
+  }, [domainLookupQuery, filterConfig]);
 
   const uiState: DerivedMainState = useMemo(() => {
     const { settings } = store;
@@ -361,9 +360,8 @@ export function useGambleAwareState() {
       sevenDayStats: buildSevenDayStats(lastSevenDaysEvents, nowMs),
       categoryBreakdown: buildCategoryBreakdown(store.events),
       triggerBreakdown: buildTriggerBreakdown(store.urgeLogs),
-      installedApps: SAMPLE_INSTALLED_APPS,
-      testQueryInput,
-      testMatchResult,
+      domainLookupQuery,
+      domainLookupResult,
       statusBannerMessage,
       builtInDomainCount: GamblingRegistry.domainToCategory.size,
       currentTimeMs: nowMs,
@@ -384,7 +382,7 @@ export function useGambleAwareState() {
       milestoneProgressFraction,
       estimatedSavedAmount,
     };
-  }, [store, nowMs, testQueryInput, testMatchResult, statusBannerMessage]);
+  }, [store, nowMs, domainLookupQuery, domainLookupResult, statusBannerMessage]);
 
   const mutateStoreAndSyncSettings = useCallback(
     (updater: (prev: PersistedStore) => PersistedStore) => {
@@ -528,18 +526,15 @@ export function useGambleAwareState() {
   const setNotificationsEnabled = useCallback(
     (enabled: boolean) => {
       updateSettings((s) => ({ ...s, notificationsEnabled: enabled }));
+      if (enabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        void Notification.requestPermission().catch(() => {});
+      }
       setStatusBannerMessage(
-        enabled ? 'Recovery & Lock notifications enabled' : 'Recovery notifications muted',
+        enabled ? 'Recovery & Lock alerts enabled' : 'Recovery notifications muted',
       );
     },
     [updateSettings],
   );
-
-  const sendTestNotification = useCallback(() => {
-    setStatusBannerMessage(
-      'GambleAware Alerts Active: milestone, lock & Install Guard alerts ready',
-    );
-  }, []);
 
   const addCustomDomain = useCallback((rawDomain: string, isAllowlisted: boolean) => {
     const normalized = sanitizeDomainForBlueprint(BlocklistMatcher.normalizeDomain(rawDomain));
@@ -747,7 +742,7 @@ export function useGambleAwareState() {
     signInWithGoogleCloud,
     signOutGoogleCloud,
     forceSyncNow,
-    updateTestQuery: setTestQueryInput,
+    updateDomainLookupQuery: setDomainLookupQuery,
     enableProtection,
     disableProtection,
     activateAccessibilityShield,
@@ -763,7 +758,6 @@ export function useGambleAwareState() {
     setThemeMode,
     setDailySpendEstimate,
     setNotificationsEnabled,
-    sendTestNotification,
     addCustomDomain,
     removeCustomDomain,
     addBlockedApp,

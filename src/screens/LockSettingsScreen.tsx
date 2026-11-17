@@ -3,19 +3,32 @@ import {
   Bell,
   ChevronRight,
   Download,
-  Lock,
+  LockKeyhole,
   LockOpen,
   RefreshCw,
   Server,
-  ShieldCheck,
   Timer,
 } from 'lucide-react';
+import { CloudSyncCard } from '../components/CloudSyncCard';
 import { LiquidGlassCard, LiquidSectionHeader, LiquidSwitch } from '../components/LiquidGlass';
-import { DerivedMainState, THEME_MODE_LABELS, ThemeMode } from '../data/types';
+import {
+  CloudAccountInfo,
+  CloudSyncStatus,
+  DerivedMainState,
+  THEME_MODE_LABELS,
+  ThemeMode,
+} from '../data/types';
 import { DAILY_SPEND_OPTIONS_NGN, formatNaira } from '../utils/currency';
 
 interface LockSettingsScreenProps {
   state: DerivedMainState;
+  cloudUser: CloudAccountInfo | null;
+  cloudSyncStatus: CloudSyncStatus;
+  lastSyncedAtMs: number | null;
+  cloudErrorMsg: string | null;
+  onSignInGoogle: () => void;
+  onSignOut: () => void;
+  onForceSync: () => void;
   onActivateTimeLock: (days: number, antiTamper: boolean) => void;
   onToggleAntiTamper: (enabled: boolean) => void;
   onSetPin: (pin: string) => void;
@@ -27,8 +40,7 @@ interface LockSettingsScreenProps {
   onResetStreak: () => void;
   onReplayTour: () => void;
   onToggleNotifications: (enabled: boolean) => void;
-  onSendTestNotification: () => void;
-  onOpenGetApp: () => void;
+  onOpenDownloadPage: () => void;
 }
 
 const LOCK_DURATIONS = [
@@ -40,6 +52,13 @@ const LOCK_DURATIONS = [
 
 export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   state,
+  cloudUser,
+  cloudSyncStatus,
+  lastSyncedAtMs,
+  cloudErrorMsg,
+  onSignInGoogle,
+  onSignOut,
+  onForceSync,
   onActivateTimeLock,
   onToggleAntiTamper,
   onSetPin,
@@ -51,8 +70,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   onResetStreak,
   onReplayTour,
   onToggleNotifications,
-  onSendTestNotification,
-  onOpenGetApp,
+  onOpenDownloadPage,
 }) => {
   const isTimeLocked = state.isTimeLockedNow;
   const [pendingLockDays, setPendingLockDays] = useState(7);
@@ -92,320 +110,333 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[600px] flex-col gap-3.5 px-4 pt-3 pb-28">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
       <div className="px-1">
         <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
-          Commitment Lock
+          Commitment Lock &amp; Sync
         </h1>
         <p className="text-xs text-[var(--ink-muted)]">
-          Prevent uninstalling, tampering, or pausing your shield
+          Prevent uninstalling, tampering, or pausing your guard — plus free Cloud Sync
         </p>
       </div>
 
-      {/* Timed Commitment Lock Card */}
-      <LiquidGlassCard className="p-4 sm:p-5" tourKey="lock_timer">
-        <div className="flex items-center gap-3">
-          <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${
-              isTimeLocked
-                ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
-                : 'bg-[var(--muted-fill)] text-[var(--muted-content)]'
-            }`}
-          >
-            {isTimeLocked ? <Lock className="h-5 w-5" /> : <Timer className="h-5 w-5" />}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-display text-base font-semibold text-[var(--ink)]">
-              {isTimeLocked ? 'Commitment Lock Active' : 'Timed Commitment Lock'}
-            </h2>
-            <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
-              {isTimeLocked
-                ? `Uninstall & tamper blocked until ${lockExpiryFormatted}`
-                : 'Lock protection, uninstalls, and blocklists for a chosen recovery period'}
-            </p>
-          </div>
-        </div>
-
-        {isTimeLocked ? (
-          <div className="mt-3.5 grid grid-cols-4 gap-2">
-            {state.lockClockQuad.map((q) => (
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="flex flex-col gap-4 lg:col-span-6">
+          {/* Timed Commitment Lock Card */}
+          <LiquidGlassCard className="p-4 sm:p-5" tourKey="lock_timer">
+            <div className="flex items-center gap-3">
               <div
-                key={q.unit}
-                className="flex flex-col items-center rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] py-2.5"
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${
+                  isTimeLocked
+                    ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
+                    : 'bg-[var(--muted-fill)] text-[var(--muted-content)]'
+                }`}
               >
-                <span className="font-mono text-xl font-bold tabular-nums text-[var(--ink)]">
-                  {q.digits}
-                </span>
-                <span className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)]">
-                  {q.unit}
-                </span>
+                {isTimeLocked ? <LockKeyhole className="h-5 w-5" /> : <Timer className="h-5 w-5" />}
               </div>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="mt-3.5 flex flex-wrap gap-2">
-          {LOCK_DURATIONS.map((d) => {
-            const selected = pendingLockDays === d.days;
-            return (
-              <button
-                key={d.days}
-                type="button"
-                onClick={() => setPendingLockDays(d.days)}
-                className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
-                  selected
-                    ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                    : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink-muted)] hover:text-[var(--ink)]'
-                }`}
-              >
-                {d.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-3.5 flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[var(--ink)]">Anti-Uninstall & Tamper Guard</p>
-            <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
-              Blocks Settings App Info, Package Installer, Play Store uninstall, Accessibility &
-              Device Admin removal while locked
-            </p>
-          </div>
-          <LiquidSwitch
-            checked={isTimeLocked ? state.settings.antiTamperLockEnabled : includeAntiTamper}
-            onChange={(checked) => {
-              if (isTimeLocked) {
-                onToggleAntiTamper(checked);
-              } else {
-                setIncludeAntiTamper(checked);
-              }
-            }}
-            ariaLabel="Anti-Uninstall & Tamper Guard"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setShowConfirmLock(true)}
-          className="mt-4 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
-        >
-          <Lock className="h-4 w-4" />
-          <span>
-            {isTimeLocked
-              ? `Extend Lock by ${pendingLockDays} Day(s)`
-              : `Activate ${pendingLockDays}-Day Lock`}
-          </span>
-        </button>
-      </LiquidGlassCard>
-
-      {/* Device Admin Uninstall Lock */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <ShieldCheck className="h-5 w-5 shrink-0 text-[var(--ink)]" />
-            <div className="min-w-0">
-              <p className="font-display text-base font-semibold text-[var(--ink)]">
-                Uninstall Lock
-              </p>
-              <p className="text-xs text-[var(--ink-muted)]">
-                {state.isDeviceAdminEnabled
-                  ? 'Active • Prevents uninstalling GambleAware'
-                  : 'Enable Device Admin to block impulsive app removal'}
-              </p>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display text-base font-semibold text-[var(--ink)]">
+                  {isTimeLocked ? 'Commitment Lock Active' : 'Timed Commitment Lock'}
+                </h2>
+                <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
+                  {isTimeLocked
+                    ? `Uninstall & tamper blocked until ${lockExpiryFormatted}`
+                    : 'Lock protection, uninstalls, and blocklists for a chosen recovery period'}
+                </p>
+              </div>
             </div>
-          </div>
-          <button
-            type="button"
-            onClick={onToggleDeviceAdmin}
-            className="shrink-0 cursor-pointer rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
-          >
-            {state.isDeviceAdminEnabled ? 'Disable' : 'Enable'}
-          </button>
-        </div>
-      </LiquidGlassCard>
 
-      {/* Accountability PIN Card */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            {state.hasPin ? (
-              <Lock className="h-5 w-5 shrink-0 text-[var(--ink)]" />
-            ) : (
-              <LockOpen className="h-5 w-5 shrink-0 text-[var(--ink)]" />
-            )}
-            <div className="min-w-0">
-              <p className="font-display text-base font-semibold text-[var(--ink)]">
-                Accountability PIN
-              </p>
-              <p className="text-xs text-[var(--ink-muted)]">
-                {state.hasPin
-                  ? '4-digit PIN required before disabling protection'
-                  : 'Set a 4-digit PIN (or ask a trusted partner to set it)'}
-              </p>
+            {isTimeLocked ? (
+              <div className="mt-3.5 grid grid-cols-4 gap-2">
+                {state.lockClockQuad.map((q) => (
+                  <div
+                    key={q.unit}
+                    className="flex flex-col items-center rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] py-2.5"
+                  >
+                    <span className="font-mono text-xl font-bold tabular-nums text-[var(--ink)]">
+                      {q.digits}
+                    </span>
+                    <span className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)]">
+                      {q.unit}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mt-3.5 flex flex-wrap gap-2">
+              {LOCK_DURATIONS.map((d) => {
+                const selected = pendingLockDays === d.days;
+                return (
+                  <button
+                    key={d.days}
+                    type="button"
+                    onClick={() => setPendingLockDays(d.days)}
+                    className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
+                      selected
+                        ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                        : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                );
+              })}
             </div>
-          </div>
-          {state.hasPin ? (
+
+            <div className="mt-3.5 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[var(--ink)]">
+                  Anti-Uninstall &amp; Tamper Guard
+                </p>
+                <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
+                  Blocks Settings App Info, Package Installer, Play Store uninstall, Accessibility
+                  &amp; Device Admin removal while locked
+                </p>
+              </div>
+              <LiquidSwitch
+                checked={isTimeLocked ? state.settings.antiTamperLockEnabled : includeAntiTamper}
+                onChange={(checked) => {
+                  if (isTimeLocked) {
+                    onToggleAntiTamper(checked);
+                  } else {
+                    setIncludeAntiTamper(checked);
+                  }
+                }}
+                ariaLabel="Anti-Uninstall & Tamper Guard"
+              />
+            </div>
+
             <button
               type="button"
-              onClick={onRemovePin}
-              className="shrink-0 cursor-pointer rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+              onClick={() => setShowConfirmLock(true)}
+              className="mt-4 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
             >
-              Remove
+              <LockKeyhole className="h-4 w-4" />
+              <span>
+                {isTimeLocked
+                  ? `Extend Lock by ${pendingLockDays} Day(s)`
+                  : `Activate ${pendingLockDays}-Day Lock`}
+              </span>
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setPinInput('');
-                setConfirmPinInput('');
-                setPinError(null);
-                setShowSetPin(true);
-              }}
-              className="shrink-0 cursor-pointer rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
-            >
-              Set PIN
-            </button>
-          )}
-        </div>
-      </LiquidGlassCard>
+          </LiquidGlassCard>
 
-      {/* Recovery & Lock Alerts */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <Bell className="h-5 w-5 shrink-0 text-[var(--ink)]" />
-            <div className="min-w-0">
-              <p className="font-display text-base font-semibold text-[var(--ink)]">
-                Recovery & Lock Alerts
-              </p>
-              <p className="text-xs text-[var(--ink-muted)]">
-                On-device alerts for streak milestones, Lock activation & Install Guard
-              </p>
-            </div>
-          </div>
-          <LiquidSwitch
-            checked={state.settings.notificationsEnabled}
-            onChange={onToggleNotifications}
-            ariaLabel="Recovery and Lock Alerts"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={onSendTestNotification}
-          className="mt-3 h-10 w-full cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
-        >
-          Send Test Alert
-        </button>
-      </LiquidGlassCard>
-
-      {/* System Private DNS Guide */}
-      <LiquidGlassCard className="p-4 sm:p-5" onClick={onOpenPrivateDnsSettings}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--muted-fill)] text-[var(--ink)]">
-            <Server className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[var(--ink)]">
-              System Private DNS (Zero-VPN)
-            </p>
-            <p className="text-xs text-[var(--ink-muted)]">
-              {state.privateDnsStatus.isActive
-                ? `Active: ${state.privateDnsStatus.serverHost ?? 'Automatic'}. Tap to adjust.`
-                : 'Optional: Set Private DNS (e.g. family.adguard-dns.com) for OS-level DNS blocking with zero VPN.'}
-            </p>
-          </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
-        </div>
-      </LiquidGlassCard>
-
-      {/* Download Android App / Install Web App */}
-      <LiquidGlassCard className="p-4 sm:p-5" onClick={onOpenGetApp}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
-            <Download className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[var(--ink)]">
-              Download Android App (.apk) &amp; Install
-            </p>
-            <p className="text-xs text-[var(--ink-muted)]">
-              Get the native Nigeria Android APK or add GambleAware to your home screen
-            </p>
-          </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
-        </div>
-      </LiquidGlassCard>
-
-      {/* Daily Spend Baseline & Appearance */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <LiquidSectionHeader
-          title="Daily Spend Baseline (₦)"
-          subtitle="Used to estimate Nigerian Naira saved during your clean streak"
-        />
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          {DAILY_SPEND_OPTIONS_NGN.map((amount) => {
-            const selected = state.settings.dailyBetSpendEstimate === amount;
-            return (
+          {/* Device Admin Uninstall Lock */}
+          <LiquidGlassCard className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+                <div className="min-w-0">
+                  <p className="font-display text-base font-semibold text-[var(--ink)]">
+                    Uninstall Lock
+                  </p>
+                  <p className="text-xs text-[var(--ink-muted)]">
+                    {state.isDeviceAdminEnabled
+                      ? 'Active • Prevents uninstalling GambleAware'
+                      : 'Enable Device Admin to block impulsive app removal'}
+                  </p>
+                </div>
+              </div>
               <button
-                key={amount}
                 type="button"
-                onClick={() => onSetDailySpend(amount)}
-                className={`cursor-pointer rounded-full border px-3 py-1.5 font-mono text-xs font-medium transition-colors ${
-                  selected
-                    ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                    : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink-muted)] hover:text-[var(--ink)]'
-                }`}
+                onClick={onToggleDeviceAdmin}
+                className="shrink-0 cursor-pointer rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
-                {formatNaira(amount)}/day
+                {state.isDeviceAdminEnabled ? 'Disable' : 'Enable'}
               </button>
-            );
-          })}
-        </div>
+            </div>
+          </LiquidGlassCard>
 
-        <div className="mt-5">
-          <LiquidSectionHeader
-            title="Black & Pink Theme"
-            subtitle="Signature obsidian black & pink liquid glass finish"
-          />
-          <div className="mt-2.5 grid grid-cols-3 gap-2">
-            {(Object.values(ThemeMode) as ThemeMode[]).map((mode) => {
-              const selected = state.settings.themeMode === mode;
-              return (
+          {/* Accountability PIN Card */}
+          <LiquidGlassCard className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                {state.hasPin ? (
+                  <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+                ) : (
+                  <LockOpen className="h-5 w-5 shrink-0 text-[var(--ink)]" />
+                )}
+                <div className="min-w-0">
+                  <p className="font-display text-base font-semibold text-[var(--ink)]">
+                    Accountability PIN
+                  </p>
+                  <p className="text-xs text-[var(--ink-muted)]">
+                    {state.hasPin
+                      ? '4-digit PIN required before disabling protection'
+                      : 'Set a 4-digit PIN (or ask a trusted partner to set it)'}
+                  </p>
+                </div>
+              </div>
+              {state.hasPin ? (
                 <button
-                  key={mode}
                   type="button"
-                  onClick={() => onSelectTheme(mode)}
-                  className={`cursor-pointer rounded-[16px] border py-3 text-center text-sm font-medium transition-colors ${
-                    selected
-                      ? 'border-[var(--active-fill)] bg-[var(--active-fill)] font-semibold text-[var(--active-content)]'
-                      : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink)] hover:bg-[var(--muted-fill)]'
-                  }`}
+                  onClick={onRemovePin}
+                  className="shrink-0 cursor-pointer rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
                 >
-                  {THEME_MODE_LABELS[mode]}
+                  Remove
                 </button>
-              );
-            })}
-          </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPinInput('');
+                    setConfirmPinInput('');
+                    setPinError(null);
+                    setShowSetPin(true);
+                  }}
+                  className="shrink-0 cursor-pointer rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                >
+                  Set PIN
+                </button>
+              )}
+            </div>
+          </LiquidGlassCard>
         </div>
 
-        <button
-          type="button"
-          onClick={onResetStreak}
-          className="mt-4 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span>Restart Clean Streak Timer</span>
-        </button>
+        <div className="flex flex-col gap-4 lg:col-span-6">
+          {/* Free Cloud Database Sync */}
+          <CloudSyncCard
+            cloudUser={cloudUser}
+            cloudSyncStatus={cloudSyncStatus}
+            lastSyncedAtMs={lastSyncedAtMs}
+            cloudErrorMsg={cloudErrorMsg}
+            onSignInGoogle={onSignInGoogle}
+            onSignOut={onSignOut}
+            onForceSync={onForceSync}
+          />
 
-        <button
-          type="button"
-          onClick={onReplayTour}
-          className="mt-2 h-11 w-full cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
-        >
-          Replay Guided Tour
-        </button>
-      </LiquidGlassCard>
+          {/* Recovery & Lock Alerts */}
+          <LiquidGlassCard className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Bell className="h-5 w-5 shrink-0 text-[var(--ink)]" />
+                <div className="min-w-0">
+                  <p className="font-display text-base font-semibold text-[var(--ink)]">
+                    Recovery &amp; Lock Alerts
+                  </p>
+                  <p className="text-xs text-[var(--ink-muted)]">
+                    On-device alerts for streak milestones, Lock activation &amp; Install Guard
+                  </p>
+                </div>
+              </div>
+              <LiquidSwitch
+                checked={state.settings.notificationsEnabled}
+                onChange={onToggleNotifications}
+                ariaLabel="Recovery and Lock Alerts"
+              />
+            </div>
+          </LiquidGlassCard>
+
+          {/* System Private DNS Guide */}
+          <LiquidGlassCard className="p-4 sm:p-5" onClick={onOpenPrivateDnsSettings}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--muted-fill)] text-[var(--ink)]">
+                <Server className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[var(--ink)]">
+                  System Private DNS (Zero-VPN)
+                </p>
+                <p className="text-xs text-[var(--ink-muted)]">
+                  {state.privateDnsStatus.isActive
+                    ? `Active: ${state.privateDnsStatus.serverHost ?? 'Automatic'}. Tap to adjust.`
+                    : 'Optional: Set Private DNS (e.g. family.adguard-dns.com) for OS-level DNS blocking with zero VPN.'}
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
+            </div>
+          </LiquidGlassCard>
+
+          {/* Dedicated Download Page CTA */}
+          <LiquidGlassCard className="p-4 sm:p-5" onClick={onOpenDownloadPage}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
+                <Download className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[var(--ink)]">
+                  Download Android APK &amp; Web App
+                </p>
+                <p className="text-xs text-[var(--ink-muted)]">
+                  Install the native Android APK for device-wide blocking or add GambleAware to your
+                  home screen
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+            </div>
+          </LiquidGlassCard>
+
+          {/* Daily Spend Baseline & Appearance */}
+          <LiquidGlassCard className="p-4 sm:p-5">
+            <LiquidSectionHeader
+              title="Daily Spend Baseline (₦)"
+              subtitle="Calculates your Naira savings across every betting-free day"
+            />
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {DAILY_SPEND_OPTIONS_NGN.map((amount) => {
+                const selected = state.settings.dailyBetSpendEstimate === amount;
+                return (
+                  <button
+                    key={amount}
+                    type="button"
+                    onClick={() => onSetDailySpend(amount)}
+                    className={`cursor-pointer rounded-full border px-3 py-1.5 font-mono text-xs font-medium transition-colors ${
+                      selected
+                        ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                        : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                    }`}
+                  >
+                    {formatNaira(amount)}/day
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-5">
+              <LiquidSectionHeader
+                title="Black & Pink Theme"
+                subtitle="Signature obsidian black & pink liquid glass finish"
+              />
+              <div className="mt-2.5 grid grid-cols-3 gap-2">
+                {(Object.values(ThemeMode) as ThemeMode[]).map((mode) => {
+                  const selected = state.settings.themeMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => onSelectTheme(mode)}
+                      className={`cursor-pointer rounded-[16px] border py-3 text-center text-sm font-medium transition-colors ${
+                        selected
+                          ? 'border-[var(--active-fill)] bg-[var(--active-fill)] font-semibold text-[var(--active-content)]'
+                          : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink)] hover:bg-[var(--muted-fill)]'
+                      }`}
+                    >
+                      {THEME_MODE_LABELS[mode]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onResetStreak}
+              className="mt-4 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Restart Clean Streak Timer</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onReplayTour}
+              className="mt-2 h-11 w-full cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+            >
+              Replay Guided Tour
+            </button>
+          </LiquidGlassCard>
+        </div>
+      </div>
 
       <footer className="py-2 text-center">
         <p className="text-xs font-semibold text-[var(--ink)]">GambleAware</p>

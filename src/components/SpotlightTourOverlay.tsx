@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Globe, Lock, Search, Shield, TrendingUp, Wind } from 'lucide-react';
+import { Anchor, Globe, LockKeyhole, Search, TrendingUp, Wind } from 'lucide-react';
 import { AnchorRoute } from '../data/types';
 
 export interface SpotlightTourStep {
@@ -18,10 +18,10 @@ export const SPOTLIGHT_TOUR_STEPS: SpotlightTourStep[] = [
     id: 'shield_orb',
     route: 'shield',
     targetKey: 'shield_orb',
-    badge: '1 OF 6 • LIVE SHIELD',
-    title: 'One-Tap Black & Pink Shield',
-    body: "Tap this chronograph orb anytime to inspect or arm GambleAware's zero-VPN Web, Search & App Shield.",
-    icon: <Shield className="h-5 w-5" />,
+    badge: '1 OF 6 • LIVE GUARD',
+    title: 'Zero-VPN Anchor Protection',
+    body: "Tap the main control orb anytime to inspect or arm GambleAware's Web, Search, and App Guard.",
+    icon: <Anchor className="h-5 w-5" />,
     highlights: ['Zero VPN', 'Instant Blocking'],
   },
   {
@@ -29,20 +29,20 @@ export const SPOTLIGHT_TOUR_STEPS: SpotlightTourStep[] = [
     route: 'shield',
     targetKey: 'sos_calm_bar',
     badge: '2 OF 6 • URGE SUPPORT',
-    title: 'SOS 60s Calm Reset & Urge Log',
-    body: 'Feeling tempted? Start a guided 60-second breathing reset or log a resisted urge to track triggers.',
+    title: '60s Calm Reset & Urge Journal',
+    body: 'Start a guided 60-second breathing reset when urges peak or record resisted urges to spot high-risk triggers.',
     icon: <Wind className="h-5 w-5" />,
     highlights: ['60s Breathing', 'Trigger Journal'],
   },
   {
-    id: 'filter_tester',
+    id: 'domain_lookup',
     route: 'shield',
-    targetKey: 'filter_tester',
-    badge: '3 OF 6 • DEFAULT BLOCKING',
-    title: 'SportyBet & 350+ Sites Blocked Live',
-    body: 'We auto-selected "sportybet.com" here to show instant blocking. SportyBet, Bet9ja, BetKing, 1xBet, Bet365 & Stake are blocked by default.',
+    targetKey: 'domain_lookup',
+    badge: '3 OF 6 • RULE LOOKUP',
+    title: 'Check & Block Any Domain Instantly',
+    body: 'Look up any gambling website to confirm protection status or add domains directly to your personal blocklist.',
     icon: <Search className="h-5 w-5" />,
-    highlights: ['SportyBet', 'Bet9ja', '1xBet', 'Bet365'],
+    highlights: ['Instant Lookup', 'Custom Rules'],
   },
   {
     id: 'blocklist_guards',
@@ -50,7 +50,7 @@ export const SPOTLIGHT_TOUR_STEPS: SpotlightTourStep[] = [
     targetKey: 'blocklist_guards',
     badge: '4 OF 6 • REAL-TIME GUARDS',
     title: 'WebView, Search & APK Install Guard',
-    body: 'Blocks Chrome, Custom Tabs, social WebViews, betting searches & newly installed betting APKs. All 5 gambling categories start ON by default.',
+    body: 'Blocks browsers, Chrome Custom Tabs, social WebViews, betting searches, and newly sideloaded betting APKs.',
     icon: <Globe className="h-5 w-5" />,
     highlights: ['Search Guard', 'WebView Guard', 'Install Guard'],
   },
@@ -58,11 +58,11 @@ export const SPOTLIGHT_TOUR_STEPS: SpotlightTourStep[] = [
     id: 'progress_dashboard',
     route: 'activity',
     targetKey: 'progress_dashboard',
-    badge: '5 OF 6 • VISUAL PROGRESS',
-    title: 'Betting-Free Days Chart',
-    body: 'Scrub across the interactive Black & Pink chart to inspect your betting-free days, money saved in ₦, and milestone badges.',
+    badge: '5 OF 6 • RECOVERY PROGRESS',
+    title: 'Streak & Naira (₦) Savings',
+    body: 'Track your betting-free streak, inspect 7-day intercept volume, and monitor cumulative Naira savings across milestones.',
     icon: <TrendingUp className="h-5 w-5" />,
-    highlights: ['Days Clean', 'Milestones', 'Est. Saved'],
+    highlights: ['Days Clean', 'Milestones', '₦ Saved'],
   },
   {
     id: 'lock_timer',
@@ -71,7 +71,7 @@ export const SPOTLIGHT_TOUR_STEPS: SpotlightTourStep[] = [
     badge: '6 OF 6 • ANTI-UNINSTALL LOCK',
     title: 'Lock Uninstalls Until Timer Ends',
     body: 'Choose 1 to 90 days and enable Device Admin. GambleAware prevents uninstalls or tampering until the countdown reaches zero.',
-    icon: <Lock className="h-5 w-5" />,
+    icon: <LockKeyhole className="h-5 w-5" />,
     highlights: ['Anti-Uninstall', '4-Digit PIN'],
   },
 ];

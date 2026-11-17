@@ -27,6 +27,15 @@ interface BlocklistScreenProps {
   onRemoveBlockedApp: (pkg: string) => void;
 }
 
+const COMMON_WEBVIEW_APPS: InstalledAppInfo[] = [
+  { packageName: 'com.android.chrome', label: 'Chrome Browser' },
+  { packageName: 'com.opera.mini.native', label: 'Opera Mini' },
+  { packageName: 'com.instagram.android', label: 'Instagram' },
+  { packageName: 'com.zhiliaoapp.musically', label: 'TikTok' },
+  { packageName: 'org.telegram.messenger', label: 'Telegram' },
+  { packageName: 'com.twitter.android', label: 'X (Twitter)' },
+];
+
 export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
   state,
   onToggleCategory,
@@ -43,7 +52,8 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
   const [isAddingAllowlist, setIsAddingAllowlist] = useState(false);
   const [registrySearch, setRegistrySearch] = useState('');
   const [showAppPicker, setShowAppPicker] = useState(false);
-  const [appFilter, setAppFilter] = useState('');
+  const [customAppLabel, setCustomAppLabel] = useState('');
+  const [customAppPkg, setCustomAppPkg] = useState('');
 
   const matchingRegistryDomains = useMemo(() => {
     const q = registrySearch.trim().toLowerCase();
@@ -52,13 +62,16 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
     return entries.filter(([domain]) => domain.includes(q)).slice(0, 30);
   }, [registrySearch]);
 
-  const filteredApps = useMemo(() => {
-    const q = appFilter.trim().toLowerCase();
-    if (!q) return state.installedApps;
-    return state.installedApps.filter(
-      (a) => a.label.toLowerCase().includes(q) || a.packageName.toLowerCase().includes(q),
-    );
-  }, [state.installedApps, appFilter]);
+  const handleAddCustomApp = (e: React.FormEvent) => {
+    e.preventDefault();
+    const pkg = customAppPkg.trim().toLowerCase();
+    const label = customAppLabel.trim() || pkg;
+    if (!pkg || pkg.length < 3 || !/^[a-zA-Z0-9_.]+$/.test(pkg)) return;
+    onAddBlockedApp({ packageName: pkg, label });
+    setCustomAppLabel('');
+    setCustomAppPkg('');
+    setShowAppPicker(false);
+  };
 
   const handleAddDomain = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,15 +81,17 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[600px] flex-col gap-3.5 px-4 pt-3 pb-28">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
       <div className="px-1">
         <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
-          Blocklist & Rules
+          Blocklist &amp; Rules
         </h1>
         <p className="text-xs text-[var(--ink-muted)]">
           Customize categories, mirror detection, domains, and apps
         </p>
       </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
       {/* Category Toggles */}
       <LiquidGlassCard className="p-4 sm:p-5">
@@ -155,7 +170,9 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
           />
         </div>
       </LiquidGlassCard>
+      </div>
 
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Custom Domain Rules */}
       <LiquidGlassCard className="p-4 sm:p-5">
         <LiquidSectionHeader
@@ -258,13 +275,13 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-3.5 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
           >
             <Grid className="h-4 w-4" />
-            <span>Pick App</span>
+            <span>Add App</span>
           </button>
         </div>
 
         {state.customBlockedApps.length === 0 ? (
           <p className="mt-3 text-xs text-[var(--ink-muted)]">
-            No extra apps added yet. Tap Pick App to add any installed app to App Shield.
+            No extra apps added yet. Tap Add App to guard a custom Android package or browser app.
           </p>
         ) : (
           <div className="mt-3 flex flex-col gap-2">
@@ -293,6 +310,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
           </div>
         )}
       </LiquidGlassCard>
+      </div>
 
       {/* Protected Registry Search */}
       <LiquidGlassCard className="p-4 sm:p-5">
@@ -325,38 +343,55 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
         </div>
       </LiquidGlassCard>
 
-      {/* App Picker Modal */}
+      {/* Add Custom App Modal */}
       {showAppPicker ? (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Select App to Block"
+          aria-label="Add App to Blocklist"
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
         >
           <div className="w-full max-w-[480px] rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold">Select App to Block</h2>
+              <h2 className="font-display text-lg font-bold">Add App to Blocklist</h2>
               <button
                 type="button"
                 onClick={() => setShowAppPicker(false)}
-                aria-label="Close app picker"
+                aria-label="Close app dialog"
                 className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="relative mt-3">
-              <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--ink-muted)]" />
+            <form onSubmit={handleAddCustomApp} className="mt-3 space-y-2.5">
               <input
                 type="text"
-                value={appFilter}
-                onChange={(e) => setAppFilter(e.target.value)}
-                placeholder="Filter installed apps"
-                className="h-11 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--canvas)] pr-3.5 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+                value={customAppLabel}
+                onChange={(e) => setCustomAppLabel(e.target.value)}
+                placeholder="App Name (e.g. Custom Betting App)"
+                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
               />
-            </div>
-            <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
-              {filteredApps.map((app) => {
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customAppPkg}
+                  onChange={(e) => setCustomAppPkg(e.target.value)}
+                  placeholder="Android Package ID (e.g. com.example.app)"
+                  className="h-11 min-w-0 flex-1 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-xs text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="shrink-0 cursor-pointer rounded-[14px] bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                >
+                  Add
+                </button>
+              </div>
+            </form>
+            <p className="mt-4 text-[11px] font-medium text-[var(--ink-muted)]">
+              Common Browsers &amp; Social Feeds (In-App WebViews)
+            </p>
+            <div className="mt-2 max-h-[220px] space-y-2 overflow-y-auto pr-1">
+              {COMMON_WEBVIEW_APPS.map((app) => {
                 const alreadyBlocked = state.customBlockedApps.some(
                   (a) => a.packageName === app.packageName.toLowerCase(),
                 );

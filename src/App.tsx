@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Ban,
+  Anchor,
   CheckCircle2,
+  Download,
   ExternalLink,
   Heart,
   Info,
-  Lock,
-  Shield,
+  LockKeyhole,
+  SlidersHorizontal,
   TrendingUp,
   X,
 } from 'lucide-react';
-import { GamblingCategory } from './blocker/gamblingCategory';
+import { AppHeader } from './components/AppHeader';
 import { BlockedInterventionModal } from './components/BlockedInterventionModal';
-import { GetAppModal } from './components/GetAppModal';
 import {
   LiquidFloatingNavBar,
   LiquidGlassBackdrop,
@@ -24,6 +24,7 @@ import { AnchorRoute, InterventionPayload, ThemeMode } from './data/types';
 import { useGambleAwareState } from './hooks/useGambleAwareState';
 import { ActivityScreen } from './screens/ActivityScreen';
 import { BlocklistScreen } from './screens/BlocklistScreen';
+import { DownloadScreen } from './screens/DownloadScreen';
 import { LockSettingsScreen } from './screens/LockSettingsScreen';
 import { ShieldScreen } from './screens/ShieldScreen';
 
@@ -60,7 +61,14 @@ const SUPPORT_LINKS = [
 export function App() {
   const {
     uiState,
-    updateTestQuery,
+    cloudUser,
+    cloudSyncStatus,
+    lastSyncedAtMs,
+    cloudErrorMsg,
+    signInWithGoogleCloud,
+    signOutGoogleCloud,
+    forceSyncNow,
+    updateDomainLookupQuery,
     enableProtection,
     disableProtection,
     activateAccessibilityShield,
@@ -76,7 +84,6 @@ export function App() {
     setThemeMode,
     setDailySpendEstimate,
     setNotificationsEnabled,
-    sendTestNotification,
     addCustomDomain,
     removeCustomDomain,
     addBlockedApp,
@@ -89,11 +96,21 @@ export function App() {
     completeTour,
     replayTour,
     logUrgeResisted,
-    logBlockedEvent,
     clearEventHistory,
   } = useGambleAwareState();
 
-  const [currentRoute, setCurrentRoute] = useState<AnchorRoute>('shield');
+  const [currentRoute, setCurrentRoute] = useState<AnchorRoute>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.replace(/\/+$/, '').toLowerCase();
+      if (path === '/download') return 'download';
+      if (path === '/rules') return 'blocklist';
+      if (path === '/progress') return 'activity';
+      if (path === '/lock') return 'lock';
+      const routeParam = new URLSearchParams(window.location.search).get('page');
+      if (routeParam === 'download') return 'download';
+    }
+    return 'shield';
+  });
   const [showAccessibilityDisclosure, setShowAccessibilityDisclosure] = useState(false);
   const [showPrivateDnsModal, setShowPrivateDnsModal] = useState(false);
   const [privateDnsInput, setPrivateDnsInput] = useState(
@@ -109,12 +126,16 @@ export function App() {
   const [urgeNote, setUrgeNote] = useState('');
 
   const [showSafeSupportSheet, setShowSafeSupportSheet] = useState(false);
-  const [showGetAppModal, setShowGetAppModal] = useState(false);
   const [intervention, setIntervention] = useState<InterventionPayload | null>(null);
 
   const autostartSkipped =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('autostart') === '1';
+
+  const navigateTo = useCallback((route: AnchorRoute) => {
+    setCurrentRoute(route);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   // Apply Black & Pink Dark / Blush Light theme class & browser theme-color
   useEffect(() => {
@@ -167,51 +188,57 @@ export function App() {
     });
   };
 
-  const handleSimulateIntercept = (target: string, categoryDisplayName: string) => {
-    logBlockedEvent(target, 'Web Shield', GamblingCategory.SPORTSBOOK);
-    setIntervention({
-      target,
-      source: 'Web Shield',
-      category: categoryDisplayName,
-      isAntiTamper: false,
-      autoStartBreathing: false,
-    });
-  };
-
-  const handleTourSelectStep = useCallback(
-    (step: SpotlightTourStep) => {
-      setCurrentRoute(step.route);
-      if (step.targetKey === 'filter_tester' && !uiState.testQueryInput.trim()) {
-        updateTestQuery('sportybet.com');
-      }
-    },
-    [uiState.testQueryInput, updateTestQuery],
-  );
+  const handleTourSelectStep = useCallback((step: SpotlightTourStep) => {
+    setCurrentRoute(step.route);
+  }, []);
 
   const navItems: NavItemConfig[] = [
-    { route: 'shield', label: 'Shield', icon: <Shield className="h-5 w-5" /> },
-    { route: 'blocklist', label: 'Blocklist', icon: <Ban className="h-5 w-5" /> },
-    { route: 'activity', label: 'Progress', icon: <TrendingUp className="h-5 w-5" /> },
-    { route: 'lock', label: 'Lock', icon: <Lock className="h-5 w-5" /> },
+    { route: 'shield', label: 'Protect', icon: <Anchor className="h-4 w-4" /> },
+    { route: 'blocklist', label: 'Rules', icon: <SlidersHorizontal className="h-4 w-4" /> },
+    { route: 'activity', label: 'Progress', icon: <TrendingUp className="h-4 w-4" /> },
+    { route: 'lock', label: 'Lock', icon: <LockKeyhole className="h-4 w-4" /> },
+    { route: 'download', label: 'Get App', icon: <Download className="h-4 w-4" /> },
   ];
 
   return (
     <LiquidGlassBackdrop isProtected={uiState.isFullyArmed}>
-      {/* Floating Status Banner */}
+      {/* Responsive Top App Bar across Desktop & Mobile */}
+      <AppHeader
+        currentRoute={currentRoute}
+        onSelectRoute={navigateTo}
+        cloudUser={cloudUser}
+        cloudSyncStatus={cloudSyncStatus}
+        onSyncClick={() => {
+          if (cloudUser) {
+            navigateTo('lock');
+          } else {
+            void signInWithGoogleCloud();
+          }
+        }}
+      />
+
+      {/* Floating Status Toast */}
       {uiState.statusBannerMessage ? (
-        <div className="pointer-events-none fixed top-3 left-0 right-0 z-40 flex justify-center px-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] px-4 py-2.5 text-xs font-semibold text-[var(--ink)] backdrop-blur-xl">
-            <Info className="h-4 w-4 shrink-0" />
+        <div className="pointer-events-none fixed top-16 left-0 right-0 z-40 flex justify-center px-4 md:top-20">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] px-4 py-2 text-xs font-semibold text-[var(--ink)] backdrop-blur-xl">
+            <Info className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
             <span>{uiState.statusBannerMessage}</span>
           </div>
         </div>
       ) : null}
 
       {/* Main Route View */}
-      <main className="min-h-screen">
+      <main className="min-h-[calc(100vh-4rem)]">
         {currentRoute === 'shield' ? (
           <ShieldScreen
             state={uiState}
+            cloudUser={cloudUser}
+            cloudSyncStatus={cloudSyncStatus}
+            lastSyncedAtMs={lastSyncedAtMs}
+            cloudErrorMsg={cloudErrorMsg}
+            onSignInGoogle={() => void signInWithGoogleCloud()}
+            onSignOut={() => void signOutGoogleCloud()}
+            onForceSync={() => void forceSyncNow()}
             onPrimaryShieldClick={() => {
               if (!uiState.isAccessibilityEnabled) {
                 setShowAccessibilityDisclosure(true);
@@ -227,13 +254,14 @@ export function App() {
               setPrivateDnsInput(uiState.privateDnsStatus.serverHost ?? 'family.adguard-dns.com');
               setShowPrivateDnsModal(true);
             }}
-            onTestQueryChanged={updateTestQuery}
-            onSimulateIntercept={handleSimulateIntercept}
-            onNavigateToLock={() => setCurrentRoute('lock')}
+            onDomainLookupChanged={updateDomainLookupQuery}
+            onQuickBlockDomain={(domain) => addCustomDomain(domain, false)}
+            onNavigateToRules={() => navigateTo('blocklist')}
+            onNavigateToLock={() => navigateTo('lock')}
             onLaunchCalmReset={launchSosCalmReset}
             onOpenUrgeJournal={() => setShowUrgeJournalSheet(true)}
             onOpenSafeSupport={() => setShowSafeSupportSheet(true)}
-            onOpenGetApp={() => setShowGetAppModal(true)}
+            onOpenDownloadPage={() => navigateTo('download')}
           />
         ) : null}
 
@@ -291,6 +319,13 @@ export function App() {
         {currentRoute === 'lock' ? (
           <LockSettingsScreen
             state={uiState}
+            cloudUser={cloudUser}
+            cloudSyncStatus={cloudSyncStatus}
+            lastSyncedAtMs={lastSyncedAtMs}
+            cloudErrorMsg={cloudErrorMsg}
+            onSignInGoogle={() => void signInWithGoogleCloud()}
+            onSignOut={() => void signOutGoogleCloud()}
+            onForceSync={() => void forceSyncNow()}
             onActivateTimeLock={activateTimeLock}
             onToggleAntiTamper={(enabled) => {
               if (enabled) setAntiTamperEnabled(true);
@@ -315,25 +350,33 @@ export function App() {
             onSelectTheme={setThemeMode}
             onResetStreak={resetStreak}
             onReplayTour={() => {
-              setCurrentRoute('shield');
+              navigateTo('shield');
               replayTour();
             }}
             onToggleNotifications={setNotificationsEnabled}
-            onSendTestNotification={sendTestNotification}
-            onOpenGetApp={() => setShowGetAppModal(true)}
+            onOpenDownloadPage={() => navigateTo('download')}
+          />
+        ) : null}
+
+        {currentRoute === 'download' ? (
+          <DownloadScreen
+            state={uiState}
+            onOpenBlocker={() => navigateTo('shield')}
+            onSignInGoogle={() => void signInWithGoogleCloud()}
+            isSignedIn={Boolean(cloudUser)}
           />
         ) : null}
       </main>
 
-      {/* Floating Liquid Glass Bottom Nav Bar */}
+      {/* Mobile Floating Liquid Glass Bottom Nav Bar */}
       <LiquidFloatingNavBar
         items={navItems}
         selectedRoute={currentRoute}
-        onSelect={setCurrentRoute}
+        onSelect={navigateTo}
       />
 
       {/* Interactive Guided Spotlight Tour */}
-      {!uiState.settings.hasCompletedTour && !autostartSkipped ? (
+      {!uiState.settings.hasCompletedTour && !autostartSkipped && currentRoute !== 'download' ? (
         <SpotlightTourOverlay
           onSelectStep={handleTourSelectStep}
           onDismissTour={completeTour}
@@ -354,9 +397,6 @@ export function App() {
           onClose={() => setIntervention(null)}
         />
       ) : null}
-
-      {/* Download APK / Install App Modal */}
-      {showGetAppModal ? <GetAppModal onClose={() => setShowGetAppModal(false)} /> : null}
 
       {/* Urge Journal Modal Sheet */}
       {showUrgeJournalSheet ? (
@@ -481,12 +521,12 @@ export function App() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Enable GambleAware Shield"
+          aria-label="Enable GambleAware Guard"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
         >
           <LiquidGlassCard className="w-full max-w-[420px] bg-[var(--surface)] p-5">
             <h2 className="font-display text-lg font-bold text-[var(--ink)]">
-              Enable GambleAware Shield
+              Enable GambleAware Guard
             </h2>
             <div className="mt-2.5 space-y-2 text-xs leading-relaxed text-[var(--ink-muted)]">
               <p>
@@ -498,10 +538,10 @@ export function App() {
               </p>
               <p>2. Detect and close installed betting apps immediately.</p>
               <p>
-                3. Enforce your Commitment Lock & prevent uninstalling GambleAware until your timer
-                ends.
+                3. Enforce your Commitment Lock &amp; prevent uninstalling GambleAware until your
+                timer ends.
               </p>
-              <p>No VPN is used, and zero personal data or browsing history leaves your device.</p>
+              <p>No VPN is used, and zero personal browsing history leaves your device.</p>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button
@@ -519,7 +559,7 @@ export function App() {
                 }}
                 className="cursor-pointer rounded-full bg-[var(--active-fill)] px-5 py-2 text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
               >
-                Activate Shield
+                Activate Guard
               </button>
             </div>
           </LiquidGlassCard>

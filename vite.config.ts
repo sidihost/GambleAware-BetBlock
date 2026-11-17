@@ -12,10 +12,10 @@ export default defineConfig({
       includeAssets: ['icon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         id: '/',
-        name: 'GambleAware Nigeria',
+        name: 'GambleAware',
         short_name: 'GambleAware',
         description:
-          'GambleAware — Black & Pink bet blocker for Nigeria by Imoogle Technology. Block SportyBet, Bet9ja, BetKing, 1xBet, MSport, track Naira saved, and lock impulses.',
+          'GambleAware by Imoogle Technology — Zero-VPN gambling site and app blocker with Naira (₦) savings tracking, anti-uninstall commitment lock, and free cloud sync.',
         theme_color: '#060608',
         background_color: '#060608',
         display: 'standalone',
@@ -43,6 +43,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,ttf,woff,woff2}'],
         globIgnores: ['**/*.apk', '**/downloads/**'],
         navigateFallbackDenylist: [/^\/downloads\//],

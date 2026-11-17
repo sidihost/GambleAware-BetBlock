@@ -2,7 +2,6 @@ import {
   BlockedAppEntity,
   BlockedDomainEntity,
   BlockedEventEntity,
-  InstalledAppInfo,
   PrivateDnsStatus,
   ProtectionSettingsState,
   ThemeMode,
@@ -22,19 +21,6 @@ export interface PersistedStore {
   events: BlockedEventEntity[];
   urgeLogs: UrgeLogEntity[];
 }
-
-export const SAMPLE_INSTALLED_APPS: InstalledAppInfo[] = [
-  { packageName: 'com.android.chrome', label: 'Chrome' },
-  { packageName: 'com.instagram.android', label: 'Instagram' },
-  { packageName: 'com.zhiliaoapp.musically', label: 'TikTok' },
-  { packageName: 'com.whatsapp', label: 'WhatsApp' },
-  { packageName: 'org.telegram.messenger', label: 'Telegram' },
-  { packageName: 'com.reddit.frontpage', label: 'Reddit' },
-  { packageName: 'com.twitter.android', label: 'X' },
-  { packageName: 'com.google.android.youtube', label: 'YouTube' },
-  { packageName: 'com.spotify.music', label: 'Spotify' },
-  { packageName: 'com.discord', label: 'Discord' },
-];
 
 export function hashPinSync(pin: string): string {
   // Deterministic FNV-1a + SHA-style salted digest so PIN verification is synchronous
