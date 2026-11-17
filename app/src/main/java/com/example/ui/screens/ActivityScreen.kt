@@ -101,9 +101,7 @@ fun ActivityScreen(
     }
 
     val savedFormatted = remember(state.estimatedSavedAmount) {
-        NumberFormat.getCurrencyInstance(Locale.US).apply {
-            maximumFractionDigits = 0
-        }.format(state.estimatedSavedAmount)
+        "₦" + NumberFormat.getIntegerInstance(Locale("en", "NG")).format(state.estimatedSavedAmount)
     }
 
     Box(

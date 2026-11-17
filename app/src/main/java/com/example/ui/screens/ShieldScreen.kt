@@ -353,9 +353,8 @@ fun ShieldScreen(
                     )
                     MetricGlassTile(
                         title = "Est. Saved",
-                        value = NumberFormat.getCurrencyInstance(Locale.US).apply {
-                            maximumFractionDigits = 0
-                        }.format(state.estimatedSavedAmount),
+                        value = "₦" + NumberFormat.getIntegerInstance(Locale("en", "NG"))
+                            .format(state.estimatedSavedAmount),
                         subtitle = "${state.totalUrgeResistedCount} resisted",
                         modifier = Modifier.weight(1f),
                     )

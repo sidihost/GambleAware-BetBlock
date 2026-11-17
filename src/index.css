@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit_semibold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dm_sans_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dm_sans_medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dm_sans_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/ibm_plex_mono_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/ibm_plex_mono_semibold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --canvas: #FFF7FA;
+  --surface: #FFFFFF;
+  --ink: #120B10;
+  --ink-muted: #6E5664;
+  --accent-ink: #D81B78;
+  --glass-fill: rgba(255, 255, 255, 0.86);
+  --glass-secondary: rgba(255, 224, 239, 0.72);
+  --glass-border: rgba(255, 61, 154, 0.24);
+  --subtle-border: #F2D3E2;
+  --active-fill: #D81B78;
+  --active-content: #FFFFFF;
+  --muted-fill: #FCEAF3;
+  --muted-content: #120B10;
+  --blob-one: #FFE0EE;
+  --blob-two: #FBD3E6;
+  --blob-three: #FFF0F6;
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: #060608;
+  --surface: #101014;
+  --ink: #F9F5F8;
+  --ink-muted: #B0A0AC;
+  --accent-ink: #FF72B8;
+  --glass-fill: rgba(18, 17, 22, 0.84);
+  --glass-secondary: rgba(28, 22, 29, 0.76);
+  --glass-border: rgba(255, 61, 154, 0.28);
+  --subtle-border: #2C2129;
+  --active-fill: #FF3D9A;
+  --active-content: #08080A;
+  --muted-fill: #1A1419;
+  --muted-content: #F9F5F8;
+  --blob-one: #260B19;
+  --blob-two: #170912;
+  --blob-three: #120A10;
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: 'Outfit', 'DM Sans', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+}
+
+@keyframes liquidDriftA {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-18px, 12px, 0);
+  }
+}
+
+@keyframes liquidDriftB {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(16px, -14px, 0);
+  }
+}
+
+@keyframes orbPulse {
+  0%,
+  100% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+
+.animate-drift-a {
+  animation: liquidDriftA 11s ease-in-out infinite;
+}
+
+.animate-drift-b {
+  animation: liquidDriftB 13s ease-in-out infinite;
+}
+
+.animate-orb-pulse {
+  animation: orbPulse 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift-a,
+  .animate-drift-b,
+  .animate-orb-pulse {
+    animation: none;
+  }
+}

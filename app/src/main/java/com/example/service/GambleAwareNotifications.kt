@@ -13,6 +13,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
+import java.text.NumberFormat
+import java.util.Locale
 
 object GambleAwareNotifications {
 
@@ -83,11 +85,12 @@ object GambleAwareNotifications {
         val reached = MILESTONE_DAYS.lastOrNull { it <= cleanDays } ?: return
         if (reached <= lastNotifiedDay) return
 
+        val formattedSaved = NumberFormat.getIntegerInstance(Locale("en", "NG")).format(estimatedSaved)
         val posted = postNotification(
             context = context,
             notificationId = NOTIF_ID_MILESTONE,
             title = "$reached Day${if (reached == 1) "" else "s"} Betting-Free",
-            body = "You've stayed clear for $reached day${if (reached == 1) "" else "s"} and kept ~$$estimatedSaved. Keep going.",
+            body = "You've stayed clear for $reached day${if (reached == 1) "" else "s"} and kept ~₦$formattedSaved. Keep going.",
         )
         if (posted) {
             onMarkNotified(reached)

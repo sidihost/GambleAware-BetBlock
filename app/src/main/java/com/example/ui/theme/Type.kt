@@ -9,21 +9,21 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 
 val DisplayFontFamily = FontFamily(
-    Font(R.font.plus_jakarta_sans, FontWeight.Normal),
-    Font(R.font.plus_jakarta_sans, FontWeight.Medium),
-    Font(R.font.plus_jakarta_sans, FontWeight.SemiBold),
-    Font(R.font.plus_jakarta_sans, FontWeight.Bold),
+    Font(R.font.outfit_regular, FontWeight.Normal),
+    Font(R.font.outfit_semibold, FontWeight.Medium),
+    Font(R.font.outfit_semibold, FontWeight.SemiBold),
+    Font(R.font.outfit_bold, FontWeight.Bold),
 )
 
 val BodyFontFamily = FontFamily(
-    Font(R.font.inter, FontWeight.Normal),
-    Font(R.font.inter, FontWeight.Medium),
-    Font(R.font.inter, FontWeight.SemiBold),
+    Font(R.font.dm_sans_regular, FontWeight.Normal),
+    Font(R.font.dm_sans_medium, FontWeight.Medium),
+    Font(R.font.dm_sans_bold, FontWeight.SemiBold),
 )
 
 val MonoFontFamily = FontFamily(
-    Font(R.font.jetbrains_mono, FontWeight.Normal),
-    Font(R.font.jetbrains_mono, FontWeight.Medium),
+    Font(R.font.ibm_plex_mono_regular, FontWeight.Normal),
+    Font(R.font.ibm_plex_mono_semibold, FontWeight.Medium),
 )
 
 val Typography = Typography(

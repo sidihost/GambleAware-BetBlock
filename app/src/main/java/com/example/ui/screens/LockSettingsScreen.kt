@@ -67,6 +67,7 @@ import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -556,7 +557,8 @@ fun LockSettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        listOf(10, 25, 50, 100, 250).forEach { amount ->
+                        val nairaFormat = remember { NumberFormat.getIntegerInstance(Locale("en", "NG")) }
+                        listOf(1000, 2500, 5000, 10000, 25000).forEach { amount ->
                             val selected = state.settings.dailyBetSpendEstimate == amount
                             LiquidGlassCard(
                                 cornerRadius = 50.dp,
@@ -566,7 +568,7 @@ fun LockSettingsScreen(
                                 onClick = { onSetDailySpend(amount) },
                             ) {
                                 Text(
-                                    text = "\$$amount/day",
+                                    text = "₦${nairaFormat.format(amount)}/day",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -578,8 +580,8 @@ fun LockSettingsScreen(
                     Spacer(modifier = Modifier.height(18.dp))
 
                     LiquidSectionHeader(
-                        title = "Monochrome Contrast",
-                        subtitle = "Black & white liquid glass finish",
+                        title = "Black & Pink Theme",
+                        subtitle = "Obsidian black & GambleAware pink finish",
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(

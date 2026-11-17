@@ -2,36 +2,38 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Pure Black & White Monochrome Tokens (Zero color hues, zero shadows, zero gradients)
+// GambleAware Black & Pink Liquid Glass Tokens (High-contrast obsidian & rose pink)
 
-// Light (White) Mode
 val PureWhite = Color(0xFFFFFFFF)
-val PureBlack = Color(0xFF000000)
-val ObsidianBlack = Color(0xFF0A0A0A)
+val ObsidianBlack = Color(0xFF08080A)
+val GamblePink = Color(0xFFFF3D9A)       // Signature GambleAware Pink (Dark mode primary)
+val GamblePinkSoft = Color(0xFFFF72B8)   // High-legibility pink ink on obsidian
+val GamblePinkDeep = Color(0xFFD81B78)   // High-contrast pink for Light mode (white text AA)
 
-val LightCanvas = Color(0xFFF2F2F2)
-val LightSurface = Color(0xFFFAFAFA)
-val LightGlassFill = Color(0xD9FFFFFF) // 85% translucent white
-val LightGlassSecondary = Color(0xB3E8E8E8)
-val LightGlassBorder = Color(0xFFFFFFFF)
-val LightSubtleBorder = Color(0xFFD4D4D4)
-val LightPrimaryContainer = Color(0xFFE3E3E3)
-val LightSecondaryInk = Color(0xFF5C5C5C)
+// Light (Blush & Black) Mode
+val LightCanvas = Color(0xFFFFF7FA)
+val LightSurface = Color(0xFFFFFFFF)
+val LightGlassFill = Color(0xE6FFFFFF)
+val LightGlassSecondary = Color(0xCCFFE5F1)
+val LightGlassBorder = Color(0xFFFFD1E6)
+val LightSubtleBorder = Color(0xFFF3C3D9)
+val LightPrimaryContainer = Color(0xFFFFEBF4)
+val LightSecondaryInk = Color(0xFF6B4F5D)
 
-val LightBlobPrimary = Color(0xFFE4E4E4)
-val LightBlobSecondary = Color(0xFFD8D8D8)
-val LightBlobTertiary = Color(0xFFEAEAEA)
+val LightBlobPrimary = Color(0xFFFFDEED)
+val LightBlobSecondary = Color(0xFFFFCCE4)
+val LightBlobTertiary = Color(0xFFFFE9F3)
 
-// Dark (Black) Mode
-val DarkCanvas = Color(0xFF000000)
-val DarkSurface = Color(0xFF0F0F0F)
-val DarkGlassFill = Color(0xCC141414) // 80% translucent obsidian
-val DarkGlassSecondary = Color(0xB31F1F1F)
-val DarkGlassBorder = Color(0x2BFFFFFF) // 17% white edge catchlight
-val DarkSubtleBorder = Color(0xFF2B2B2B)
-val DarkPrimaryContainer = Color(0xFF262626)
-val DarkSecondaryInk = Color(0xFFA3A3A3)
+// Dark (Obsidian Black & Pink — Signature Default) Mode
+val DarkCanvas = Color(0xFF060608)
+val DarkSurface = Color(0xFF101014)
+val DarkGlassFill = Color(0xD9121116)
+val DarkGlassSecondary = Color(0xCC1E131B)
+val DarkGlassBorder = Color(0x47FF3D9A) // 28% pink edge catchlight
+val DarkSubtleBorder = Color(0xFF331D2A)
+val DarkPrimaryContainer = Color(0xFF1F111A)
+val DarkSecondaryInk = Color(0xFFC7A8B8)
 
-val DarkBlobPrimary = Color(0xFF141414)
-val DarkBlobSecondary = Color(0xFF1C1C1C)
-val DarkBlobTertiary = Color(0xFF101010)
+val DarkBlobPrimary = Color(0xFF280A1B)
+val DarkBlobSecondary = Color(0xFF190712)
+val DarkBlobTertiary = Color(0xFF210817)

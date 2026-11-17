@@ -1,0 +1,510 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // -------------------------------------------------------------------------
+    // Global Safety Net (Default-Deny)
+    // -------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Connection Probe Document (Startup Connectivity Check)
+    // -------------------------------------------------------------------------
+    match /test/connection {
+      allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 3: Global Hardened Primitives
+    // -------------------------------------------------------------------------
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function hasUserAnchor(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isValidOwnerField(data, userId) {
+      return data.ownerId is string &&
+        data.ownerId.size() >= 1 &&
+        data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.ownerId == userId;
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 2: Entity Validation Blueprints
+    // -------------------------------------------------------------------------
+    function isValidUserRoot(data, userId) {
+      return data.keys().hasAll(['ownerId', 'planTier', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'planTier', 'createdAt', 'updatedAt']) &&
+        isValidOwnerField(data, userId) &&
+        data.planTier is string &&
+        data.planTier.size() <= 16 &&
+        data.planTier == 'free' &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data, userId) {
+      return data.keys().hasAll(['ownerId', 'email', 'displayName', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'email', 'displayName', 'createdAt', 'updatedAt']) &&
+        isValidOwnerField(data, userId) &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 254 &&
+        data.displayName is string &&
+        data.displayName.size() <= 120 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserSettings(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'isProtectionEnabled',
+          'blockSportsbooks',
+          'blockCasinos',
+          'blockPokerAndBingo',
+          'blockCryptoBetting',
+          'blockFantasyAndLottery',
+          'strictKeywordFilter',
+          'browserShieldEnabled',
+          'appShieldEnabled',
+          'searchGuardEnabled',
+          'antiTamperLockEnabled',
+          'lockUntilEpochMs',
+          'pinHash',
+          'protectionStartedAtMs',
+          'dailyBetSpendEstimate',
+          'themeMode',
+          'hasCompletedTour',
+          'notificationsEnabled',
+          'lastNotifiedMilestoneDay',
+          'isAccessibilityEnabled',
+          'isDeviceAdminEnabled',
+          'privateDnsActive',
+          'privateDnsHost',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'isProtectionEnabled',
+          'blockSportsbooks',
+          'blockCasinos',
+          'blockPokerAndBingo',
+          'blockCryptoBetting',
+          'blockFantasyAndLottery',
+          'strictKeywordFilter',
+          'browserShieldEnabled',
+          'appShieldEnabled',
+          'searchGuardEnabled',
+          'antiTamperLockEnabled',
+          'lockUntilEpochMs',
+          'pinHash',
+          'protectionStartedAtMs',
+          'dailyBetSpendEstimate',
+          'themeMode',
+          'hasCompletedTour',
+          'notificationsEnabled',
+          'lastNotifiedMilestoneDay',
+          'isAccessibilityEnabled',
+          'isDeviceAdminEnabled',
+          'privateDnsActive',
+          'privateDnsHost',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidOwnerField(data, userId) &&
+        data.isProtectionEnabled is bool &&
+        data.blockSportsbooks is bool &&
+        data.blockCasinos is bool &&
+        data.blockPokerAndBingo is bool &&
+        data.blockCryptoBetting is bool &&
+        data.blockFantasyAndLottery is bool &&
+        data.strictKeywordFilter is bool &&
+        data.browserShieldEnabled is bool &&
+        data.appShieldEnabled is bool &&
+        data.searchGuardEnabled is bool &&
+        data.antiTamperLockEnabled is bool &&
+        data.lockUntilEpochMs is number &&
+        data.lockUntilEpochMs >= 0 &&
+        data.pinHash is string &&
+        data.pinHash.size() <= 64 &&
+        data.protectionStartedAtMs is number &&
+        data.protectionStartedAtMs >= 0 &&
+        data.dailyBetSpendEstimate is number &&
+        data.dailyBetSpendEstimate >= 0 &&
+        data.dailyBetSpendEstimate <= 10000000 &&
+        data.themeMode is string &&
+        data.themeMode.size() <= 16 &&
+        data.themeMode in ['SYSTEM', 'LIGHT', 'DARK'] &&
+        data.hasCompletedTour is bool &&
+        data.notificationsEnabled is bool &&
+        data.lastNotifiedMilestoneDay is number &&
+        data.lastNotifiedMilestoneDay >= 0 &&
+        data.lastNotifiedMilestoneDay <= 36500 &&
+        data.isAccessibilityEnabled is bool &&
+        data.isDeviceAdminEnabled is bool &&
+        data.privateDnsActive is bool &&
+        data.privateDnsHost is string &&
+        data.privateDnsHost.size() <= 253 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCustomDomainRule(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'domain',
+          'isAllowlisted',
+          'categoryName',
+          'addedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'domain',
+          'isAllowlisted',
+          'categoryName',
+          'addedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidOwnerField(data, userId) &&
+        data.domain is string &&
+        data.domain.size() >= 3 &&
+        data.domain.size() <= 253 &&
+        data.domain.matches('^[a-z0-9.-]+\\.[a-z]{2,}$') &&
+        data.isAllowlisted is bool &&
+        data.categoryName is string &&
+        data.categoryName.size() >= 1 &&
+        data.categoryName.size() <= 64 &&
+        data.addedAt is number &&
+        data.addedAt >= 0 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidBlockedAppRule(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'packageName',
+          'appLabel',
+          'addedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'packageName',
+          'appLabel',
+          'addedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidOwnerField(data, userId) &&
+        data.packageName is string &&
+        data.packageName.size() >= 3 &&
+        data.packageName.size() <= 160 &&
+        data.packageName.matches('^[a-zA-Z0-9_.]+$') &&
+        data.appLabel is string &&
+        data.appLabel.size() >= 1 &&
+        data.appLabel.size() <= 80 &&
+        data.addedAt is number &&
+        data.addedAt >= 0 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidBlockedEvent(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'eventId',
+          'target',
+          'source',
+          'categoryName',
+          'timestamp',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'eventId',
+          'target',
+          'source',
+          'categoryName',
+          'timestamp',
+          'createdAt'
+        ]) &&
+        isValidOwnerField(data, userId) &&
+        data.eventId is number &&
+        data.eventId > 0 &&
+        data.target is string &&
+        data.target.size() >= 1 &&
+        data.target.size() <= 253 &&
+        data.source is string &&
+        data.source.size() <= 32 &&
+        data.source in ['Web Shield', 'In-App WebView', 'App Shield', 'Install Guard'] &&
+        data.categoryName is string &&
+        data.categoryName.size() >= 1 &&
+        data.categoryName.size() <= 64 &&
+        data.timestamp is number &&
+        data.timestamp > 0 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidUrgeLog(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'logId',
+          'triggerTag',
+          'note',
+          'timestamp',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'logId',
+          'triggerTag',
+          'note',
+          'timestamp',
+          'createdAt'
+        ]) &&
+        isValidOwnerField(data, userId) &&
+        data.logId is number &&
+        data.logId > 0 &&
+        data.triggerTag is string &&
+        data.triggerTag.size() >= 1 &&
+        data.triggerTag.size() <= 40 &&
+        data.note is string &&
+        data.note.size() <= 280 &&
+        data.timestamp is number &&
+        data.timestamp > 0 &&
+        data.createdAt is timestamp;
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 4: User Root Anchor & Private Collections
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserRoot(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserRoot(incoming(), userId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt']);
+      allow delete: if isValidId(userId) && isOwner(userId);
+
+      // Isolated PII Collection (email & displayName)
+      match /private/{docId} {
+        allow get: if isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'account' &&
+          isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'account' &&
+          isOwner(userId) &&
+          isValidUserPrivateInfo(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'account' &&
+          isOwner(userId) &&
+          isValidUserPrivateInfo(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(docId) && isOwner(userId);
+      }
+
+      // Protection Profile & Blocker Settings
+      match /profile/{docId} {
+        allow get: if isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'settings' &&
+          isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'settings' &&
+          isOwner(userId) &&
+          isValidUserSettings(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'settings' &&
+          isOwner(userId) &&
+          isValidUserSettings(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'isProtectionEnabled',
+            'blockSportsbooks',
+            'blockCasinos',
+            'blockPokerAndBingo',
+            'blockCryptoBetting',
+            'blockFantasyAndLottery',
+            'strictKeywordFilter',
+            'browserShieldEnabled',
+            'appShieldEnabled',
+            'searchGuardEnabled',
+            'antiTamperLockEnabled',
+            'lockUntilEpochMs',
+            'pinHash',
+            'protectionStartedAtMs',
+            'dailyBetSpendEstimate',
+            'themeMode',
+            'hasCompletedTour',
+            'notificationsEnabled',
+            'lastNotifiedMilestoneDay',
+            'isAccessibilityEnabled',
+            'isDeviceAdminEnabled',
+            'privateDnsActive',
+            'privateDnsHost',
+            'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(docId) && isOwner(userId);
+      }
+
+      // Custom Domain Rules (Blocked & Allowlisted)
+      match /domains/{domainId} {
+        allow get: if isValidId(userId) && isValidId(domainId) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(domainId) &&
+          isOwner(userId) &&
+          isValidCustomDomainRule(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(domainId) &&
+          isOwner(userId) &&
+          isValidCustomDomainRule(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'isAllowlisted',
+            'categoryName',
+            'addedAt',
+            'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(domainId) && isOwner(userId);
+      }
+
+      // Custom Blocked Apps
+      match /blockedApps/{packageId} {
+        allow get: if isValidId(userId) && isValidId(packageId) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(packageId) &&
+          isOwner(userId) &&
+          isValidBlockedAppRule(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(packageId) &&
+          isOwner(userId) &&
+          isValidBlockedAppRule(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'appLabel',
+            'addedAt',
+            'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(packageId) && isOwner(userId);
+      }
+
+      // Blocked Event Telemetry (Append-Only; Delete Allowed Only For Clear History)
+      match /events/{eventId} {
+        allow get: if isValidId(userId) && isValidId(eventId) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(eventId) &&
+          isOwner(userId) &&
+          isValidBlockedEvent(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(eventId) && isOwner(userId);
+      }
+
+      // Urge-Resisted Victory Journal (Append-Only)
+      match /urgeLogs/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(logId) &&
+          isOwner(userId) &&
+          isValidUrgeLog(incoming(), userId) &&
+          hasUserAnchor(userId) &&
+          incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="ga-bg-m" cx="50%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#220D1B" />
+      <stop offset="65%" stop-color="#0B0B0F" />
+      <stop offset="100%" stop-color="#060608" />
+    </radialGradient>
+    <linearGradient id="ga-pink-m" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF72B8" />
+      <stop offset="100%" stop-color="#FF3D9A" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#ga-bg-m)" />
+  <circle cx="256" cy="256" r="158" fill="none" stroke="#FF3D9A" stroke-opacity="0.24" stroke-width="3.5" />
+  <g transform="translate(256 256) scale(0.76) translate(-256 -256)" stroke="url(#ga-pink-m)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M 256 124 L 364 172 L 364 268 Q 358 356 256 396 Q 154 356 148 268 L 148 172 Z"
+      fill="#FF3D9A"
+      fill-opacity="0.14"
+      stroke-width="22"
+    />
+    <circle cx="256" cy="204" r="16" stroke-width="15" />
+    <line x1="256" y1="222" x2="256" y2="324" stroke-width="17" />
+    <line x1="220" y1="242" x2="292" y2="242" stroke-width="15" />
+    <path d="M 202 284 Q 256 340 310 284" stroke-width="17" />
+  </g>
+</svg>

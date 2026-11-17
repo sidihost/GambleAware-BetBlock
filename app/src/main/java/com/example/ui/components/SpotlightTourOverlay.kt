@@ -130,7 +130,7 @@ val SPOTLIGHT_TOUR_STEPS = listOf(
         route = "shield",
         targetKey = TourTargetKeys.SHIELD_ORB,
         badge = "1 OF 6 • LIVE SHIELD",
-        title = "One-Tap Monochrome Shield",
+        title = "One-Tap Black & Pink Shield",
         body = "Tap this chronograph orb anytime to inspect or arm GambleAware's zero-VPN Web, Search & App Shield.",
         icon = Icons.Rounded.Shield,
         highlights = listOf("Zero VPN", "Instant Blocking"),
@@ -171,7 +171,7 @@ val SPOTLIGHT_TOUR_STEPS = listOf(
         targetKey = TourTargetKeys.PROGRESS_DASHBOARD,
         badge = "5 OF 6 • VISUAL PROGRESS",
         title = "Betting-Free Days Chart",
-        body = "Scrub across the interactive monochrome chart to inspect your betting-free days, money saved, and milestone badges.",
+        body = "Scrub across the interactive Black & Pink chart to inspect your betting-free days, money saved in ₦, and milestone badges.",
         icon = Icons.Rounded.Insights,
         highlights = listOf("Days Clean", "Milestones", "Est. Saved"),
     ),
@@ -275,7 +275,7 @@ fun SpotlightTourOverlay(
                     blendMode = BlendMode.Clear,
                 )
                 drawRoundRect(
-                    color = Color.White,
+                    color = liquid.activeFill,
                     topLeft = Offset(animatedRect.left, animatedRect.top),
                     size = Size(animatedRect.width, animatedRect.height),
                     cornerRadius = radius,

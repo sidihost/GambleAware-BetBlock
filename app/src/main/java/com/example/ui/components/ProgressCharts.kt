@@ -38,20 +38,20 @@ import androidx.compose.ui.unit.dp
 import com.example.ui.DailyBlockStat
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
+import java.text.NumberFormat
+import java.util.Locale
 import kotlin.math.roundToInt
 
 data class ProgressChartPoint(
     val dayNumber: Int,
     val label: String,
-    val savedDollars: Int,
+    val savedNaira: Int,
     val achieved: Boolean,
 )
 
 /**
- * Native Recharts-style interactive monochrome Area + Line Progress Chart.
- * Displays real betting-free days achieved vs next milestone horizon, with
- * dashed Cartesian gridlines, touch-scrub crosshair, and floating tooltip pill.
- * Strictly Black & White monochrome, zero gradients, zero shadows.
+ * Interactive Black & Pink Area + Line Progress Chart.
+ * Displays betting-free days achieved vs next milestone horizon in Naira.
  */
 @Composable
 fun BettingFreeProgressChart(
@@ -64,6 +64,8 @@ fun BettingFreeProgressChart(
     val liquid = LocalLiquidColors.current
     val ink = MaterialTheme.colorScheme.onBackground
     val mutedInk = MaterialTheme.colorScheme.onSurfaceVariant
+    val accent = liquid.activeFill
+    val nairaFormat = remember { NumberFormat.getIntegerInstance(Locale("en", "NG")) }
 
     val points = remember(cleanDays, cleanHoursRemainder, dailySpendEstimate, nextMilestoneDay) {
         val horizon = maxOf(nextMilestoneDay, maxOf(cleanDays + 1, 7))
@@ -93,7 +95,7 @@ fun BettingFreeProgressChart(
             ProgressChartPoint(
                 dayNumber = day,
                 label = if (day == 0) "Start" else "D$day",
-                savedDollars = saved,
+                savedNaira = saved,
                 achieved = achieved,
             )
         }
@@ -138,11 +140,11 @@ fun BettingFreeProgressChart(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "\$${activePoint.savedDollars}",
+                    text = "₦${nairaFormat.format(activePoint.savedNaira)}",
                     fontFamily = MonoFontFamily,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
-                    color = ink,
+                    color = liquid.accentInk,
                 )
                 Text(
                     text = "Est. Saved",
@@ -277,7 +279,7 @@ fun BettingFreeProgressChart(
                         }
                         drawPath(
                             path = areaPath,
-                            color = ink.copy(alpha = 0.10f),
+                            color = accent.copy(alpha = 0.16f),
                         )
                         val linePath = Path().apply {
                             moveTo(achievedPoints.first().x, achievedPoints.first().y)
@@ -287,9 +289,9 @@ fun BettingFreeProgressChart(
                         }
                         drawPath(
                             path = linePath,
-                            color = ink,
+                            color = accent,
                             style = Stroke(
-                                width = 2.4.dp.toPx(),
+                                width = 2.6.dp.toPx(),
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round,
                             ),
@@ -299,9 +301,8 @@ fun BettingFreeProgressChart(
                     // Active Crosshair & Selected Node
                     val selPt = points[selectedIndex]
                     val selX = selectedIndex * stepX
-                    val selY = topPad + chartH * (1f - (selPt.dayNumber.toFloat() / maxDay.toFloat()).coerceIn(0f, 1f))
                     drawLine(
-                        color = ink.copy(alpha = 0.45f),
+                        color = accent.copy(alpha = 0.55f),
                         start = Offset(selX, topPad),
                         end = Offset(selX, topPad + chartH),
                         strokeWidth = 1.dp.toPx(),
@@ -321,14 +322,14 @@ fun BettingFreeProgressChart(
                                 center = Offset(cx, cy),
                             )
                             drawCircle(
-                                color = ink,
+                                color = accent,
                                 radius = radius + 2.dp.toPx(),
                                 center = Offset(cx, cy),
                                 style = Stroke(width = 1.75.dp.toPx()),
                             )
                         }
                         drawCircle(
-                            color = if (pt.achieved) ink else liquid.mutedFill,
+                            color = if (pt.achieved) accent else liquid.mutedFill,
                             radius = radius,
                             center = Offset(cx, cy),
                         )
@@ -469,7 +470,7 @@ fun InteractiveBlockedBarChart(
                     val top = h * 0.98f - barH
                     val isSelected = idx == selectedIdx
                     drawRoundRect(
-                        color = if (isSelected) ink else ink.copy(alpha = 0.65f),
+                        color = if (isSelected) liquid.activeFill else liquid.activeFill.copy(alpha = 0.6f),
                         topLeft = Offset(left, top),
                         size = Size(barW, barH),
                         cornerRadius = corner,
@@ -477,7 +478,7 @@ fun InteractiveBlockedBarChart(
                 }
                 if (idx == selectedIdx) {
                     drawRoundRect(
-                        color = ink,
+                        color = liquid.activeFill,
                         topLeft = Offset(left - 2.dp.toPx(), h * 0.04f),
                         size = Size(barW + 4.dp.toPx(), h * 0.94f),
                         cornerRadius = corner,

@@ -619,10 +619,11 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
         val liquid = LocalLiquidColors.current
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val supportLinks = listOf(
-            Triple("Gamblers Anonymous", "Peer support groups & meetings worldwide", "https://www.gamblersanonymous.org"),
-            Triple("National Council on Problem Gambling", "24/7 confidential helpline & resources", "https://www.ncpgambling.org"),
-            Triple("GamCare", "Free information, advice & counselling", "https://www.gamcare.org.uk"),
+            Triple("Mentally Aware Nigeria (MANI)", "Confidential Nigerian support & counselling", "https://mentallyaware.org"),
+            Triple("NLRC Responsible Gaming", "National Lottery Regulatory Commission Nigeria", "https://nlrc-gov.ng"),
+            Triple("LSLGA Responsible Gaming", "Lagos State Lotteries & Gaming Authority", "https://lslga.lg.gov.ng"),
             Triple("GambleAware Support", "Confidential guidance to stay betting-free", "https://www.begambleaware.org"),
+            Triple("Gamblers Anonymous", "Peer support groups & meetings worldwide", "https://www.gamblersanonymous.org"),
         )
 
         ModalBottomSheet(

@@ -1,0 +1,323 @@
+{
+  "entities": {
+    "UserRoot": {
+      "title": "UserRoot",
+      "description": "Root ownership anchor document enabling relational verification for user subcollections.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the account owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "planTier": {
+          "type": "string",
+          "description": "Subscription tier indicator (always free).",
+          "enum": ["free"],
+          "maxLength": 16
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when user anchor was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of latest anchor touch."
+        }
+      },
+      "required": ["ownerId", "planTier", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII document storing Google email and display name accessible strictly to the owner.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the account owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified account email address.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Account display name.",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "Persistent GambleAware blocker configuration, streak baseline, commitment lock, and UI preferences.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "isProtectionEnabled": { "type": "boolean" },
+        "blockSportsbooks": { "type": "boolean" },
+        "blockCasinos": { "type": "boolean" },
+        "blockPokerAndBingo": { "type": "boolean" },
+        "blockCryptoBetting": { "type": "boolean" },
+        "blockFantasyAndLottery": { "type": "boolean" },
+        "strictKeywordFilter": { "type": "boolean" },
+        "browserShieldEnabled": { "type": "boolean" },
+        "appShieldEnabled": { "type": "boolean" },
+        "searchGuardEnabled": { "type": "boolean" },
+        "antiTamperLockEnabled": { "type": "boolean" },
+        "lockUntilEpochMs": { "type": "number" },
+        "pinHash": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "protectionStartedAtMs": { "type": "number" },
+        "dailyBetSpendEstimate": { "type": "number" },
+        "themeMode": {
+          "type": "string",
+          "enum": ["SYSTEM", "LIGHT", "DARK"],
+          "maxLength": 16
+        },
+        "hasCompletedTour": { "type": "boolean" },
+        "notificationsEnabled": { "type": "boolean" },
+        "lastNotifiedMilestoneDay": { "type": "number" },
+        "isAccessibilityEnabled": { "type": "boolean" },
+        "isDeviceAdminEnabled": { "type": "boolean" },
+        "privateDnsActive": { "type": "boolean" },
+        "privateDnsHost": {
+          "type": "string",
+          "maxLength": 253
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "isProtectionEnabled",
+        "blockSportsbooks",
+        "blockCasinos",
+        "blockPokerAndBingo",
+        "blockCryptoBetting",
+        "blockFantasyAndLottery",
+        "strictKeywordFilter",
+        "browserShieldEnabled",
+        "appShieldEnabled",
+        "searchGuardEnabled",
+        "antiTamperLockEnabled",
+        "lockUntilEpochMs",
+        "pinHash",
+        "protectionStartedAtMs",
+        "dailyBetSpendEstimate",
+        "themeMode",
+        "hasCompletedTour",
+        "notificationsEnabled",
+        "lastNotifiedMilestoneDay",
+        "isAccessibilityEnabled",
+        "isDeviceAdminEnabled",
+        "privateDnsActive",
+        "privateDnsHost",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CustomDomainRule": {
+      "title": "CustomDomainRule",
+      "description": "User-defined custom gambling block or safe allowlist domain rule.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "domain": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 253,
+          "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$"
+        },
+        "isAllowlisted": { "type": "boolean" },
+        "categoryName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "addedAt": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "domain",
+        "isAllowlisted",
+        "categoryName",
+        "addedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BlockedAppRule": {
+      "title": "BlockedAppRule",
+      "description": "User-selected Android app package blocked by App Shield.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "packageName": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160,
+          "pattern": "^[a-zA-Z0-9_.]+$"
+        },
+        "appLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "addedAt": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "packageName",
+        "appLabel",
+        "addedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BlockedEvent": {
+      "title": "BlockedEvent",
+      "description": "Recorded gambling site/app intercept telemetry event belonging strictly to owner.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "eventId": { "type": "number" },
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253
+        },
+        "source": {
+          "type": "string",
+          "enum": ["Web Shield", "In-App WebView", "App Shield", "Install Guard"],
+          "maxLength": 32
+        },
+        "categoryName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "timestamp": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "eventId",
+        "target",
+        "source",
+        "categoryName",
+        "timestamp",
+        "createdAt"
+      ]
+    },
+    "UrgeLog": {
+      "title": "UrgeLog",
+      "description": "Personal urge-resisted recovery victory log entry.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "logId": { "type": "number" },
+        "triggerTag": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "note": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 280
+        },
+        "timestamp": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "logId",
+        "triggerTag",
+        "note",
+        "timestamp",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserRoot" },
+      "description": "Owner root anchor document used by Master Gate subcollection checks."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII document (email & displayName) strictly owned by userId."
+    },
+    "/users/{userId}/profile/{docId}": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "Synced protection settings & Naira baseline document (docId == settings)."
+    },
+    "/users/{userId}/domains/{domainId}": {
+      "schema": { "$ref": "#/entities/CustomDomainRule" },
+      "description": "Custom blocked & allowlisted website domains."
+    },
+    "/users/{userId}/blockedApps/{packageId}": {
+      "schema": { "$ref": "#/entities/BlockedAppRule" },
+      "description": "User-added Android app package rules."
+    },
+    "/users/{userId}/events/{eventId}": {
+      "schema": { "$ref": "#/entities/BlockedEvent" },
+      "description": "Historical blocked intercept logs scoped to user."
+    },
+    "/users/{userId}/urgeLogs/{logId}": {
+      "schema": { "$ref": "#/entities/UrgeLog" },
+      "description": "Urge-resisted victory journal logs scoped to user."
+    }
+  }
+}

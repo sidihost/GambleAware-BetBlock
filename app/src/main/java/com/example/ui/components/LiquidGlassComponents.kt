@@ -123,24 +123,25 @@ fun LiquidGlassBackdrop(
                 center = orb3Center,
             )
 
-            // Crisp monochrome concentric orbital hairline rings
+            // Crisp Black & Pink concentric orbital hairline rings
             val ringCenter = Offset(w * 0.5f, h * 0.24f)
-            val ringAlpha = if (isProtected) 0.07f else 0.04f
+            val ringAlpha = if (isProtected) 0.14f else 0.06f
+            val ringColor = liquid.activeFill
             val strokePx = 0.75.dp.toPx()
             drawCircle(
-                color = inkColor.copy(alpha = ringAlpha),
+                color = ringColor.copy(alpha = ringAlpha),
                 radius = w * 0.42f,
                 center = ringCenter,
                 style = Stroke(width = strokePx),
             )
             drawCircle(
-                color = inkColor.copy(alpha = ringAlpha * 0.75f),
+                color = ringColor.copy(alpha = ringAlpha * 0.75f),
                 radius = w * 0.62f,
                 center = ringCenter,
                 style = Stroke(width = strokePx),
             )
             drawCircle(
-                color = inkColor.copy(alpha = ringAlpha * 0.5f),
+                color = inkColor.copy(alpha = ringAlpha * 0.4f),
                 radius = w * 0.84f,
                 center = ringCenter,
                 style = Stroke(width = strokePx),
@@ -234,15 +235,15 @@ fun LiquidShieldOrb(
             val center = Offset(size.width / 2f, size.height / 2f)
             val maxR = size.minDimension / 2f
 
-            // Outer translucent glass aura
+            // Outer translucent pink glass aura
             val outerScale = if (isProtected) 0.92f + (pulse * 0.06f) else 0.90f
             drawCircle(
-                color = inkColor.copy(alpha = if (isProtected) 0.06f else 0.03f),
+                color = liquid.activeFill.copy(alpha = if (isProtected) 0.12f else 0.04f),
                 radius = maxR * outerScale,
                 center = center,
             )
 
-            // 60-tick precision monochrome watch-bezel ring
+            // 60-tick precision Black & Pink watch-bezel ring
             val tickOuterR = maxR * 0.86f
             for (i in 0 until 60) {
                 val isMajor = i % 5 == 0
@@ -250,14 +251,15 @@ fun LiquidShieldOrb(
                 val angleRad = (i * 6.0 - 90.0) * PI / 180.0
                 val cosA = cos(angleRad).toFloat()
                 val sinA = sin(angleRad).toFloat()
+                val tickColor = if (isProtected && isMajor) liquid.activeFill else inkColor
                 val tickAlpha = when {
-                    isProtected && isMajor -> 0.72f
-                    isProtected -> 0.28f
+                    isProtected && isMajor -> 0.88f
+                    isProtected -> 0.30f
                     isMajor -> 0.30f
                     else -> 0.12f
                 }
                 drawLine(
-                    color = inkColor.copy(alpha = tickAlpha),
+                    color = tickColor.copy(alpha = tickAlpha),
                     start = Offset(center.x + tickInnerR * cosA, center.y + tickInnerR * sinA),
                     end = Offset(center.x + tickOuterR * cosA, center.y + tickOuterR * sinA),
                     strokeWidth = if (isMajor) 1.5.dp.toPx() else 0.85.dp.toPx(),
@@ -268,7 +270,7 @@ fun LiquidShieldOrb(
             // Inner frosted halo ring
             val midScale = if (isProtected) 0.69f + (pulse * 0.03f) else 0.69f
             drawCircle(
-                color = inkColor.copy(alpha = if (isProtected) 0.12f else 0.06f),
+                color = liquid.activeFill.copy(alpha = if (isProtected) 0.18f else 0.06f),
                 radius = maxR * midScale,
                 center = center,
             )
@@ -276,21 +278,21 @@ fun LiquidShieldOrb(
             // Hardened lock bezel circle when Commitment Lock is active
             if (isLocked) {
                 drawCircle(
-                    color = inkColor.copy(alpha = 0.85f),
+                    color = liquid.activeFill.copy(alpha = 0.90f),
                     radius = maxR * 0.92f,
                     center = center,
-                    style = Stroke(width = 1.25.dp.toPx()),
+                    style = Stroke(width = 1.5.dp.toPx()),
                 )
             }
 
-            // Core solid monochrome orb
+            // Core solid Black & Pink orb
             drawCircle(
                 color = coreFill,
                 radius = maxR * 0.56f,
                 center = center,
             )
             drawCircle(
-                color = inkColor.copy(alpha = 0.28f),
+                color = liquid.activeFill.copy(alpha = 0.45f),
                 radius = maxR * 0.56f,
                 center = center,
                 style = Stroke(width = 1.25.dp.toPx()),

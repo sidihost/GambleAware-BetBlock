@@ -9,8 +9,8 @@ import java.security.MessageDigest
 
 enum class ThemeMode(val label: String) {
     SYSTEM("System"),
-    LIGHT("White"),
-    DARK("Black"),
+    LIGHT("Blush"),
+    DARK("Black & Pink"),
 }
 
 data class ProtectionSettingsState(
@@ -28,8 +28,8 @@ data class ProtectionSettingsState(
     val lockUntilEpochMs: Long = 0L,
     val hasPin: Boolean = false,
     val protectionStartedAtMs: Long = 0L,
-    val dailyBetSpendEstimate: Int = 25,
-    val themeMode: ThemeMode = ThemeMode.LIGHT,
+    val dailyBetSpendEstimate: Int = 5000,
+    val themeMode: ThemeMode = ThemeMode.DARK,
     val hasCompletedTour: Boolean = false,
     val notificationsEnabled: Boolean = true,
     val lastNotifiedMilestoneDay: Int = 0,
@@ -58,7 +58,7 @@ class ProtectionPreferences private constructor(context: Context) {
     val state: StateFlow<ProtectionSettingsState> = _state.asStateFlow()
 
     private fun readState(): ProtectionSettingsState {
-        val themeOrdinal = prefs.getInt(KEY_THEME_MODE, ThemeMode.LIGHT.ordinal)
+        val themeOrdinal = prefs.getInt(KEY_THEME_MODE, ThemeMode.DARK.ordinal)
             .coerceIn(0, ThemeMode.entries.lastIndex)
         val startedAt = prefs.getLong(KEY_STARTED_AT_MS, 0L)
         val enabled = prefs.getBoolean(KEY_PROTECTION_ENABLED, true)
@@ -80,7 +80,7 @@ class ProtectionPreferences private constructor(context: Context) {
             lockUntilEpochMs = prefs.getLong(KEY_LOCK_UNTIL_MS, 0L),
             hasPin = !prefs.getString(KEY_PIN_HASH, null).isNullOrEmpty(),
             protectionStartedAtMs = prefs.getLong(KEY_STARTED_AT_MS, System.currentTimeMillis()),
-            dailyBetSpendEstimate = prefs.getInt(KEY_DAILY_SPEND, 25),
+            dailyBetSpendEstimate = prefs.getInt(KEY_DAILY_SPEND, 5000),
             themeMode = ThemeMode.entries[themeOrdinal],
             hasCompletedTour = prefs.getBoolean(KEY_HAS_COMPLETED_TOUR, false),
             notificationsEnabled = prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true),
@@ -119,7 +119,7 @@ class ProtectionPreferences private constructor(context: Context) {
     fun setAppShieldEnabled(enabled: Boolean) = update { putBoolean(KEY_APP_SHIELD, enabled) }
     fun setSearchGuardEnabled(enabled: Boolean) = update { putBoolean(KEY_SEARCH_GUARD, enabled) }
     fun setAntiTamperLockEnabled(enabled: Boolean) = update { putBoolean(KEY_ANTI_TAMPER, enabled) }
-    fun setDailyBetSpendEstimate(amount: Int) = update { putInt(KEY_DAILY_SPEND, amount.coerceIn(0, 10000)) }
+    fun setDailyBetSpendEstimate(amount: Int) = update { putInt(KEY_DAILY_SPEND, amount.coerceIn(0, 10_000_000)) }
     fun setThemeMode(mode: ThemeMode) = update { putInt(KEY_THEME_MODE, mode.ordinal) }
     fun setHasCompletedTour(completed: Boolean) = update { putBoolean(KEY_HAS_COMPLETED_TOUR, completed) }
     fun setNotificationsEnabled(enabled: Boolean) = update { putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled) }
