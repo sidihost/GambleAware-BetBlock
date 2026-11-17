@@ -1,0 +1,6 @@
+{
+  "name": "GambleAware",
+  "description": "GambleAware — a product of Imoogle Technology. Monochrome black-and-white liquid glass bet blocker with universal WebView/browser/app protection, anti-uninstall Device Admin lock, and timed commitment lock.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
