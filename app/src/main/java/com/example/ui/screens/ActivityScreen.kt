@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,21 +21,30 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PhonelinkLock
 import androidx.compose.material.icons.rounded.PublicOff
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,13 +53,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.BlockedEventEntity
 import com.example.ui.MainUiState
+import com.example.ui.RECOVERY_MILESTONES
+import com.example.ui.components.BettingFreeProgressChart
+import com.example.ui.components.InteractiveBlockedBarChart
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
+import com.example.ui.components.TourTargetKeys
+import com.example.ui.components.tourTarget
 import com.example.ui.theme.LocalLiquidColors
+import com.example.ui.theme.MonoFontFamily
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -59,20 +77,33 @@ import java.util.Locale
 fun ActivityScreen(
     state: MainUiState,
     onClearHistory: () -> Unit,
+    onOpenUrgeJournal: () -> Unit,
+    onLaunchCalmReset: () -> Unit,
+    activeTourKey: String? = null,
     bottomContentPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
 ) {
     val liquid = LocalLiquidColors.current
+    var selectedChartMode by remember { mutableIntStateOf(0) } // 0 = Days & Savings, 1 = 7-Day Blocks
     var selectedSource by remember { mutableStateOf("All") }
     val sourceOptions = listOf("All", "Web Shield", "In-App WebView", "App Shield", "Install Guard")
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(activeTourKey) {
+        if (activeTourKey == TourTargetKeys.PROGRESS_DASHBOARD) {
+            listState.animateScrollToItem(1)
+        }
+    }
 
     val filteredEvents = remember(state.recentEvents, selectedSource) {
         if (selectedSource == "All") state.recentEvents
         else state.recentEvents.filter { it.source == selectedSource }
     }
 
-    val maxDailyCount = remember(state.sevenDayStats) {
-        (state.sevenDayStats.maxOfOrNull { it.count } ?: 0).coerceAtLeast(1)
+    val savedFormatted = remember(state.estimatedSavedAmount) {
+        NumberFormat.getCurrencyInstance(Locale.US).apply {
+            maximumFractionDigits = 0
+        }.format(state.estimatedSavedAmount)
     }
 
     Box(
@@ -80,6 +111,7 @@ fun ActivityScreen(
         contentAlignment = Alignment.TopCenter,
     ) {
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .widthIn(max = 600.dp)
                 .fillMaxSize(),
@@ -91,103 +123,352 @@ fun ActivityScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            // Item 0: Progress Header & Betting-Free Hero Card
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Shield Activity",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                        Text(
-                            text = "Real-time blocked websites, WebViews, and apps",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    if (state.recentEvents.isNotEmpty()) {
-                        OutlinedButton(
-                            onClick = onClearHistory,
-                            shape = RoundedCornerShape(50),
-                            border = BorderStroke(1.dp, liquid.subtleBorder),
-                            modifier = Modifier.testTag("clear_activity_button"),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.DeleteOutline,
-                                contentDescription = "Clear log",
-                                modifier = Modifier.size(16.dp),
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Recovery Progress",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Clear")
+                            Text(
+                                text = "Betting-free streak, savings & shield telemetry",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (state.recentEvents.isNotEmpty()) {
+                            OutlinedButton(
+                                onClick = onClearHistory,
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                modifier = Modifier.testTag("clear_activity_button"),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.DeleteOutline,
+                                    contentDescription = "Clear log",
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Clear")
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    LiquidGlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = 20.dp,
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text(
+                                    text = "BETTING-FREE STREAK",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "${state.cleanDays} Day${if (state.cleanDays == 1) "" else "s"}",
+                                    style = MaterialTheme.typography.displayMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.testTag("progress_clean_days"),
+                                )
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.End,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(liquid.mutedFill)
+                                    .border(1.dp, liquid.subtleBorder, RoundedCornerShape(16.dp))
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                            ) {
+                                Text(
+                                    text = String.format(
+                                        Locale.US,
+                                        "%02dh : %02dm : %02ds",
+                                        state.cleanHoursRemainder,
+                                        state.cleanMinutesRemainder,
+                                        state.cleanSecondsRemainder,
+                                    ),
+                                    fontFamily = MonoFontFamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
+                                Text(
+                                    text = "Next: ${state.nextMilestone.title}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Monochrome Milestone Progress Bar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(liquid.mutedFill)
+                                .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50)),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(state.milestoneProgressFraction.coerceAtLeast(0.03f))
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(50))
+                                    .background(liquid.activeFill),
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            ProgressMiniStat(
+                                label = "Est. Saved",
+                                value = savedFormatted,
+                                modifier = Modifier.weight(1f),
+                            )
+                            ProgressMiniStat(
+                                label = "Urges Resisted",
+                                value = "${state.totalUrgeResistedCount}",
+                                modifier = Modifier.weight(1f),
+                            )
+                            ProgressMiniStat(
+                                label = "Blocked",
+                                value = "${state.totalBlockedCount}",
+                                modifier = Modifier.weight(1f),
+                            )
                         }
                     }
                 }
             }
 
-            // 7-Day Activity Bar Chart (Flat solid monochrome capsules)
+            // Item 1: Interactive Visual Progress Chart (Tour Target)
+            item {
+                LiquidGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .tourTarget(TourTargetKeys.PROGRESS_DASHBOARD),
+                    contentPadding = 18.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (selectedChartMode == 0) "Betting-Free Trajectory" else "7-Day Intercepts",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            Text(
+                                text = if (selectedChartMode == 0) {
+                                    "Touch & scrub across milestones"
+                                } else {
+                                    "${state.todayBlockedCount} today • ${state.totalBlockedCount} total"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Monochrome Chart Switcher Pills
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        ChartModePill(
+                            label = "Days & Savings",
+                            selected = selectedChartMode == 0,
+                            onClick = { selectedChartMode = 0 },
+                            modifier = Modifier.weight(1f),
+                            testTag = "chart_mode_days",
+                        )
+                        ChartModePill(
+                            label = "7-Day Blocks",
+                            selected = selectedChartMode == 1,
+                            onClick = { selectedChartMode = 1 },
+                            modifier = Modifier.weight(1f),
+                            testTag = "chart_mode_blocks",
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    if (selectedChartMode == 0) {
+                        BettingFreeProgressChart(
+                            cleanDays = state.cleanDays,
+                            cleanHoursRemainder = state.cleanHoursRemainder,
+                            dailySpendEstimate = state.settings.dailyBetSpendEstimate,
+                            nextMilestoneDay = state.nextMilestone.days,
+                        )
+                    } else {
+                        InteractiveBlockedBarChart(
+                            stats = state.sevenDayStats,
+                        )
+                    }
+                }
+            }
+
+            // Item 2: Recovery Milestone Badges
             item {
                 LiquidGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = 18.dp,
                 ) {
                     LiquidSectionHeader(
-                        title = "7-Day Blocked Attempts",
-                        subtitle = "${state.todayBlockedCount} today • ${state.totalBlockedCount} all time",
+                        title = "Recovery Milestones",
+                        subtitle = "Badges unlock automatically as your betting-free days climb",
                     )
-
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(126.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom,
+                    Spacer(modifier = Modifier.height(12.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        state.sevenDayStats.forEach { stat ->
-                            val fraction = stat.count.toFloat() / maxDailyCount.toFloat()
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Bottom,
+                        RECOVERY_MILESTONES.forEach { milestone ->
+                            val unlocked = state.cleanDays >= milestone.days
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(if (unlocked) liquid.activeFill else liquid.mutedFill)
+                                    .border(
+                                        1.dp,
+                                        if (unlocked) liquid.activeFill else liquid.subtleBorder,
+                                        RoundedCornerShape(50),
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    text = if (stat.count > 0) "${stat.count}" else "",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                Icon(
+                                    imageVector = if (unlocked) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
+                                    contentDescription = null,
+                                    tint = if (unlocked) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp),
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .width(22.dp)
-                                        .height(82.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(liquid.mutedFill),
-                                    contentAlignment = Alignment.BottomCenter,
-                                ) {
-                                    if (stat.count > 0) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height((82f * fraction.coerceIn(0.14f, 1f)).dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(liquid.activeFill),
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = stat.dayLabel,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    text = "${milestone.label} • ${milestone.title}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (unlocked) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            // Item 3: Urge Resistance & Trigger Insights
+            item {
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 18.dp,
+                ) {
+                    LiquidSectionHeader(
+                        title = "Urge Journal & Triggers",
+                        subtitle = "${state.totalUrgeResistedCount} urge victories recorded on-device",
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (state.triggerBreakdown.isNotEmpty()) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            state.triggerBreakdown.forEach { item ->
+                                Row(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(50))
+                                        .background(liquid.mutedFill)
+                                        .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50))
+                                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = item.triggerTag,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "${item.count}",
+                                        fontFamily = MonoFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    } else {
+                        Text(
+                            text = "When you pass on a betting urge, log what triggered it to recognize patterns and protect peak times.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Button(
+                            onClick = onOpenUrgeJournal,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("progress_log_urge_button"),
+                            shape = RoundedCornerShape(50),
+                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.EditNote,
+                                contentDescription = null,
+                                modifier = Modifier.size(17.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Log Urge Victory", maxLines = 1)
+                        }
+                        OutlinedButton(
+                            onClick = onLaunchCalmReset,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, liquid.subtleBorder),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Air,
+                                contentDescription = null,
+                                modifier = Modifier.size(17.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("60s SOS Calm", maxLines = 1)
                         }
                     }
                 }
@@ -300,6 +581,7 @@ fun ActivityScreen(
                                 text = "When GambleAware intercepts a gambling site, in-app WebView, or betting app, it will appear in this timeline.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
                             )
                         }
                     }
@@ -309,7 +591,88 @@ fun ActivityScreen(
                     BlockedEventRow(event = event)
                 }
             }
+
+            // Footer
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, bottom = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = "GambleAware",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = "A product of Imoogle Technology",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun ProgressMiniStat(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    val liquid = LocalLiquidColors.current
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(liquid.mutedFill)
+            .border(1.dp, liquid.subtleBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = value,
+            fontFamily = MonoFontFamily,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun ChartModePill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    testTag: String,
+) {
+    val liquid = LocalLiquidColors.current
+    LiquidGlassCard(
+        modifier = modifier.testTag(testTag),
+        cornerRadius = 50.dp,
+        fillColor = if (selected) liquid.activeFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.55f),
+        borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
+        contentPadding = 10.dp,
+        onClick = onClick,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
     }
 }
 

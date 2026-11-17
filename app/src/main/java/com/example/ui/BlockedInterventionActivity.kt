@@ -78,6 +78,7 @@ class BlockedInterventionActivity : ComponentActivity() {
         val source = intent.getStringExtra(EXTRA_SOURCE) ?: "GambleAware Shield"
         val category = intent.getStringExtra(EXTRA_CATEGORY) ?: "Protected"
         val isAntiTamper = intent.getBooleanExtra(EXTRA_IS_ANTI_TAMPER, false)
+        val autoStartBreathing = intent.getBooleanExtra(EXTRA_START_BREATHING, false)
 
         val prefs = ProtectionPreferences.getInstance(this).currentSnapshot()
         val days = if (prefs.protectionStartedAtMs > 0L) {
@@ -94,6 +95,7 @@ class BlockedInterventionActivity : ComponentActivity() {
                     source = source,
                     category = category,
                     isAntiTamper = isAntiTamper,
+                    autoStartBreathing = autoStartBreathing,
                     cleanDays = days,
                     onGoHome = {
                         val homeIntent = Intent(Intent.ACTION_MAIN).apply {
@@ -117,6 +119,7 @@ class BlockedInterventionActivity : ComponentActivity() {
         const val EXTRA_SOURCE = "extra_source"
         const val EXTRA_CATEGORY = "extra_category"
         const val EXTRA_IS_ANTI_TAMPER = "extra_is_anti_tamper"
+        const val EXTRA_START_BREATHING = "extra_start_breathing"
     }
 }
 
@@ -126,12 +129,13 @@ private fun InterventionScreen(
     source: String,
     category: String,
     isAntiTamper: Boolean,
+    autoStartBreathing: Boolean,
     cleanDays: Int,
     onGoHome: () -> Unit,
     onOpenGambleAware: () -> Unit,
 ) {
     val liquid = LocalLiquidColors.current
-    var isBreathingActive by remember { mutableStateOf(false) }
+    var isBreathingActive by remember { mutableStateOf(autoStartBreathing) }
     var calmSecondsLeft by remember { mutableIntStateOf(60) }
 
     LaunchedEffect(isBreathingActive) {

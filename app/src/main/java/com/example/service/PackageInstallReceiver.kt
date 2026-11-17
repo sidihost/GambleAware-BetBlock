@@ -46,6 +46,10 @@ class PackageInstallReceiver : BroadcastReceiver() {
                 )
             }
 
+            if (settings.notificationsEnabled) {
+                GambleAwareNotifications.notifyInstallGuardBlock(context, match.matchedTarget)
+            }
+
             val warnIntent = Intent(context, BlockedInterventionActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 putExtra(BlockedInterventionActivity.EXTRA_TARGET, match.matchedTarget)

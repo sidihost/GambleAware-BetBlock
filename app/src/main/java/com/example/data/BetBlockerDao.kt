@@ -50,4 +50,16 @@ interface BetBlockerDao {
 
     @Query("DELETE FROM blocked_events")
     suspend fun clearAllEvents()
+
+    @Query("SELECT * FROM urge_logs ORDER BY timestamp DESC LIMIT 100")
+    fun observeRecentUrgeLogs(): Flow<List<UrgeLogEntity>>
+
+    @Query("SELECT COUNT(*) FROM urge_logs")
+    fun observeTotalUrgeCount(): Flow<Int>
+
+    @Insert
+    suspend fun insertUrgeLog(entry: UrgeLogEntity)
+
+    @Query("DELETE FROM urge_logs")
+    suspend fun clearAllUrgeLogs()
 }

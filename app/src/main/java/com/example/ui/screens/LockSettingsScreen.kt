@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
@@ -41,6 +43,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +63,8 @@ import com.example.data.ThemeMode
 import com.example.ui.MainUiState
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
+import com.example.ui.components.TourTargetKeys
+import com.example.ui.components.tourTarget
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
 import java.text.SimpleDateFormat
@@ -80,6 +85,10 @@ fun LockSettingsScreen(
     onSelectTheme: (ThemeMode) -> Unit,
     onResetStreak: () -> Unit,
     onReplayTour: () -> Unit,
+    hasNotificationPermission: Boolean,
+    onToggleNotifications: (Boolean) -> Unit,
+    onSendTestNotification: () -> Unit,
+    activeTourKey: String? = null,
     bottomContentPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
 ) {
@@ -89,6 +98,13 @@ fun LockSettingsScreen(
     var pendingLockDays by remember { mutableIntStateOf(7) }
     var includeAntiTamper by remember { mutableStateOf(true) }
     var showSetPinDialog by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(activeTourKey) {
+        if (activeTourKey == TourTargetKeys.LOCK_TIMER) {
+            listState.animateScrollToItem(1)
+        }
+    }
 
     val lockExpiryFormatted = remember(state.settings.lockUntilEpochMs, state.currentTimeMs) {
         if (state.settings.lockUntilEpochMs <= state.currentTimeMs) ""
@@ -101,6 +117,7 @@ fun LockSettingsScreen(
         contentAlignment = Alignment.TopCenter,
     ) {
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .widthIn(max = 600.dp)
                 .fillMaxSize(),
@@ -130,7 +147,9 @@ fun LockSettingsScreen(
             // Timed Commitment Lock Card
             item {
                 LiquidGlassCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .tourTarget(TourTargetKeys.LOCK_TIMER),
                     contentPadding = 18.dp,
                 ) {
                     Row(
@@ -403,6 +422,70 @@ fun LockSettingsScreen(
                                 Text("Set PIN")
                             }
                         }
+                    }
+                }
+            }
+
+            // On-Device Recovery & Lock Alerts
+            item {
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 18.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Notifications,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onBackground,
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Recovery & Lock Alerts",
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                Text(
+                                    text = if (!hasNotificationPermission && state.settings.notificationsEnabled) {
+                                        "Permission needed on Android 13+ for milestone & lock alerts"
+                                    } else {
+                                        "On-device alerts for streak milestones, Lock activation & Install Guard"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = state.settings.notificationsEnabled,
+                            onCheckedChange = onToggleNotifications,
+                            modifier = Modifier.testTag("switch_notifications"),
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = liquid.activeContent,
+                                checkedTrackColor = liquid.activeFill,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                uncheckedTrackColor = liquid.mutedFill,
+                                uncheckedBorderColor = liquid.subtleBorder,
+                            ),
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = onSendTestNotification,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("send_test_notification_button"),
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.dp, liquid.subtleBorder),
+                    ) {
+                        Text("Send Test Alert")
                     }
                 }
             }

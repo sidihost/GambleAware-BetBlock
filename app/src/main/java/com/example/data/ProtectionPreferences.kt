@@ -31,6 +31,8 @@ data class ProtectionSettingsState(
     val dailyBetSpendEstimate: Int = 25,
     val themeMode: ThemeMode = ThemeMode.LIGHT,
     val hasCompletedTour: Boolean = false,
+    val notificationsEnabled: Boolean = true,
+    val lastNotifiedMilestoneDay: Int = 0,
 ) {
     fun isTimeLocked(nowMs: Long = System.currentTimeMillis()): Boolean {
         return lockUntilEpochMs > nowMs
@@ -81,6 +83,8 @@ class ProtectionPreferences private constructor(context: Context) {
             dailyBetSpendEstimate = prefs.getInt(KEY_DAILY_SPEND, 25),
             themeMode = ThemeMode.entries[themeOrdinal],
             hasCompletedTour = prefs.getBoolean(KEY_HAS_COMPLETED_TOUR, false),
+            notificationsEnabled = prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true),
+            lastNotifiedMilestoneDay = prefs.getInt(KEY_LAST_MILESTONE_DAY, 0),
         )
     }
 
@@ -118,6 +122,8 @@ class ProtectionPreferences private constructor(context: Context) {
     fun setDailyBetSpendEstimate(amount: Int) = update { putInt(KEY_DAILY_SPEND, amount.coerceIn(0, 10000)) }
     fun setThemeMode(mode: ThemeMode) = update { putInt(KEY_THEME_MODE, mode.ordinal) }
     fun setHasCompletedTour(completed: Boolean) = update { putBoolean(KEY_HAS_COMPLETED_TOUR, completed) }
+    fun setNotificationsEnabled(enabled: Boolean) = update { putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled) }
+    fun setLastNotifiedMilestoneDay(day: Int) = update { putInt(KEY_LAST_MILESTONE_DAY, day) }
 
     fun activateTimeLock(durationMs: Long) {
         val until = System.currentTimeMillis() + durationMs
@@ -176,6 +182,8 @@ class ProtectionPreferences private constructor(context: Context) {
         private const val KEY_DAILY_SPEND = "daily_spend"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_HAS_COMPLETED_TOUR = "has_completed_tour"
+        private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
+        private const val KEY_LAST_MILESTONE_DAY = "last_milestone_day"
 
         @Volatile
         private var INSTANCE: ProtectionPreferences? = null

@@ -14,8 +14,10 @@ import com.example.data.BlockedEventEntity
 import com.example.data.InstalledAppInfo
 import com.example.data.ProtectionSettingsState
 import com.example.data.ThemeMode
+import com.example.data.UrgeLogEntity
 import com.example.service.AnchorDeviceAdminReceiver
 import com.example.service.BetBlockerAccessibilityService
+import com.example.service.GambleAwareNotifications
 import com.example.service.PrivateDnsInspector
 import com.example.service.PrivateDnsStatus
 import kotlinx.coroutines.delay
@@ -39,6 +41,28 @@ data class CategoryBreakdown(
     val count: Int,
 )
 
+data class TriggerBreakdown(
+    val triggerTag: String,
+    val count: Int,
+)
+
+data class RecoveryMilestone(
+    val days: Int,
+    val label: String,
+    val title: String,
+)
+
+val RECOVERY_MILESTONES = listOf(
+    RecoveryMilestone(1, "1d", "First 24h"),
+    RecoveryMilestone(3, "3d", "Urge Peak"),
+    RecoveryMilestone(7, "7d", "One Week"),
+    RecoveryMilestone(14, "14d", "Two Weeks"),
+    RecoveryMilestone(30, "30d", "One Month"),
+    RecoveryMilestone(90, "90d", "Rewired"),
+    RecoveryMilestone(180, "180d", "Half Year"),
+    RecoveryMilestone(365, "365d", "One Year"),
+)
+
 data class MainUiState(
     val settings: ProtectionSettingsState = ProtectionSettingsState(),
     val isAccessibilityEnabled: Boolean = false,
@@ -48,10 +72,13 @@ data class MainUiState(
     val allowlistedDomains: List<BlockedDomainEntity> = emptyList(),
     val customBlockedApps: List<BlockedAppEntity> = emptyList(),
     val recentEvents: List<BlockedEventEntity> = emptyList(),
+    val recentUrgeLogs: List<UrgeLogEntity> = emptyList(),
     val totalBlockedCount: Int = 0,
     val todayBlockedCount: Int = 0,
+    val totalUrgeResistedCount: Int = 0,
     val sevenDayStats: List<DailyBlockStat> = emptyList(),
     val categoryBreakdown: List<CategoryBreakdown> = emptyList(),
+    val triggerBreakdown: List<TriggerBreakdown> = emptyList(),
     val installedApps: List<InstalledAppInfo> = emptyList(),
     val isLoadingApps: Boolean = false,
     val testQueryInput: String = "",
@@ -97,30 +124,39 @@ data class MainUiState(
             )
         }
 
-    val cleanDays: Int
+    val cleanElapsedMs: Long
         get() {
             val start = settings.protectionStartedAtMs
-            if (!settings.isProtectionEnabled || start <= 0L) return 0
-            val diff = (currentTimeMs - start).coerceAtLeast(0L)
-            return (diff / (24L * 60 * 60 * 1000)).toInt()
+            if (!settings.isProtectionEnabled || start <= 0L) return 0L
+            return (currentTimeMs - start).coerceAtLeast(0L)
         }
 
+    val cleanExactDays: Float
+        get() = (cleanElapsedMs / (24.0 * 60.0 * 60.0 * 1000.0)).toFloat()
+
+    val cleanDays: Int
+        get() = (cleanElapsedMs / (24L * 60 * 60 * 1000)).toInt()
+
     val cleanHoursRemainder: Int
+        get() = ((cleanElapsedMs / (60L * 60 * 1000)) % 24).toInt()
+
+    val cleanMinutesRemainder: Int
+        get() = ((cleanElapsedMs / (60L * 1000)) % 60).toInt()
+
+    val cleanSecondsRemainder: Int
+        get() = ((cleanElapsedMs / 1000L) % 60).toInt()
+
+    val nextMilestone: RecoveryMilestone
+        get() = RECOVERY_MILESTONES.firstOrNull { it.days > cleanDays } ?: RECOVERY_MILESTONES.last()
+
+    val milestoneProgressFraction: Float
         get() {
-            val start = settings.protectionStartedAtMs
-            if (!settings.isProtectionEnabled || start <= 0L) return 0
-            val diff = (currentTimeMs - start).coerceAtLeast(0L)
-            return ((diff / (60L * 60 * 1000)) % 24).toInt()
+            val target = nextMilestone.days.toFloat().coerceAtLeast(1f)
+            return (cleanExactDays / target).coerceIn(0f, 1f)
         }
 
     val estimatedSavedAmount: Int
-        get() {
-            val start = settings.protectionStartedAtMs
-            if (!settings.isProtectionEnabled || start <= 0L) return 0
-            val daysFraction = (currentTimeMs - start).coerceAtLeast(0L) /
-                (24.0 * 60.0 * 60.0 * 1000.0)
-            return (daysFraction * settings.dailyBetSpendEstimate).toInt()
-        }
+        get() = (cleanExactDays * settings.dailyBetSpendEstimate).toInt()
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -178,17 +214,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         Tuple5(weekEvents, apps, loading, query, result)
     }
 
+    private val urgeFlow = combine(
+        repository.recentUrgeLogs,
+        repository.totalUrgeResistedCount,
+    ) { logs, total ->
+        logs to total
+    }
+
+    private val metaFlow = combine(
+        bannerFlow,
+        tickerFlow,
+        urgeFlow,
+    ) { banner, nowMs, urges ->
+        Triple(banner, nowMs, urges)
+    }
+
     val uiState: StateFlow<MainUiState> = combine(
         systemHealthFlow,
         dataFlow,
         interactiveFlow,
-        bannerFlow,
-        tickerFlow,
-    ) { health, data, interactive, banner, nowMs ->
+        metaFlow,
+    ) { health, data, interactive, meta ->
         val settings = health.first
         val domains = data.first
         val weekEvents = interactive.first
-        MainUiState(
+        val banner = meta.first
+        val nowMs = meta.second
+        val urgeLogs = meta.third.first
+        val totalUrges = meta.third.second
+
+        val state = MainUiState(
             settings = settings,
             isAccessibilityEnabled = health.second,
             isDeviceAdminEnabled = health.third,
@@ -197,10 +252,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             allowlistedDomains = domains.filter { it.isAllowlisted },
             customBlockedApps = data.second,
             recentEvents = data.third,
+            recentUrgeLogs = urgeLogs,
             totalBlockedCount = data.fourth,
             todayBlockedCount = data.fifth,
+            totalUrgeResistedCount = totalUrges,
             sevenDayStats = buildSevenDayStats(weekEvents),
             categoryBreakdown = buildCategoryBreakdown(data.third),
+            triggerBreakdown = buildTriggerBreakdown(urgeLogs),
             installedApps = interactive.second,
             isLoadingApps = interactive.third,
             testQueryInput = interactive.fourth,
@@ -208,6 +266,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             statusBannerMessage = banner,
             currentTimeMs = nowMs,
         )
+
+        if (settings.notificationsEnabled && state.cleanDays >= 1) {
+            GambleAwareNotifications.notifyMilestoneIfEligible(
+                context = getApplication(),
+                cleanDays = state.cleanDays,
+                estimatedSaved = state.estimatedSavedAmount,
+                lastNotifiedDay = settings.lastNotifiedMilestoneDay,
+                onMarkNotified = { day -> repository.prefs.setLastNotifiedMilestoneDay(day) },
+            )
+        }
+
+        state
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -287,6 +357,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.prefs.setDailyBetSpendEstimate(amount)
     }
 
+    fun setNotificationsEnabled(enabled: Boolean) {
+        repository.prefs.setNotificationsEnabled(enabled)
+        bannerFlow.value = if (enabled) {
+            "Recovery & Lock notifications enabled"
+        } else {
+            "Recovery notifications muted"
+        }
+    }
+
+    fun sendTestNotification() {
+        val sent = GambleAwareNotifications.notifyTestAlert(getApplication())
+        bannerFlow.value = if (sent) {
+            "Test notification sent"
+        } else {
+            "Grant notification permission to receive alerts"
+        }
+    }
+
     fun addCustomDomain(rawDomain: String, isAllowlisted: Boolean) {
         val normalized = BlocklistMatcher.normalizeDomain(rawDomain)
         if (normalized.isEmpty() || !normalized.contains('.')) {
@@ -363,6 +451,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (enableAntiTamper) {
             repository.prefs.setAntiTamperLockEnabled(true)
         }
+        if (repository.prefs.currentSnapshot().notificationsEnabled) {
+            GambleAwareNotifications.notifyLockActivated(getApplication(), days)
+        }
         bannerFlow.value = "Commitment Lock active for $days day${if (days == 1) "" else "s"}"
     }
 
@@ -387,6 +478,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetStreak() {
         repository.prefs.resetStreakStart()
+        repository.prefs.setLastNotifiedMilestoneDay(0)
         bannerFlow.value = "Clean streak restarted"
     }
 
@@ -396,6 +488,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun replayTour() {
         repository.prefs.setHasCompletedTour(false)
+    }
+
+    fun logUrgeResisted(triggerTag: String, note: String) {
+        viewModelScope.launch {
+            repository.logUrgeResisted(triggerTag, note)
+            bannerFlow.value = "Urge resisted & logged ($triggerTag)"
+        }
     }
 
     fun clearEventHistory() {
@@ -436,6 +535,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val cat = GamblingCategory.entries.firstOrNull { it.name == name } ?: GamblingCategory.CUSTOM
                 CategoryBreakdown(category = cat, count = count)
             }
+            .sortedByDescending { it.count }
+    }
+
+    private fun buildTriggerBreakdown(logs: List<UrgeLogEntity>): List<TriggerBreakdown> {
+        if (logs.isEmpty()) return emptyList()
+        return logs
+            .groupingBy { it.triggerTag }
+            .eachCount()
+            .entries
+            .map { (tag, count) -> TriggerBreakdown(tag, count) }
             .sortedByDescending { it.count }
     }
 

@@ -20,16 +20,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AdminPanelSettings
+import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PhonelinkLock
@@ -43,10 +47,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,12 +63,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.ui.MainUiState
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
 import com.example.ui.components.LiquidShieldOrb
 import com.example.ui.components.LiquidStatusPill
+import com.example.ui.components.TourTargetKeys
+import com.example.ui.components.tourTarget
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
 import java.text.NumberFormat
@@ -78,6 +85,10 @@ fun ShieldScreen(
     onOpenPrivateDnsSettings: () -> Unit,
     onTestQueryChanged: (String) -> Unit,
     onNavigateToLock: () -> Unit,
+    onLaunchCalmReset: () -> Unit,
+    onOpenUrgeJournal: () -> Unit,
+    onOpenSafeSupport: () -> Unit,
+    activeTourKey: String?,
     bottomContentPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
 ) {
@@ -86,12 +97,28 @@ fun ShieldScreen(
     val isLocked = state.isTimeLockedNow
     val keyboard = LocalSoftwareKeyboardController.current
     val showQuickOnboarding = !state.isAccessibilityEnabled || !state.isDeviceAdminEnabled || !isLocked
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(activeTourKey, showQuickOnboarding) {
+        when (activeTourKey) {
+            TourTargetKeys.SHIELD_ORB -> listState.animateScrollToItem(0)
+            TourTargetKeys.SOS_CALM_BAR -> {
+                val sosIdx = if (showQuickOnboarding) 3 else 2
+                listState.animateScrollToItem(sosIdx)
+            }
+            TourTargetKeys.FILTER_TESTER -> {
+                val testerIdx = if (showQuickOnboarding) 5 else 4
+                listState.animateScrollToItem(testerIdx)
+            }
+        }
+    }
 
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter,
     ) {
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .widthIn(max = 600.dp)
                 .fillMaxSize(),
@@ -103,7 +130,7 @@ fun ShieldScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Hero Monochrome Liquid Glass Shield Card
+            // Item 0: Hero Monochrome Liquid Glass Shield Card
             item {
                 LiquidGlassCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -149,11 +176,13 @@ fun ShieldScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        LiquidShieldOrb(
-                            isProtected = isArmed,
-                            isLocked = isLocked,
-                            onClick = onPrimaryShieldClick,
-                        )
+                        Box(modifier = Modifier.tourTarget(TourTargetKeys.SHIELD_ORB)) {
+                            LiquidShieldOrb(
+                                isProtected = isArmed,
+                                isLocked = isLocked,
+                                onClick = onPrimaryShieldClick,
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(14.dp))
 
@@ -175,7 +204,7 @@ fun ShieldScreen(
                         Text(
                             text = when {
                                 isArmed ->
-                                    "Blocking gambling domains, search engines, mirror pages, WebViews, and betting apps in real time without a VPN."
+                                    "Blocking SportyBet, Bet9ja, Bet365, 1xBet, Stake, search queries, WebViews & betting apps in real time."
                                 !state.isAccessibilityEnabled ->
                                     "Enable GambleAware in Android Accessibility to block browsers, WebViews, betting apps, and impulsive uninstalls."
                                 else ->
@@ -262,7 +291,7 @@ fun ShieldScreen(
                 }
             }
 
-            // Quick 3-Step Protection & Anti-Uninstall Setup Banner
+            // Item 1 (conditional): Quick 3-Step Protection & Anti-Uninstall Setup Banner
             if (showQuickOnboarding) {
                 item {
                     LiquidGlassCard(
@@ -304,7 +333,7 @@ fun ShieldScreen(
                 }
             }
 
-            // Metrics Trio Card
+            // Item 1/2: Metrics Trio Card
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -312,8 +341,8 @@ fun ShieldScreen(
                 ) {
                     MetricGlassTile(
                         title = "Clean Streak",
-                        value = if (state.cleanDays > 0) "${state.cleanDays}d ${state.cleanHoursRemainder}h" else "${state.cleanHoursRemainder}h",
-                        subtitle = if (state.settings.isProtectionEnabled) "Active" else "Paused",
+                        value = if (state.cleanDays > 0) "${state.cleanDays}d ${state.cleanHoursRemainder}h" else "${state.cleanHoursRemainder}h ${state.cleanMinutesRemainder}m",
+                        subtitle = "Goal: ${state.nextMilestone.label}",
                         modifier = Modifier.weight(1f),
                     )
                     MetricGlassTile(
@@ -327,13 +356,89 @@ fun ShieldScreen(
                         value = NumberFormat.getCurrencyInstance(Locale.US).apply {
                             maximumFractionDigits = 0
                         }.format(state.estimatedSavedAmount),
-                        subtitle = "\$${state.settings.dailyBetSpendEstimate}/day",
+                        subtitle = "${state.totalUrgeResistedCount} resisted",
                         modifier = Modifier.weight(1f),
                     )
                 }
             }
 
-            // 3-Layer Non-VPN Protection Stack
+            // Item 2/3: SOS Recovery Toolkit (60s Calm Reset, Log Urge, Safe Support)
+            item {
+                LiquidGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .tourTarget(TourTargetKeys.SOS_CALM_BAR),
+                    contentPadding = 18.dp,
+                ) {
+                    LiquidSectionHeader(
+                        title = "Urge & Recovery Toolkit",
+                        subtitle = "Immediate tools when an urge hits",
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Button(
+                            onClick = onLaunchCalmReset,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("sos_calm_reset_button"),
+                            shape = RoundedCornerShape(50),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 0.dp,
+                                pressedElevation = 0.dp,
+                            ),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Air,
+                                contentDescription = null,
+                                modifier = Modifier.size(17.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("60s SOS Calm", maxLines = 1)
+                        }
+                        OutlinedButton(
+                            onClick = onOpenUrgeJournal,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("log_urge_button"),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, liquid.subtleBorder),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.EditNote,
+                                contentDescription = null,
+                                modifier = Modifier.size(17.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Log Victory", maxLines = 1)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onOpenSafeSupport,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("safe_support_button"),
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.dp, liquid.subtleBorder),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.FavoriteBorder,
+                            contentDescription = null,
+                            modifier = Modifier.size(17.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Confidential Support & Helplines")
+                    }
+                }
+            }
+
+            // Item 3/4: 3-Layer Non-VPN Protection Stack
             item {
                 LiquidGlassCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -349,7 +454,7 @@ fun ShieldScreen(
                         icon = Icons.Rounded.PhonelinkLock,
                         title = "Web, Search & App Shield",
                         subtitle = if (state.isAccessibilityEnabled) {
-                            "Active • Browsers, Search Guard, WebViews & 120+ betting apps"
+                            "Active • Browsers, Search Guard, WebViews & 130+ betting apps"
                         } else {
                             "Tap to enable in Android Accessibility Settings"
                         },
@@ -414,15 +519,17 @@ fun ShieldScreen(
                 }
             }
 
-            // Live Domain & URL Filter Tester
+            // Item 4/5: Live Domain & URL Filter Tester (Spotlight Tour Step 2 Target)
             item {
                 LiquidGlassCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .tourTarget(TourTargetKeys.FILTER_TESTER),
                     contentPadding = 18.dp,
                 ) {
                     LiquidSectionHeader(
                         title = "Verify Filter Live",
-                        subtitle = "Test any gambling domain, mirror, or URL against active rules",
+                        subtitle = "Test SportyBet, Bet9ja, Stake, or any URL against active rules",
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -432,7 +539,7 @@ fun ShieldScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("live_domain_test_input"),
-                        placeholder = { Text("Try bet365.com, stake.com, or google.com") },
+                        placeholder = { Text("Try sportybet.com, bet9ja.com, or stake.com") },
                         leadingIcon = {
                             Icon(Icons.Rounded.Search, contentDescription = null)
                         },
@@ -462,14 +569,14 @@ fun ShieldScreen(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         QuickSampleChip(
+                            label = "sportybet.com",
+                            onClick = { onTestQueryChanged("sportybet.com") },
+                            testTag = "sample_chip_sportybet",
+                        )
+                        QuickSampleChip(
                             label = "bet365.com",
                             onClick = { onTestQueryChanged("bet365.com") },
                             testTag = "sample_chip_bet365",
-                        )
-                        QuickSampleChip(
-                            label = "stake.com",
-                            onClick = { onTestQueryChanged("stake.com") },
-                            testTag = "sample_chip_stake",
                         )
                         QuickSampleChip(
                             label = "betterhelp.com",

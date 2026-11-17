@@ -26,3 +26,11 @@ data class BlockedAppEntity(
     val appLabel: String,
     val addedAt: Long = System.currentTimeMillis(),
 )
+
+@Entity(tableName = "urge_logs")
+data class UrgeLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val triggerTag: String,
+    val note: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
+)

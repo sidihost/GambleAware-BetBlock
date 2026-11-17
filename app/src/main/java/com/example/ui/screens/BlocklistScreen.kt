@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -43,6 +44,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +61,8 @@ import com.example.data.InstalledAppInfo
 import com.example.ui.MainUiState
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
+import com.example.ui.components.TourTargetKeys
+import com.example.ui.components.tourTarget
 import com.example.ui.theme.LocalLiquidColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,6 +79,7 @@ fun BlocklistScreen(
     onOpenAppPicker: () -> Unit,
     onAddBlockedApp: (InstalledAppInfo) -> Unit,
     onRemoveBlockedApp: (String) -> Unit,
+    activeTourKey: String? = null,
     bottomContentPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
 ) {
@@ -83,6 +88,13 @@ fun BlocklistScreen(
     var isAddingAllowlist by remember { mutableStateOf(false) }
     var registrySearch by remember { mutableStateOf("") }
     var showAppPickerSheet by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(activeTourKey) {
+        if (activeTourKey == TourTargetKeys.BLOCKLIST_GUARDS) {
+            listState.animateScrollToItem(2)
+        }
+    }
 
     val matchingRegistryDomains = remember(registrySearch) {
         val q = registrySearch.trim().lowercase()
@@ -101,6 +113,7 @@ fun BlocklistScreen(
         contentAlignment = Alignment.TopCenter,
     ) {
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .widthIn(max = 600.dp)
                 .fillMaxSize(),
@@ -191,7 +204,9 @@ fun BlocklistScreen(
             // Shield Engines
             item {
                 LiquidGlassCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .tourTarget(TourTargetKeys.BLOCKLIST_GUARDS),
                     contentPadding = 18.dp,
                 ) {
                     LiquidSectionHeader(

@@ -5,6 +5,6 @@
     <string name="device_admin_description">Prevents uninstalling GambleAware until your Commitment Lock timer expires.</string>
     <string name="nav_shield">Shield</string>
     <string name="nav_blocklist">Blocklist</string>
-    <string name="nav_activity">Activity</string>
+    <string name="nav_activity">Progress</string>
     <string name="nav_lock">Lock</string>
 </resources>

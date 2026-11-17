@@ -43,11 +43,13 @@ class AnchorRepository private constructor(context: Context) {
     val customBlockedApps: StateFlow<List<BlockedAppEntity>> = dao.observeBlockedApps()
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
-    val recentEvents: StateFlow<List<BlockedEventEntity>> = dao.observeRecentEvents()
-        .stateIn(scope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val recentEvents: Flow<List<BlockedEventEntity>> = dao.observeRecentEvents()
 
-    val totalBlockedCount: StateFlow<Int> = dao.observeTotalBlockedCount()
-        .stateIn(scope, SharingStarted.WhileSubscribed(5000), 0)
+    val totalBlockedCount: Flow<Int> = dao.observeTotalBlockedCount()
+
+    val recentUrgeLogs: Flow<List<UrgeLogEntity>> = dao.observeRecentUrgeLogs()
+
+    val totalUrgeResistedCount: Flow<Int> = dao.observeTotalUrgeCount()
 
     private val startOfTodayMs: Long
         get() = Calendar.getInstance().apply {
@@ -134,6 +136,19 @@ class AnchorRepository private constructor(context: Context) {
 
     suspend fun clearEventHistory() {
         dao.clearAllEvents()
+    }
+
+    suspend fun logUrgeResisted(triggerTag: String, note: String) {
+        dao.insertUrgeLog(
+            UrgeLogEntity(
+                triggerTag = triggerTag.trim().ifEmpty { "General" },
+                note = note.trim(),
+            ),
+        )
+    }
+
+    suspend fun clearUrgeLogs() {
+        dao.clearAllUrgeLogs()
     }
 
     suspend fun loadLaunchableUserApps(): List<InstalledAppInfo> = withContext(Dispatchers.IO) {
