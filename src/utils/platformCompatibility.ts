@@ -1,6 +1,9 @@
 export type ClientPlatform = 'ios' | 'android' | 'desktop';
 export type AppViewMode = 'landing' | 'app';
 
+export const ANDROID_APK_DOWNLOAD_URL =
+  'https://github.com/sidihost/GambleAware-BetBlock/releases/latest/download/GambleAware-Nigeria.apk';
+
 export function detectClientPlatform(
   userAgent: string,
   maxTouchPoints = 0,

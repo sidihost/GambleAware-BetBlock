@@ -24,6 +24,7 @@ import {
   LOCK_DURATION_PRESETS,
 } from '../utils/lockDurations';
 import {
+  ANDROID_APK_DOWNLOAD_URL,
   formatIosBlocklistText,
   getDefaultInstallGuideTarget,
   getOrderedPlatformCards,
@@ -241,8 +242,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
               </button>
             ) : (
               <a
-                href="/downloads/GambleAware-Nigeria.apk?v=2.1.0"
-                download="GambleAware-v2.1.apk"
+                href={ANDROID_APK_DOWNLOAD_URL}
+                rel="noopener noreferrer"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
               >
                 <Download className="h-4 w-4 shrink-0" />
@@ -913,8 +914,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                   </ul>
                 </div>
                 <a
-                  href="/downloads/GambleAware-Nigeria.apk?v=2.1.0"
-                  download="GambleAware-v2.1.apk"
+                  href={ANDROID_APK_DOWNLOAD_URL}
+                  rel="noopener noreferrer"
                   className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
                 >
                   <Download className="h-4 w-4 shrink-0" />
@@ -1180,8 +1181,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 </div>
 
                 <a
-                  href="/downloads/GambleAware-Nigeria.apk?v=2.1.0"
-                  download="GambleAware-v2.1.apk"
+                  href={ANDROID_APK_DOWNLOAD_URL}
+                  rel="noopener noreferrer"
                   className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
                 >
                   <Download className="h-4 w-4 shrink-0" />
