@@ -225,7 +225,15 @@ fun LockSettingsScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    val durations = listOf(1 to "24 Hours", 7 to "7 Days", 30 to "30 Days", 90 to "90 Days")
+                    val durations = listOf(
+                        1 to "24 Hours",
+                        7 to "7 Days",
+                        30 to "30 Days",
+                        90 to "90 Days",
+                        180 to "6 Months",
+                        365 to "1 Year",
+                        730 to "2 Years",
+                    )
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -309,8 +317,11 @@ fun LockSettingsScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            if (isTimeLocked) "Extend Lock by $pendingLockDays Day(s)"
-                            else "Activate $pendingLockDays-Day Lock",
+                            if (isTimeLocked) {
+                                "Extend Lock by ${formatLockLong(pendingLockDays)}"
+                            } else {
+                                "Activate ${formatLockAdjective(pendingLockDays)} Lock"
+                            },
                         )
                     }
                 }
@@ -680,7 +691,7 @@ fun LockSettingsScreen(
     if (showConfirmLockDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmLockDialog = false },
-            title = { Text("Activate $pendingLockDays-Day Lock?") },
+            title = { Text("Activate ${formatLockAdjective(pendingLockDays)} Lock?") },
             text = {
                 Text(
                     "While Commitment Lock is active, GambleAware will not allow uninstalling the app, pausing protection, turning off categories, or deleting blocked rules until the timer completes.",
@@ -770,4 +781,20 @@ fun LockSettingsScreen(
             },
         )
     }
+}
+
+private fun formatLockLong(days: Int): String = when (days) {
+    1 -> "24 Hours"
+    180 -> "6 Months"
+    365 -> "1 Year"
+    730 -> "2 Years"
+    else -> "$days Days"
+}
+
+private fun formatLockAdjective(days: Int): String = when (days) {
+    1 -> "24-Hour"
+    180 -> "6-Month"
+    365 -> "1-Year"
+    730 -> "2-Year"
+    else -> "$days-Day"
 }

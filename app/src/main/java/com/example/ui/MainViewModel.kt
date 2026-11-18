@@ -61,6 +61,7 @@ val RECOVERY_MILESTONES = listOf(
     RecoveryMilestone(90, "90d", "Rewired"),
     RecoveryMilestone(180, "180d", "Half Year"),
     RecoveryMilestone(365, "365d", "One Year"),
+    RecoveryMilestone(730, "730d", "Two Years"),
 )
 
 data class MainUiState(
@@ -326,13 +327,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun completeInitialSetup(name: String, lockDays: Int) {
-        repository.prefs.completeInitialSetup(name, lockDays)
+        val safeDays = lockDays.coerceIn(1, 730)
+        repository.prefs.completeInitialSetup(name, safeDays)
         refreshSystemServiceStatus()
         val first = name.trim().split(Regex("\\s+")).firstOrNull().orEmpty()
+        val span = formatLockSpan(safeDays)
         bannerFlow.value = if (first.isNotEmpty()) {
-            "Locked for $lockDays days — welcome, $first"
+            "Locked for $span — welcome, $first"
         } else {
-            "Admin Lock & Shield armed for $lockDays days"
+            "Admin Lock & Shield armed for $span"
         }
     }
 
@@ -466,15 +469,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun activateTimeLock(days: Int, enableAntiTamper: Boolean) {
-        val durationMs = days.toLong() * 24L * 60L * 60L * 1000L
+        val safeDays = days.coerceIn(1, 730)
+        val durationMs = safeDays.toLong() * 24L * 60L * 60L * 1000L
         repository.prefs.activateTimeLock(durationMs)
         if (enableAntiTamper) {
             repository.prefs.setAntiTamperLockEnabled(true)
         }
         if (repository.prefs.currentSnapshot().notificationsEnabled) {
-            GambleAwareNotifications.notifyLockActivated(getApplication(), days)
+            GambleAwareNotifications.notifyLockActivated(getApplication(), safeDays)
         }
-        bannerFlow.value = "Commitment Lock active for $days day${if (days == 1) "" else "s"}"
+        bannerFlow.value = "Commitment Lock active for ${formatLockSpan(safeDays)}"
+    }
+
+    private fun formatLockSpan(days: Int): String = when (days) {
+        1 -> "24 hours"
+        180 -> "6 months"
+        365 -> "1 year"
+        730 -> "2 years"
+        else -> "$days days"
     }
 
     fun setPin(pin: String) {

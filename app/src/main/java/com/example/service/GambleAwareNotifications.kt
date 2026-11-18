@@ -27,7 +27,7 @@ object GambleAwareNotifications {
     private const val NOTIF_ID_LOCK = 4103
     private const val NOTIF_ID_TEST = 4104
 
-    private val MILESTONE_DAYS = listOf(1, 3, 7, 14, 30, 60, 90, 180, 365)
+    private val MILESTONE_DAYS = listOf(1, 3, 7, 14, 30, 60, 90, 180, 365, 730)
 
     fun hasNotificationPermission(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -67,10 +67,17 @@ object GambleAwareNotifications {
     }
 
     fun notifyLockActivated(context: Context, days: Int) {
+        val label = when (days) {
+            1 -> "24 Hours"
+            180 -> "6 Months"
+            365 -> "1 Year"
+            730 -> "2 Years"
+            else -> "$days Days"
+        }
         postNotification(
             context = context,
             notificationId = NOTIF_ID_LOCK,
-            title = "Commitment Lock Active ($days Day${if (days == 1) "" else "s"})",
+            title = "Commitment Lock Active ($label)",
             body = "Uninstall and tamper protection stay locked until your timer finishes.",
         )
     }

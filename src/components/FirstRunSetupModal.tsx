@@ -8,6 +8,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { DAILY_SPEND_OPTIONS_NGN, formatNaira } from '../utils/currency';
+import { formatLockDurationAdjective, LOCK_DURATION_PRESETS } from '../utils/lockDurations';
 import { BrandAnchorMark } from './AppHeader';
 
 interface FirstRunSetupModalProps {
@@ -20,13 +21,6 @@ interface FirstRunSetupModalProps {
     dailySpendNgn: number;
   }) => void;
 }
-
-const SETUP_LOCK_OPTIONS = [
-  { days: 1, label: '24 Hours' },
-  { days: 7, label: '7 Days (Default)' },
-  { days: 30, label: '30 Days' },
-  { days: 90, label: '90 Days' },
-];
 
 export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
   initialName,
@@ -238,7 +232,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             <div className="mt-4">
               <p className="mb-2 text-xs font-semibold text-[var(--ink)]">Default Lock Duration</p>
               <div className="grid grid-cols-2 gap-2">
-                {SETUP_LOCK_OPTIONS.map((opt) => {
+                {LOCK_DURATION_PRESETS.map((opt) => {
                   const selected = lockDays === opt.days;
                   return (
                     <button
@@ -251,7 +245,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
                           : 'border-[var(--subtle-border)] bg-[var(--canvas)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
                       }`}
                     >
-                      {opt.label}
+                      {opt.days === 7 ? '7 Days (Default)' : opt.label}
                     </button>
                   );
                 })}
@@ -289,7 +283,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
               className="mt-5 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
             >
               <LockKeyhole className="h-4 w-4" />
-              <span>Lock In {lockDays}-Day Protection Now</span>
+              <span>Lock In {formatLockDurationAdjective(lockDays)} Protection Now</span>
             </button>
           </div>
         ) : null}

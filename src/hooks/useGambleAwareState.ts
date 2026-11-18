@@ -529,7 +529,7 @@ export function useGambleAwareState() {
   const completeInitialSetup = useCallback(
     (params: { preferredName: string; lockDays: number; dailySpendNgn: number }) => {
       const cleanName = sanitizePreferredName(params.preferredName);
-      const safeDays = Math.max(1, Math.min(90, Math.round(params.lockDays || 7)));
+      const safeDays = Math.max(1, Math.min(730, Math.round(params.lockDays || 7)));
       const safeSpend = Math.max(0, Math.min(10_000_000, Math.round(params.dailySpendNgn || 5000)));
       const now = Date.now();
       const until = now + safeDays * 86_400_000;
@@ -550,10 +550,20 @@ export function useGambleAwareState() {
             prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : now,
         },
       }));
+      const spanLabel =
+        safeDays === 1
+          ? '24 hours'
+          : safeDays === 180
+            ? '6 months'
+            : safeDays === 365
+              ? '1 year'
+              : safeDays === 730
+                ? '2 years'
+                : `${safeDays} days`;
       setStatusBannerMessage(
         cleanName
-          ? `Locked for ${safeDays} days — welcome, ${cleanName.split(' ')[0]}`
-          : `Protection & Admin Lock armed for ${safeDays} days`,
+          ? `Locked for ${spanLabel} — welcome, ${cleanName.split(' ')[0]}`
+          : `Protection & Admin Lock armed for ${spanLabel}`,
       );
     },
     [mutateStore],
@@ -561,7 +571,8 @@ export function useGambleAwareState() {
 
   const activateTimeLock = useCallback(
     (days: number, enableAntiTamper: boolean) => {
-      const durationMs = days * 86_400_000;
+      const safeDays = Math.max(1, Math.min(730, Math.round(days || 7)));
+      const durationMs = safeDays * 86_400_000;
       const now = Date.now();
       const until = now + durationMs;
       mutateStore((prev) => ({
@@ -575,7 +586,17 @@ export function useGambleAwareState() {
             prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : now,
         },
       }));
-      setStatusBannerMessage(`Commitment Lock active for ${days} day${days === 1 ? '' : 's'}`);
+      const spanLabel =
+        safeDays === 1
+          ? '24 hours'
+          : safeDays === 180
+            ? '6 months'
+            : safeDays === 365
+              ? '1 year'
+              : safeDays === 730
+                ? '2 years'
+                : `${safeDays} days`;
+      setStatusBannerMessage(`Commitment Lock active for ${spanLabel}`);
     },
     [mutateStore],
   );

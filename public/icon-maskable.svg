@@ -1,23 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <radialGradient id="ga-obs-bg-m" cx="32%" cy="22%" r="85%">
-      <stop offset="0%" stop-color="#2D091D" />
-      <stop offset="48%" stop-color="#0D080C" />
-      <stop offset="100%" stop-color="#050507" />
+    <radialGradient id="ga-obs-bg-m" cx="34%" cy="20%" r="84%">
+      <stop offset="0%" stop-color="#29091B" />
+      <stop offset="52%" stop-color="#0D080C" />
+      <stop offset="100%" stop-color="#060608" />
     </radialGradient>
-    <linearGradient id="ga-pearl-top-m" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="ga-pearl-m" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="65%" stop-color="#FBF2F7" />
+      <stop offset="68%" stop-color="#FBF3F7" />
       <stop offset="100%" stop-color="#E7CFD9" />
     </linearGradient>
-    <linearGradient id="ga-neon-top-m" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF9AD0" />
-      <stop offset="50%" stop-color="#FF3D9A" />
-      <stop offset="100%" stop-color="#E01878" />
-    </linearGradient>
-    <linearGradient id="ga-neon-deep-m" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#E81E80" />
-      <stop offset="100%" stop-color="#9A094F" />
+    <linearGradient id="ga-pink-core-m" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#FF8CC8" />
+      <stop offset="48%" stop-color="#FF3D9A" />
+      <stop offset="100%" stop-color="#D11372" />
     </linearGradient>
   </defs>
 
@@ -25,22 +21,21 @@
 
   <!-- Centered inside Android/PWA 72% safe zone -->
   <g transform="translate(256 256) scale(0.74) translate(-256 -256)">
+    <circle cx="256" cy="256" r="182" fill="none" stroke="#FF3D9A" stroke-opacity="0.18" stroke-width="3" />
     <path
-      d="M 352 132 L 320 166 L 194 166 L 166 194 L 166 318 L 194 346 L 318 346 L 348 378 L 322 396 L 174 396 L 116 338 L 116 174 L 174 116 L 326 116 Z"
-      fill="url(#ga-pearl-top-m)"
+      d="M 256 105 L 387 150 L 387 251 C 387 335 326 387 256 412 C 186 387 125 335 125 251 L 125 150 Z"
+      fill="url(#ga-pearl-m)"
     />
     <path
-      d="M 244 232 L 396 232 L 396 334 L 346 382 L 346 280 L 218 280 Z"
-      fill="url(#ga-neon-top-m)"
+      d="M 256 105 L 387 150 L 387 251 C 387 335 326 387 256 412 Z"
+      fill="#D2B6C5"
+      opacity="0.20"
     />
     <path
-      d="M 346 280 L 396 232 L 396 334 L 346 382 Z"
-      fill="url(#ga-neon-deep-m)"
+      d="M 256 146 L 348 178 L 348 248 C 348 311 305 349 256 370 C 207 349 164 311 164 248 L 164 178 Z"
+      fill="url(#ga-pink-core-m)"
     />
-    <path
-      d="M 370 122 Q 370 158 406 158 Q 370 158 370 194 Q 370 158 334 158 Q 370 158 370 122 Z"
-      fill="#FF72B8"
-    />
-    <circle cx="370" cy="158" r="7" fill="#FFFFFF" />
+    <circle cx="256" cy="238" r="28" fill="#09070B" />
+    <path d="M 241 257 L 271 257 L 279 311 L 233 311 Z" fill="#09070B" />
   </g>
 </svg>

@@ -141,6 +141,7 @@ export const RECOVERY_MILESTONES: RecoveryMilestone[] = [
   { days: 90, label: '90d', title: 'Rewired' },
   { days: 180, label: '180d', title: 'Half Year' },
   { days: 365, label: '365d', title: 'One Year' },
+  { days: 730, label: '730d', title: 'Two Years' },
 ];
 
 export type AnchorRoute = 'shield' | 'blocklist' | 'activity' | 'lock' | 'download';

@@ -182,14 +182,14 @@ export const LiquidShieldOrb: React.FC<{
   const ticks = Array.from({ length: 60 }, (_, i) => {
     const isMajor = i % 5 === 0;
     const angleRad = ((i * 6 - 90) * Math.PI) / 180;
-    const outerR = 77.4;
-    const innerR = isMajor ? 69.3 : 73.35;
+    const outerR = 78.2;
+    const innerR = isMajor ? 69.8 : 74.2;
     const cosA = Math.cos(angleRad);
     const sinA = Math.sin(angleRad);
     const opacity = isProtected
       ? isMajor
-        ? 0.88
-        : 0.32
+        ? 0.92
+        : 0.34
       : isMajor
         ? 0.35
         : 0.14;
@@ -198,11 +198,13 @@ export const LiquidShieldOrb: React.FC<{
       y1: 90 + innerR * sinA,
       x2: 90 + outerR * cosA,
       y2: 90 + outerR * sinA,
-      strokeWidth: isMajor ? 1.6 : 0.85,
+      strokeWidth: isMajor ? 1.75 : 0.85,
       stroke: isProtected && isMajor ? 'var(--active-fill)' : 'currentColor',
       opacity,
     };
   });
+
+  const emblemStroke = isProtected ? 'var(--active-content)' : 'var(--accent-ink)';
 
   return (
     <button
@@ -213,13 +215,13 @@ export const LiquidShieldOrb: React.FC<{
       className="group relative flex h-[180px] w-[180px] cursor-pointer items-center justify-center rounded-full transition-transform duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--active-fill)]"
     >
       <svg viewBox="0 0 180 180" className="h-full w-full">
-        {/* Outer translucent pink aura */}
+        {/* Outer translucent aura */}
         <circle
           cx="90"
           cy="90"
           r="84"
           fill="var(--active-fill)"
-          fillOpacity={isProtected ? 0.10 : 0.04}
+          fillOpacity={isProtected ? 0.11 : 0.04}
           className={isProtected ? 'animate-orb-pulse origin-center' : ''}
         />
 
@@ -252,7 +254,7 @@ export const LiquidShieldOrb: React.FC<{
           <circle
             cx="90"
             cy="90"
-            r="82.8"
+            r="83.2"
             fill="none"
             stroke="var(--active-fill)"
             strokeOpacity={0.92}
@@ -260,30 +262,39 @@ export const LiquidShieldOrb: React.FC<{
           />
         ) : null}
 
-        {/* Core Black & Pink orb */}
+        {/* Specular Core Medallion */}
         <circle
           cx="90"
           cy="90"
-          r="50.4"
+          r="50.5"
           fill={isProtected ? 'var(--active-fill)' : 'var(--muted-fill)'}
           stroke="var(--active-fill)"
-          strokeOpacity={isProtected ? 0.6 : 0.3}
-          strokeWidth="1.35"
+          strokeOpacity={isProtected ? 0.72 : 0.35}
+          strokeWidth="1.4"
+        />
+        <circle
+          cx="90"
+          cy="90"
+          r="45.2"
+          fill="none"
+          stroke={emblemStroke}
+          strokeOpacity={isProtected ? 0.24 : 0.16}
+          strokeWidth="0.9"
         />
 
-        {/* Geometric Anchor & North-Star Compass Crest */}
+        {/* Precision Geometric Shield & Keyhole Lock Crest */}
         <g
-          stroke={isProtected ? 'var(--active-content)' : 'var(--accent-ink)'}
+          stroke={emblemStroke}
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <circle cx="90" cy="74.2" r="4.0" strokeWidth="2.5" />
-          <line x1="90" y1="78.5" x2="90" y2="108.5" strokeWidth="2.8" />
-          <line x1="78.5" y1="86.5" x2="101.5" y2="86.5" strokeWidth="2.5" />
-          <path d="M 71.5 96.5 Q 76 111.5 90 111.5 Q 104 111.5 108.5 96.5" strokeWidth="2.8" />
-          <path d="M 68.5 99.5 L 71.5 96.2 L 75.2 98.8" strokeWidth="2.3" />
-          <path d="M 111.5 99.5 L 108.5 96.2 L 104.8 98.8" strokeWidth="2.3" />
+          <path
+            d="M 90 64.5 L 110.5 71.8 L 110.5 87.8 C 110.5 101.8 100.8 111.2 90 116 C 79.2 111.2 69.5 101.8 69.5 87.8 L 69.5 71.8 Z"
+            strokeWidth="2.75"
+          />
+          <circle cx="90" cy="85.8" r="3.6" fill={emblemStroke} stroke="none" />
+          <path d="M 88 89.2 L 92 89.2 L 93 97.6 L 87 97.6 Z" fill={emblemStroke} stroke="none" />
         </g>
       </svg>
     </button>

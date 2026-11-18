@@ -298,76 +298,56 @@ fun LiquidShieldOrb(
                 style = Stroke(width = 1.25.dp.toPx()),
             )
 
-            // Precision geometric shield & anchor silhouette
-            val s = maxR * 0.26f
+            // Precision geometric shield & keyhole lock silhouette
+            val s = maxR * 0.25f
             val shieldPath = Path().apply {
-                moveTo(center.x, center.y - s * 1.05f)
-                lineTo(center.x + s * 0.85f, center.y - s * 0.68f)
-                lineTo(center.x + s * 0.85f, center.y + s * 0.08f)
-                quadraticTo(
-                    center.x + s * 0.80f,
-                    center.y + s * 0.78f,
+                moveTo(center.x, center.y - s * 1.04f)
+                lineTo(center.x + s * 0.86f, center.y - s * 0.72f)
+                lineTo(center.x + s * 0.86f, center.y - s * 0.04f)
+                cubicTo(
+                    center.x + s * 0.86f,
+                    center.y + s * 0.56f,
+                    center.x + s * 0.44f,
+                    center.y + s * 0.94f,
                     center.x,
-                    center.y + s * 1.10f,
+                    center.y + s * 1.12f,
                 )
-                quadraticTo(
-                    center.x - s * 0.80f,
-                    center.y + s * 0.78f,
-                    center.x - s * 0.85f,
-                    center.y + s * 0.08f,
+                cubicTo(
+                    center.x - s * 0.44f,
+                    center.y + s * 0.94f,
+                    center.x - s * 0.86f,
+                    center.y + s * 0.56f,
+                    center.x - s * 0.86f,
+                    center.y - s * 0.04f,
                 )
-                lineTo(center.x - s * 0.85f, center.y - s * 0.68f)
+                lineTo(center.x - s * 0.86f, center.y - s * 0.72f)
                 close()
             }
             drawPath(
                 path = shieldPath,
                 color = emblemColor,
                 style = Stroke(
-                    width = 2.8.dp.toPx(),
+                    width = 2.75.dp.toPx(),
                     cap = StrokeCap.Round,
                     join = StrokeJoin.Round,
                 ),
             )
 
-            val aTop = center.y - s * 0.42f
-            val aBottom = center.y + s * 0.52f
-            drawLine(
-                color = emblemColor,
-                start = Offset(center.x, aTop + s * 0.16f),
-                end = Offset(center.x, aBottom),
-                strokeWidth = 2.4.dp.toPx(),
-                cap = StrokeCap.Round,
-            )
             drawCircle(
                 color = emblemColor,
-                radius = s * 0.13f,
-                center = Offset(center.x, aTop),
-                style = Stroke(width = 2.2.dp.toPx()),
+                radius = s * 0.16f,
+                center = Offset(center.x, center.y - s * 0.14f),
             )
-            drawLine(
-                color = emblemColor,
-                start = Offset(center.x - s * 0.28f, center.y - s * 0.14f),
-                end = Offset(center.x + s * 0.28f, center.y - s * 0.14f),
-                strokeWidth = 2.2.dp.toPx(),
-                cap = StrokeCap.Round,
-            )
-            val flukePath = Path().apply {
-                moveTo(center.x - s * 0.42f, center.y + s * 0.20f)
-                quadraticTo(
-                    center.x,
-                    center.y + s * 0.64f,
-                    center.x + s * 0.42f,
-                    center.y + s * 0.20f,
-                )
+            val keyholeTail = Path().apply {
+                moveTo(center.x - s * 0.09f, center.y - s * 0.02f)
+                lineTo(center.x + s * 0.09f, center.y - s * 0.02f)
+                lineTo(center.x + s * 0.13f, center.y + s * 0.36f)
+                lineTo(center.x - s * 0.13f, center.y + s * 0.36f)
+                close()
             }
             drawPath(
-                path = flukePath,
+                path = keyholeTail,
                 color = emblemColor,
-                style = Stroke(
-                    width = 2.4.dp.toPx(),
-                    cap = StrokeCap.Round,
-                    join = StrokeJoin.Round,
-                ),
             )
         }
     }

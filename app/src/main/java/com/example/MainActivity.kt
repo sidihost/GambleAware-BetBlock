@@ -801,7 +801,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                     when (currentStep) {
                         1 -> {
                             Text(
-                                "Enter your first name so your clean streak and block screens stay personal. Next, GambleAware automatically prompts Device Admin protection so you cannot undo setup in a weak moment.",
+                                "Enter your first name so your home screen stays personal. Next, GambleAware prompts for Android Device Admin so uninstalling or pausing protection cannot be done impulsively.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                             OutlinedTextField(
@@ -816,7 +816,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                         }
                         2 -> {
                             Text(
-                                "Required before using GambleAware: activate Android Device Admin so nobody—not even a late-night urge—can quickly uninstall the blocker.",
+                                "Required before using GambleAware: turn on Android Device Admin so nobody can quickly uninstall the blocker.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }
@@ -835,7 +835,15 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                listOf(1 to "24 Hours", 7 to "7 Days", 30 to "30 Days", 90 to "90 Days").forEach { (days, label) ->
+                                listOf(
+                                    1 to "24 Hours",
+                                    7 to "7 Days",
+                                    30 to "30 Days",
+                                    90 to "90 Days",
+                                    180 to "6 Months",
+                                    365 to "1 Year",
+                                    730 to "2 Years",
+                                ).forEach { (days, label) ->
                                     val selected = setupLockDays == days
                                     val liquid = LocalLiquidColors.current
                                     LiquidGlassCard(
@@ -859,6 +867,13 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                 }
             },
             confirmButton = {
+                val setupButtonAdj = when (setupLockDays) {
+                    1 -> "24-Hour"
+                    180 -> "6-Month"
+                    365 -> "1-Year"
+                    730 -> "2-Year"
+                    else -> "${setupLockDays}-Day"
+                }
                 Button(
                     onClick = {
                         when (currentStep) {
@@ -889,7 +904,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                             1 -> "Continue & Arm Admin Lock"
                             2 -> "Activate Device Admin"
                             3 -> "Open Accessibility Settings"
-                            else -> "Lock In ${setupLockDays}-Day Shield"
+                            else -> "Lock In $setupButtonAdj Shield"
                         },
                     )
                 }

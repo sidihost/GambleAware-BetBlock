@@ -131,7 +131,7 @@ class ProtectionPreferences private constructor(context: Context) {
     fun setLastNotifiedMilestoneDay(day: Int) = update { putInt(KEY_LAST_MILESTONE_DAY, day) }
 
     fun completeInitialSetup(name: String, lockDays: Int) {
-        val safeDays = lockDays.coerceIn(1, 90)
+        val safeDays = lockDays.coerceIn(1, 730)
         val durationMs = safeDays.toLong() * 24L * 60L * 60L * 1000L
         val now = System.currentTimeMillis()
         val until = now + durationMs

@@ -15,6 +15,11 @@ import { RecoveryVaultCard } from '../components/RecoveryVaultCard';
 import { PersistedStore } from '../data/storage';
 import { DerivedMainState, THEME_MODE_LABELS, ThemeMode } from '../data/types';
 import { DAILY_SPEND_OPTIONS_NGN, formatNaira } from '../utils/currency';
+import {
+  formatLockDurationAdjective,
+  formatLockDurationLong,
+  LOCK_DURATION_PRESETS,
+} from '../utils/lockDurations';
 
 interface LockSettingsScreenProps {
   store: PersistedStore;
@@ -35,13 +40,6 @@ interface LockSettingsScreenProps {
   onToggleNotifications: (enabled: boolean) => void;
   onOpenDownloadPage: () => void;
 }
-
-const LOCK_DURATIONS = [
-  { days: 1, label: '24 Hours' },
-  { days: 7, label: '7 Days' },
-  { days: 30, label: '30 Days' },
-  { days: 90, label: '90 Days' },
-];
 
 export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   store,
@@ -157,7 +155,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             ) : null}
 
             <div className="mt-3.5 flex flex-wrap gap-2">
-              {LOCK_DURATIONS.map((d) => {
+              {LOCK_DURATION_PRESETS.map((d) => {
                 const selected = pendingLockDays === d.days;
                 return (
                   <button
@@ -206,8 +204,8 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
               <LockKeyhole className="h-4 w-4" />
               <span>
                 {isTimeLocked
-                  ? `Extend Lock by ${pendingLockDays} Day(s)`
-                  : `Activate ${pendingLockDays}-Day Lock`}
+                  ? `Extend Lock by ${formatLockDurationLong(pendingLockDays)}`
+                  : `Activate ${formatLockDurationAdjective(pendingLockDays)} Lock`}
               </span>
             </button>
           </LiquidGlassCard>
@@ -499,12 +497,12 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Activate ${pendingLockDays}-Day Lock?`}
+          aria-label={`Activate ${formatLockDurationAdjective(pendingLockDays)} Lock?`}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
         >
           <div className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]">
             <h2 className="font-display text-lg font-bold">
-              Activate {pendingLockDays}-Day Lock?
+              Activate {formatLockDurationAdjective(pendingLockDays)} Lock?
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)]">
               While Commitment Lock is active, GambleAware will not allow uninstalling the app,
