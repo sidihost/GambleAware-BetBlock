@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,11 +24,25 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Ensure debug.keystore exists for CI
+      run: |
+        if [ ! -f debug.keystore ]; then
+          keytool -genkeypair -v -keystore debug.keystore \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+        fi
+
     - name: Run unit tests and build APK
       run: ./gradlew testDebugUnitTest assembleDebug
+
+    - name: Package GambleAware-Nigeria.apk
+      run: |
+        mkdir -p apk-output
+        cp app/build/outputs/apk/debug/app-debug.apk apk-output/GambleAware-Nigeria.apk
 
     - name: Upload GambleAware APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: gambleaware-android-apk
-        path: app/build/outputs/apk/**/*.apk
+        path: apk-output/GambleAware-Nigeria.apk
