@@ -51,13 +51,6 @@
       ]
     }
   ],
-  "redirects": [
-    {
-      "source": "/downloads/GambleAware-Nigeria.apk",
-      "destination": "https://github.com/sidihost/GambleAware-BetBlock/releases/latest/download/GambleAware-Nigeria.apk",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/((?!downloads/|assets/|fonts/|api/|apple-touch-icon\\.png|icon\\.svg|icon-maskable\\.svg|pwa-).*)",
