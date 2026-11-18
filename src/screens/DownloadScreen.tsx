@@ -17,6 +17,7 @@ import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import { BrandGIcon } from '../components/AppHeader';
 import { BettingBrandLogo, FeaturedBrandsWall } from '../components/BettingBrandLogo';
 import { LiquidGlassCard, LiquidShieldOrb } from '../components/LiquidGlass';
+import { PWAInstallButton } from '../components/PWAInstallModal';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { formatNaira } from '../utils/currency';
 import {
@@ -109,95 +110,95 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
     {
       num: '01',
       icon: LockKeyhole,
-      title: 'Device Admin + Settings Tamper Lock',
-      body: 'Once granted Admin + Shield access, Android blocks app uninstallation, Force Stop, and tampering while your Commitment Lock is active — plus Cloud Lock Sync re-arms after a phone wipe.',
+      title: 'Uninstall & Settings Lock',
+      body: 'Once granted Device Admin and Shield access, Android blocks app removal, Force Stop, and settings tampering while your timer runs. Optional Google sign-in restores your lock if the phone is wiped.',
       wide: true,
     },
     {
       num: '02',
       icon: GlobeLock,
-      title: 'Zero-VPN All-Browser & Ad Shield',
-      body: `Blocks ${builtInDomainCount}+ platforms as you type (even sporty or 1xbe), gambling ad networks, popunders & social links across Chrome, Brave, Firefox, Safari, Instagram & Telegram — while allowing ProtonVPN, Mullvad or WARP.`,
+      title: 'Browser & Ad Blocking Without VPN',
+      body: `Blocks ${builtInDomainCount}+ betting sites as you type (even sporty or 1xbe), plus gambling ads and pop-ups across Chrome, Brave, Firefox, Safari, Instagram, and Telegram — leaving ProtonVPN, Mullvad, or WARP free to use.`,
       wide: false,
     },
     {
       num: '03',
       icon: Smartphone,
-      title: `${builtInAppCount}+ Betting Apps & Sideload Guard`,
-      body: 'Watches installed sportsbook & casino apps and intercepts newly sideloaded APKs immediately with exact platform recognition.',
+      title: `${builtInAppCount}+ Betting Apps & New Installs`,
+      body: 'Detects installed sportsbook and casino apps and blocks newly downloaded betting APKs right away.',
       wide: false,
     },
     {
       num: '04',
       icon: Clock,
-      title: 'Tilt Velocity Radar & Stake Banking',
-      body: 'Detects chasing-loss bursts within 10–60m, neutralizes booking codes & deposit links, and lets you bank tempted stakes into your vault instead.',
+      title: 'Urge Alerts & Stake Banking',
+      body: 'Spots repeat blocked attempts within 10–60 minutes, strips booking codes and deposit links, and lets you log skipped stakes as savings.',
       wide: false,
     },
     {
       num: '05',
       icon: Wallet,
-      title: 'Trusted Buddy Co-Lock + Goals Ledger',
-      body: 'Zero-server 6-digit Buddy approval unlock, Naira recovery goals, 5-layer Leak Audit, and Cloud Recovery Sync.',
+      title: 'Partner Approval & Savings Goals',
+      body: 'Require a 6-digit code from a trusted friend or partner before unlocking early, track personal savings goals, and back up your setup locally.',
       wide: false,
     },
     {
       num: '06',
       icon: ShieldCheck,
-      title: 'iPhone + Android Free Forever',
-      body: 'Android phones get Zero-VPN All-Browser + Ad + Anti-Uninstall protection while keeping your VPN slot free; iPhone gets a Home-Screen G app + Screen Time blocker list.',
+      title: 'Free on Android & iPhone',
+      body: 'No subscription or paywall. Android gets browser, ad, and uninstall protection while keeping your VPN slot free; iPhone gets a Home-Screen app paired with Apple Screen Time.',
       wide: true,
     },
   ];
 
   const comparisonRows = [
     {
-      capability: 'Zero-VPN Architecture (Use Your Own VPN)',
-      gambleAware: 'Runs without VPN slot — ProtonVPN, Mullvad & WARP work freely',
-      gamban: 'Occupies VPN slot — breaks third-party VPNs',
+      capability: 'Works Alongside Other VPNs',
+      gambleAware: 'Leaves your VPN slot free — ProtonVPN, Mullvad & WARP work normally',
+      gamban: 'Uses the device VPN slot — blocks other VPN apps',
     },
     {
-      capability: 'Instant While-Typing & Ad/Popunder Guard',
-      gambleAware: `Blocks prefixes (sporty, 1xbe), gambling ads & ${builtInDomainCount}+ platforms`,
-      gamban: 'Generic block screen · Paid subscription',
+      capability: 'While-Typing & Ad Blocking',
+      gambleAware: `Blocks prefixes (sporty, 1xbe), betting ads & ${builtInDomainCount}+ sites`,
+      gamban: 'Domain block screen · Paid subscription',
     },
     {
-      capability: 'Anti-Uninstall + Wipe-Resistant Cloud Lock',
-      gambleAware: 'Device Admin + Settings Tamper Guard + Cloud Lock Sync (up to 2 yrs)',
-      gamban: 'Basic uninstall friction · Paid plan',
+      capability: 'Uninstall Lock & Wipe Recovery',
+      gambleAware: 'Device Admin + Tamper Lock + Cloud backup (up to 2 years)',
+      gamban: 'Basic uninstall lock · Paid plan',
     },
     {
-      capability: 'Tilt Velocity Radar & 1-Tap Stake Banking',
-      gambleAware: 'Chasing-loss burst detection + Urge-to-Savings vault',
+      capability: 'Urge Tracking & Saved Stakes',
+      gambleAware: 'Detects chasing-loss bursts & logs skipped stakes as savings',
       gamban: 'Not included',
     },
     {
-      capability: 'Personal Goals & Trusted Buddy Co-Lock',
-      gambleAware: 'Custom ₦ recovery goals + offline 6-digit partner unlock',
-      gamban: 'Paid subscription · No offline co-lock',
+      capability: 'Goals & Partner Approval Lock',
+      gambleAware: 'Personal ₦ savings goals + offline 6-digit partner unlock',
+      gamban: 'Paid subscription · No offline partner code',
     },
     {
-      capability: 'Cost & Privacy',
-      gambleAware: '100% Free forever · Optional Google Cloud Lock backup',
-      gamban: 'Recurring monthly/annual subscription',
+      capability: 'Price & Privacy',
+      gambleAware: 'Free · Optional Google backup',
+      gamban: 'Monthly or annual fee',
     },
   ];
 
   const installSteps = [
     {
       num: '01',
-      title: 'Download GambleAware.apk',
-      desc: 'Tap Download Android App to save the installer to your Android phone.',
+      title: 'Download GambleAware-Nigeria.apk',
+      desc: 'Tap Download Android App to save the installer to your phone.',
     },
     {
       num: '02',
-      title: 'Install APK & Enable All-Browser Shield',
-      desc: 'Open the APK from Downloads, tap Install, and turn on GambleAware All-Browser & Ad Shield — no VPN slot required.',
+      title: 'Install APK & Turn On Shield',
+      desc: 'Open the downloaded file, allow "Install unknown apps" for Chrome or Files if prompted, then turn on browser and ad protection — no VPN needed.',
     },
     {
       num: '03',
-      title: 'Arm Admin Lock & Cloud Recovery',
-      desc: 'Grant Device Admin access and sign in with Google in Lock settings so uninstallation stays blocked and your lock survives a phone wipe.',
+      title: 'Enable Uninstall Lock & Backup',
+      desc: 'Grant Device Admin access and optionally sign in with Google in Lock settings so uninstallation stays blocked and your lock survives a phone reset.',
     },
   ];
 
@@ -227,13 +228,13 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
       <section className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-10">
         <div className="flex flex-col items-start lg:col-span-6">
           <h1 className="font-display text-[clamp(1.7rem,3.4vw,2.75rem)] leading-[1.08] font-bold tracking-tight text-balance text-[var(--ink)]">
-            A gambling blocker you can&rsquo;t switch off midway.
+            Block gambling sites and apps — and keep them blocked.
           </h1>
 
           <p className="mt-3.5 max-w-xl text-sm leading-relaxed text-[var(--ink-muted)] sm:text-[15px]">
             GambleAware blocks {builtInDomainCount}+ sportsbooks, casinos, gambling ads, and{' '}
-            {builtInAppCount}+ betting apps across every Android browser without needing a VPN
-            (so your own VPN still works freely) — and supports iPhone via Home Screen + Screen Time.
+            {builtInAppCount}+ betting apps across Android browsers without taking your VPN slot
+            (so your own VPN keeps working) — and runs on iPhone via Home Screen and Screen Time.
           </p>
 
           <div className="mt-5 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -249,6 +250,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             ) : (
               <a
                 href={ANDROID_APK_DOWNLOAD_URL}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-11 sm:text-sm"
               >
@@ -256,6 +258,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 <span>Download Android App</span>
               </a>
             )}
+
+            <PWAInstallButton variant="secondary" label="Install Web App" />
 
             <button
               type="button"
@@ -275,10 +279,10 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             <div className="mt-4 w-full max-w-xl rounded-2xl border border-[var(--glass-border)] bg-[var(--muted-fill)] px-4 py-3 text-xs leading-relaxed text-[var(--ink)]">
               <span className="font-semibold text-[var(--accent-ink)]">iPhone Ready:</span> Open
               in Safari, tap <span className="font-semibold">Open &amp; Install for iPhone</span>{' '}
-              above, then tap <span className="font-semibold">Share → Add to Home Screen</span> +
-              our{' '}
+              above, then tap <span className="font-semibold">Share → Add to Home Screen</span> and
+              copy our{' '}
               <a href="#platforms" className="font-semibold underline underline-offset-2">
-                22-site Screen Time Blocker List
+                22-site Screen Time list
               </a>{' '}
               below.
             </div>
@@ -288,8 +292,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             {isAppleHandheld
               ? 'iPhone / iPad detected · Home-Screen app & Screen Time list ready · Free'
               : isAndroidHandheld
-                ? 'Android phone detected · Zero-VPN APK ready · Free'
-                : 'Android 7.0+ APK · iPhone Home-Screen + Screen Time · Free forever'}
+                ? 'Android phone detected · APK & Home-Screen Web App ready · Free'
+                : 'Android 7.0+ APK · Web App · iPhone Home Screen + Screen Time · Free'}
           </p>
 
           {/* Clean Architectural Spec Strip */}
@@ -394,7 +398,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                               GambleAware · Tunde
                             </p>
                             <p className="text-[10px] text-[var(--ink-muted)]">
-                              Zero-VPN All-Browser &amp; Ad Guard
+                              Browser &amp; Ad Shield
                             </p>
                           </div>
                           <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-[var(--accent-ink)]">
@@ -414,7 +418,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                         </div>
 
                         <p className="text-center font-display text-[13px] font-bold text-[var(--ink)]">
-                          Full Shield &amp; Admin Lock On
+                          Shield &amp; Lock Active
                         </p>
                         <p className="mt-0.5 text-center text-[10px] leading-snug text-[var(--ink-muted)]">
                           Blocking SportyBet, Bet9ja, Bet365, 1xBet, Stake &amp; betting apps.
@@ -687,12 +691,12 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                       <div className="rounded-[20px] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-3">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-[var(--ink)]">
-                            {formatLockDurationLong(previewLockDays)} Lock Armed
+                            {formatLockDurationLong(previewLockDays)} Lock On
                           </span>
                           <LockKeyhole className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
                         </div>
                         <p className="mt-0.5 text-[10px] text-[var(--ink-muted)]">
-                          Cannot be undone until timer hits zero
+                          Stays locked until the timer hits zero
                         </p>
 
                         <div className="mt-2.5 grid grid-cols-4 gap-1.5">
@@ -806,11 +810,11 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
       <section className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-9">
         <div className="max-w-2xl">
           <h2 className="font-display text-xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-2xl">
-            Every major betting platform recognized &amp; blocked.
+            Major betting sites &amp; apps covered out of the box.
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
-            {builtInDomainCount}+ sportsbooks, casinos, crash sites, mirrors, and {builtInAppCount}+
-            betting apps stopped automatically across Africa, UK, North America, and crypto rooms.
+            {builtInDomainCount}+ sportsbooks, casinos, crash games, mirrors, and {builtInAppCount}+
+            betting apps blocked across Nigeria, the UK, North America, and crypto rooms.
           </p>
         </div>
 
@@ -823,11 +827,11 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
       <section id="features" className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-9">
         <div className="max-w-2xl">
           <h2 className="font-display text-xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-2xl">
-            Six protections built directly into Android.
+            Six practical protections built directly into the app.
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
-            Everything runs locally on your phone with no account, no subscription, and no server
-            dependency. Clearing cache or app data will not wipe your timer or blocklist.
+            Everything runs on your device with no required account and no subscription fee. Clearing
+            browser cache will not erase your streak, goals, or blocklist.
           </p>
         </div>
 
@@ -871,8 +875,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             Built for Android &amp; iPhone.
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
-            Install the native Android APK for Zero-VPN all-browser &amp; ad blocking, or set up
-            GambleAware on your iPhone cleanly via Safari Home Screen + Screen Time.
+            Install the Android APK for system-wide browser and ad blocking without occupying your
+            VPN slot, or add GambleAware to your iPhone Home Screen alongside Screen Time.
           </p>
         </div>
 
@@ -888,43 +892,44 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                     <Smartphone className="h-4 w-4 text-[var(--accent-ink)]" />
                   </div>
                   <h3 className="mt-3 font-display text-lg font-semibold text-[var(--ink)]">
-                    Native Android Blocker (APK)
+                    Android App (APK)
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
                     Blocks {builtInDomainCount}+ betting platforms as you type across Chrome, Brave,
-                    Firefox, Edge, Opera, Instagram, TikTok &amp; Telegram — with zero VPN conflict
-                    so ProtonVPN, Mullvad or WARP stay usable.
+                    Firefox, Edge, Opera, Instagram, TikTok &amp; Telegram — leaving ProtonVPN,
+                    Mullvad, or WARP free to run.
                   </p>
                   <ul className="mt-3 space-y-2 text-xs leading-relaxed text-[var(--ink-muted)]">
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
-                        • Device Admin + Tamper Lock:
+                        • Uninstall &amp; Tamper Lock:
                       </span>{' '}
-                      Blocks App Info Uninstall, Force Stop &amp; Admin deactivation while your
-                      Commitment timer runs, plus Cloud Lock re-arming after a wipe.
+                      Blocks App Info Uninstall, Force Stop, and permission removal while your
+                      lock timer is active, with optional Google sign-in backup.
                     </li>
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
-                        • Gambling Ad &amp; Popunder Guard:
+                        • Gambling Ads &amp; Pop-Up Filter:
                       </span>{' '}
-                      Filters betting ad networks, affiliate links, mirror sites &amp; booking codes
-                      without occupying Android&rsquo;s VPN slot.
+                      Stops betting ad networks, affiliate links, mirror sites, and booking codes
+                      without taking Android&rsquo;s VPN slot.
                     </li>
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
-                        • Install Guard + 150+ Betting Apps:
+                        • App &amp; Sideload Guard ({builtInAppCount}+ apps):
                       </span>{' '}
-                      Matches installed &amp; newly sideloaded betting APKs immediately.
+                      Watches installed sportsbooks and newly downloaded betting APKs immediately.
                     </li>
                   </ul>
                 </div>
                 <a
                   href={ANDROID_APK_DOWNLOAD_URL}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
                 >
                   <Download className="h-4 w-4 shrink-0" />
-                  <span>Download GambleAware.apk</span>
+                  <span>Download GambleAware-Nigeria.apk</span>
                 </a>
               </LiquidGlassCard>
             ) : (
@@ -1141,8 +1146,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             ) : (
               <>
                 <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-                  Takes under two minutes. Zero VPN conflict (use ProtonVPN or WARP freely), Device
-                  Admin Uninstall Lock, and Google Cloud Lock recovery after a wipe.
+                  Takes under two minutes. Runs without taking your VPN slot, locks uninstallation
+                  with Device Admin, and supports Google backup recovery.
                 </p>
 
                 <ol className="mt-5 divide-y divide-[var(--subtle-border)]/70">
@@ -1164,30 +1169,33 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                   ))}
                 </ol>
 
-                {/* OS Uninstall Lock & Cloud Persistence Note */}
+                {/* APK Install Troubleshooting */}
                 <div className="mt-5 rounded-2xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-4">
                   <p className="text-xs font-semibold text-[var(--ink)]">
-                    Zero-VPN Uninstall Lock + Cloud Wipe Recovery
+                    APK not installing? Common fixes
                   </p>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-                    Inside Lock settings, granting{' '}
-                    <span className="font-semibold text-[var(--ink)]">
-                      Device Admin Uninstall Lock
-                    </span>{' '}
-                    and enabling{' '}
-                    <span className="font-semibold text-[var(--ink)]">
-                      All-Browser &amp; Tamper Shield
-                    </span>{' '}
-                    blocks uninstallation, Force Stop, and every browser without taking your VPN slot.
-                  </p>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-                    Sign in with Google to re-arm your lock automatically if the phone is wiped, or
-                    arm optional ADB Device Owner for enterprise reset lock.
-                  </p>
+                  <ul className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+                    <li>
+                      <span className="font-semibold text-[var(--ink)]">1. Permission prompt:</span>{' '}
+                      Enable <span className="font-semibold text-[var(--ink)]">Install unknown apps</span>{' '}
+                      for Chrome or Files in Android Settings, then tap the downloaded APK again.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-[var(--ink)]">2. Older version installed:</span>{' '}
+                      If &ldquo;App not installed&rdquo; appears, uninstall any older GambleAware APK
+                      first so signatures match.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-[var(--ink)]">3. Play Protect prompt:</span>{' '}
+                      Tap <span className="font-semibold text-[var(--ink)]">More details → Install anyway</span>{' '}
+                      to finish installing the direct GitHub release.
+                    </li>
+                  </ul>
                 </div>
 
                 <a
                   href={ANDROID_APK_DOWNLOAD_URL}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
                 >
@@ -1205,8 +1213,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
               GambleAware vs. Gamban
             </h2>
             <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
-              GambleAware has zero subscription fee, blocks sites while typing &amp; gambling ads
-              without locking your VPN slot, and syncs active Commitment Locks to the cloud.
+              GambleAware is free to use, blocks betting sites as you type without taking your VPN
+              slot, and lets you lock settings with optional cloud backup.
             </p>
 
             {/* Mobile stacked comparison */}

@@ -100,3 +100,30 @@ export function formatIosBlocklistText(
 ): string {
   return domains.join('\n');
 }
+
+export type InstallActionMode =
+  | 'installed'
+  | 'native_prompt'
+  | 'open_standalone_tab'
+  | 'guided_manual';
+
+export function resolveInstallActionMode(params: {
+  isInstalled: boolean;
+  hasDeferredPrompt: boolean;
+  isInIframe: boolean;
+}): InstallActionMode {
+  if (params.isInstalled) return 'installed';
+  if (params.hasDeferredPrompt) return 'native_prompt';
+  if (params.isInIframe) return 'open_standalone_tab';
+  return 'guided_manual';
+}
+
+export function buildStandaloneInstallUrl(currentHref: string): string {
+  try {
+    const parsed = new URL(currentHref);
+    parsed.searchParams.set('app', '1');
+    return parsed.toString();
+  } catch {
+    return '/?app=1';
+  }
+}

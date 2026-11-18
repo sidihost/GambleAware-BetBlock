@@ -34,15 +34,15 @@ export function evaluateHighRiskGuard(
 
   const isActive = activeLabels.length > 0;
 
-  let nextWindowHint = 'Enable any window below to heighten strict filtering automatically.';
+  let nextWindowHint = 'Turn on a schedule below to tighten filtering during common trigger hours.';
   if (isActive) {
-    nextWindowHint = 'Strict keyword & search filtering are actively enforced right now.';
+    nextWindowHint = 'Strict keyword and search filters are turned on right now.';
   } else if (schedule.lateNightLockout) {
-    nextWindowHint = 'Late-Night Guard arms automatically at 10:00 PM tonight.';
+    nextWindowHint = 'Late-night rules turn on at 10:00 PM tonight.';
   } else if (schedule.matchdayWeekendGuard) {
-    nextWindowHint = 'Matchday Shield arms automatically Friday at 6:00 PM.';
+    nextWindowHint = 'Weekend match rules turn on Friday at 6:00 PM.';
   } else if (schedule.paydaySurgeGuard) {
-    nextWindowHint = 'Payday Surge Guard arms on the 25th through the 3rd.';
+    nextWindowHint = 'Payday rules run from the 25th through the 3rd.';
   }
 
   return {

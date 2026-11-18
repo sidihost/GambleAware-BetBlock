@@ -71,14 +71,14 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
       <LiquidGlassCard className="p-3.5 sm:p-4">
         <div className="flex items-start justify-between gap-2.5">
           <LiquidSectionHeader
-            title="5-Layer Shield Leak Check"
-            subtitle={`${audit.healthyCount} of ${audit.totalCount} anti-bypass layers armed`}
+            title="Setup & Bypass Check"
+            subtitle={`${audit.healthyCount} of ${audit.totalCount} protections turned on`}
           />
           <div className="shrink-0 text-right">
             <p className="font-mono text-xl font-bold tabular-nums text-[var(--accent-ink)]">
               {audit.score}%
             </p>
-            <p className="font-mono text-[10px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
+            <p className="font-mono text-[11px] font-semibold text-[var(--ink-muted)]">
               {audit.gradeLabel}
             </p>
           </div>
@@ -102,8 +102,8 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold text-[var(--ink)]">{layer.label}</p>
-                  <span className="font-mono text-[10px] font-bold text-[var(--ink-muted)] uppercase">
-                    {layer.isHealthy ? 'ARMED' : `+${layer.weight}%`}
+                  <span className="font-mono text-[11px] font-semibold text-[var(--ink-muted)]">
+                    {layer.isHealthy ? 'On' : `+${layer.weight}%`}
                   </span>
                 </div>
                 <p className="mt-0.5 text-[11px] leading-snug text-[var(--ink-muted)]">
@@ -115,7 +115,7 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
         </div>
       </LiquidGlassCard>
 
-      {/* Trusted Buddy Co-Lock (Zero-Server Offline Challenge/Response) */}
+      {/* Partner Unlock */}
       <LiquidGlassCard className="p-3.5 sm:p-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
@@ -123,10 +123,10 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="font-display text-[15px] font-semibold text-[var(--ink)]">
-              Trusted Buddy Co-Lock
+              Partner Unlock
             </h3>
             <p className="text-xs text-[var(--ink-muted)]">
-              Require an offline 6-digit approval code from a friend or sponsor to unlock early
+              Require a 6-digit approval code from someone you trust before unlocking early
             </p>
           </div>
         </div>
@@ -212,41 +212,41 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
               placeholder="Trusted friend, spouse, or sponsor name"
               className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
-            <button
-              type="submit"
-              data-testid="arm-buddy-colock-button"
-              className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
-            >
-              <LockKeyhole className="h-3.5 w-3.5" />
-              <span>Arm Co-Lock</span>
-            </button>
-          </form>
-        )}
+                <button
+                  type="submit"
+                  data-testid="arm-buddy-colock-button"
+                  className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                >
+                  <LockKeyhole className="h-3.5 w-3.5" />
+                  <span>Enable Partner Lock</span>
+                </button>
+              </form>
+            )}
 
-        {/* Offline Buddy Keygen Helper (zero servers needed) */}
-        <div className="mt-3 border-t border-[var(--subtle-border)]/60 pt-2.5">
-          <button
-            type="button"
-            onClick={() => {
-              setHelperChallenge(buddyChallengeCode || '');
-              setShowBuddyHelper((v) => !v);
-            }}
-            className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)]"
-          >
-            <ShieldCheck className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-            <span>
-              {showBuddyHelper
-                ? 'Hide Partner Key Generator'
-                : 'Partner Mode: Generate 6-digit Approval Code Offline'}
-            </span>
-          </button>
+            {/* Offline Partner Code Helper */}
+            <div className="mt-3 border-t border-[var(--subtle-border)]/60 pt-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setHelperChallenge(buddyChallengeCode || '');
+                  setShowBuddyHelper((v) => !v);
+                }}
+                className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)]"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
+                <span>
+                  {showBuddyHelper
+                    ? 'Hide Partner Code Generator'
+                    : 'Partner Mode: Generate 6-digit code offline'}
+                </span>
+              </button>
 
-          {showBuddyHelper ? (
-            <div className="mt-2.5 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3 text-xs">
-              <p className="text-[11px] text-[var(--ink-muted)]">
-                For your accountability buddy on their own phone: enter the Challenge Key &amp; agreed
-                Secret Word to derive the matching 6-digit approval token completely offline.
-              </p>
+              {showBuddyHelper ? (
+                <div className="mt-2.5 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3 text-xs">
+                  <p className="text-[11px] text-[var(--ink-muted)]">
+                    Your partner can enter your Challenge Key and shared secret word on their own
+                    phone to generate the matching 6-digit code without internet access.
+                  </p>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <input
                   type="text"

@@ -128,8 +128,8 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       <LiquidGlassCard className="p-3.5 sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-medium tracking-wider text-[var(--ink-muted)]">
-              BETTING-FREE STREAK
+            <p className="text-[11px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
+              Betting-free streak
             </p>
             <p className="mt-1 font-display text-3xl font-bold tabular-nums text-[var(--ink)] sm:text-4xl">
               {state.cleanDays} Day{state.cleanDays === 1 ? '' : 's'}
@@ -185,7 +185,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
               No personal recovery goal set yet
             </p>
             <p className="text-xs text-[var(--ink-muted)]">
-              Create a Naira savings or streak target right here — stored safely across all 3 device layers.
+              Set a savings or streak target and keep it backed up locally.
             </p>
           </div>
           <button
@@ -203,11 +203,11 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="progress_dashboard">
         <div>
           <h2 className="font-display text-[15px] font-semibold text-[var(--ink)]">
-            {selectedChartMode === 0 ? 'Betting-Free Trajectory' : '7-Day Intercepts'}
+            {selectedChartMode === 0 ? 'Streak & Savings' : '7-Day Blocked Attempts'}
           </h2>
           <p className="text-xs text-[var(--ink-muted)]">
             {selectedChartMode === 0
-              ? 'Touch & scrub across milestones'
+              ? 'Tap or drag across milestones'
               : `${state.todayBlockedCount} today · ${state.totalBlockedCount} total`}
           </p>
         </div>
@@ -256,7 +256,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         <LiquidGlassCard className="p-3.5 sm:p-4">
           <LiquidSectionHeader
             title="Recovery Milestones"
-            subtitle="Milestones unlock automatically as your betting-free days climb"
+            subtitle="Unlocks as your betting-free days add up"
           />
           <div className="mt-3 grid grid-cols-2 gap-2">
             {RECOVERY_MILESTONES.map((milestone) => {
@@ -324,7 +324,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
               className="flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-3 text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
             >
               <Wind className="h-4 w-4 shrink-0" />
-              <span>60s SOS Calm</span>
+              <span>60s Breather</span>
             </button>
           </div>
         </LiquidGlassCard>
@@ -357,7 +357,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           <p className="text-xs text-[var(--ink-muted)]">
             {state.groupedBlockedSites.length > 0
               ? `${state.groupedBlockedSites.length} blocked targets · ${state.totalBlockedCount} total attempts`
-              : 'Intercepted domains and betting apps appear automatically'}
+              : 'Blocked sites and betting apps appear here automatically'}
           </p>
         </div>
         <div
@@ -422,11 +422,10 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             <BrandGMark className="h-9 w-9" />
           </div>
           <h3 className="mt-3 font-display text-sm font-semibold text-[var(--ink)]">
-            All Quiet Here
+            Nothing Blocked Yet
           </h3>
           <p className="mt-1 text-xs leading-relaxed text-[var(--ink-muted)]">
-            When GambleAware intercepts a gambling website, social app link, or betting app, it
-            will appear here.
+            When GambleAware blocks a betting site, social link, or app, it will show up here.
           </p>
         </LiquidGlassCard>
       ) : logViewMode === 'grouped' ? (

@@ -14,6 +14,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { LiquidGlassCard, LiquidSectionHeader, LiquidSwitch } from '../components/LiquidGlass';
+import { PWAInstallButton } from '../components/PWAInstallModal';
 import { RecoveryVaultCard } from '../components/RecoveryVaultCard';
 import { ShieldDiagnosticsCard } from '../components/ShieldDiagnosticsCard';
 import { PersistedStore } from '../data/storage';
@@ -130,7 +131,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           Lock &amp; Settings
         </h1>
         <p className="text-xs text-[var(--ink-muted)]">
-          Set a protection timer, 4-digit PIN, theme switch, and zero-loss Recovery Vault
+          Manage your lock timer, 4-digit PIN, local backup, and theme
         </p>
       </div>
 
@@ -150,12 +151,12 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="font-display text-[15px] font-semibold text-[var(--ink)]">
-                  {isTimeLocked ? 'Commitment Lock Active' : 'Timed Commitment Lock'}
+                  {isTimeLocked ? 'Lock Timer Active' : 'Timed Protection Lock'}
                 </h2>
                 <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
                   {isTimeLocked
-                    ? `Uninstall & tamper blocked until ${lockExpiryFormatted}`
-                    : 'Lock protection, uninstalls, and blocklists for a chosen recovery period'}
+                    ? `Uninstalls and settings changes are blocked until ${lockExpiryFormatted}`
+                    : 'Lock protection, uninstalls, and blocklists for a set period'}
                 </p>
               </div>
             </div>
@@ -245,8 +246,8 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                   </p>
                   <p className="text-xs text-[var(--ink-muted)]">
                     {state.isDeviceAdminEnabled
-                      ? 'Active · Blocks Android uninstallation & tampering until Commitment Lock expires'
-                      : 'Grant OS Device Administrator permission so you cannot uninstall GambleAware during an urge'}
+                      ? 'Active · Prevents app removal and settings tampering until your lock timer ends'
+                      : 'Grant Device Administrator access so GambleAware cannot be uninstalled during an urge'}
                   </p>
                 </div>
               </div>
@@ -264,7 +265,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                 ) : state.isDeviceAdminEnabled ? (
                   <span>Deactivate</span>
                 ) : (
-                  <span>Arm Admin Lock</span>
+                  <span>Enable Uninstall Lock</span>
                 )}
               </button>
             </div>
@@ -341,7 +342,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                   subtitle={
                     userEmail
                       ? `Signed in as ${userEmail}${isSyncingCloud ? ' · Syncing...' : ' · Active'}`
-                      : 'Sign in with Google so Commitment Lock, PIN & goals re-arm automatically if your phone is wiped or flashed'
+                      : 'Sign in with Google so your lock timer, PIN, and goals restore if your phone is reset'
                   }
                 />
               </div>
@@ -367,9 +368,8 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
               ) : null}
             </div>
             <p className="mt-2.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-              Lock timers and 4-digit PIN hashes sync upward-only to Firebase so signing back in
-              after a factory reset restores your remaining lock automatically. For Android hardware
-              enterprise reset protection, set Device Owner via ADB after setup.
+              Lock timers and 4-digit PINs back up to Firebase so signing back in after a reset
+              restores your remaining time. Advanced users can also set Android Device Owner via ADB.
             </p>
             {cloudError ? (
               <p className="mt-1.5 text-xs font-medium text-[var(--accent-ink)]">{cloudError}</p>
@@ -406,23 +406,33 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             </div>
           </LiquidGlassCard>
 
-          {/* Dedicated Download Page CTA */}
-          <LiquidGlassCard className="p-3.5 sm:p-4" onClick={onOpenDownloadPage}>
-            <div className="flex items-center gap-2.5">
+          {/* Dedicated Download & Install Card */}
+          <LiquidGlassCard className="p-3.5 sm:p-4">
+            <div className="flex items-start gap-2.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
                 <Download className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[var(--ink)]">
-                  {isIOS ? 'iPhone Screen Time & Home-Screen Guide' : 'Get GambleAware on Android'}
+                  {isIOS ? 'iPhone Screen Time & Home-Screen Guide' : 'Install GambleAware'}
                 </p>
-                <p className="text-xs text-[var(--ink-muted)]">
+                <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
                   {isIOS
-                    ? 'Copy the 22 betting sites for Safari Screen Time or save to Home Screen'
-                    : 'Download Android APK with Zero-VPN All-Browser Guard, Ad Blocker & Cloud Lock Sync'}
+                    ? 'Copy the 22 betting sites for Safari Screen Time or save GambleAware to your Home Screen'
+                    : 'Install the Web App or download the Android APK with browser, ad, and uninstall protection'}
                 </p>
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <PWAInstallButton variant="header" label="Install Web App" />
+              <button
+                type="button"
+                onClick={onOpenDownloadPage}
+                className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+              >
+                <span>{isIOS ? 'Open iPhone Guide' : 'Download Page & APK'}</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
             </div>
           </LiquidGlassCard>
 

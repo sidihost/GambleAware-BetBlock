@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AnchorRoute } from '../data/types';
 import { ANDROID_APK_DOWNLOAD_URL } from '../utils/platformCompatibility';
+import { PWAInstallButton } from './PWAInstallModal';
 
 /**
  * Architectural GambleAware Geometric G Logo — pure flat Apple/Google vector paths (zero gradients)
@@ -277,20 +278,26 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-9 sm:px-3.5"
             >
               <Download className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
-              <span className="hidden lg:inline">{isIOS ? 'iPhone Guide & Info' : 'Android APK & Setup'}</span>
+              <span className="hidden lg:inline">{isIOS ? 'iPhone Setup' : 'Android APK'}</span>
               <span className="lg:hidden">{isIOS ? 'Setup' : 'APK'}</span>
             </button>
           ) : mode === 'landing' && !isIOS ? (
-            <a
-              href={ANDROID_APK_DOWNLOAD_URL}
-              rel="noopener noreferrer"
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-9 sm:px-3.5"
-            >
-              <Download className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden min-[380px]:inline">Download APK</span>
-              <span className="min-[380px]:hidden">APK</span>
-            </a>
+            <>
+              <PWAInstallButton variant="header" className="hidden sm:inline-flex" />
+              <a
+                href={ANDROID_APK_DOWNLOAD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-9 sm:px-3.5"
+              >
+                <Download className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden min-[380px]:inline">Download APK</span>
+                <span className="min-[380px]:hidden">APK</span>
+              </a>
+            </>
           ) : null}
+
+          {mode === 'app' ? <PWAInstallButton variant="header" className="hidden sm:inline-flex" /> : null}
 
           {mode === 'landing' ? (
             <button
@@ -325,8 +332,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             ))}
           </div>
 
-          {showIosLaunchButton ? (
-            <div className="mt-2 border-t border-[var(--subtle-border)] pt-3">
+          <div className="mt-2 flex flex-col gap-2 border-t border-[var(--subtle-border)] pt-3">
+            {showIosLaunchButton ? (
               <button
                 type="button"
                 onClick={() => {
@@ -338,8 +345,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 <Smartphone className="h-4 w-4 shrink-0" />
                 <span>Open iPhone App</span>
               </button>
-            </div>
-          ) : null}
+            ) : null}
+            <PWAInstallButton
+              variant="secondary"
+              label="Install GambleAware Web App"
+              className="w-full"
+            />
+          </div>
         </nav>
       ) : null}
     </header>

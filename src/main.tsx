@@ -1,10 +1,22 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { loadStore } from './data/storage';
 import { ThemeMode } from './data/types';
+import { captureEarlyInstallPrompt } from './hooks/usePWAInstall';
 import './index.css';
+
+// Capture browser install prompt even if it fires before React mounts
+captureEarlyInstallPrompt();
+
+// Register Workbox service worker for offline cache & standalone installability
+try {
+  registerSW({ immediate: true });
+} catch {
+  // Ignored in unsupported browser contexts
+}
 
 // Synchronously apply stored theme before first React paint to prevent White/Black flash
 try {

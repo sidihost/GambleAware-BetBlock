@@ -10,6 +10,8 @@ import com.example.blocker.BlocklistMatcher
 import com.example.blocker.BrandCatalog
 import com.example.blocker.GamblingCategory
 import com.example.blocker.GamblingRegistry
+import com.example.blocker.MlRiskEvaluation
+import com.example.blocker.MlRiskPredictor
 import com.example.blocker.TiltRadarEngine
 import com.example.blocker.TiltRadarEvaluation
 import com.example.data.AnchorRepository
@@ -311,6 +313,16 @@ data class MainUiState(
 
     val tiltRadar: TiltRadarEvaluation
         get() = TiltRadarEngine.evaluate(recentEvents, currentTimeMs)
+
+    val mlRisk: MlRiskEvaluation
+        get() = MlRiskPredictor.evaluate(
+            events = recentEvents,
+            urgeLogs = recentUrgeLogs,
+            settings = settings,
+            cleanDays = cleanDays,
+            isLockedNow = isTimeLockedNow,
+            nowMs = currentTimeMs,
+        )
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {

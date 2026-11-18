@@ -15,16 +15,18 @@ export default defineConfig({
         'apple-touch-icon.png',
         'pwa-192x192.png',
         'pwa-512x512.png',
+        'pwa-maskable-512x512.png',
       ],
       manifest: {
         id: '/',
         name: 'GambleAware',
         short_name: 'GambleAware',
         description:
-          'GambleAware by Imoogle Technology — instant gambling site and app blocker with Naira (₦) savings tracking, high-risk schedule guards, lock timers, and zero-loss recovery vault.',
+          'Block betting websites and gambling apps, track Naira savings, and lock your settings against impulse changes.',
         theme_color: '#FFFFFF',
         background_color: '#FFFFFF',
         display: 'standalone',
+        prefer_related_applications: false,
         start_url: '/?app=1',
         scope: '/',
         icons: [
@@ -52,7 +54,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,ttf,woff,woff2}'],
         globIgnores: ['**/*.apk', '**/downloads/**'],
-        navigateFallbackDenylist: [/^\/downloads\//],
+        navigateFallbackDenylist: [/^\/downloads\//, /manifest\.webmanifest$/],
       },
       devOptions: {
         enabled: true,

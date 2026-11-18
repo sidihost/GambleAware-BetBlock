@@ -1,7 +1,7 @@
 import { GamblingCategory } from './gamblingCategory';
 
 export type BrandGlyphShape =
-  | 'lightning'
+  | 'sportyCrest'
   | 'ball9'
   | 'crown'
   | 'diagonal'
@@ -49,7 +49,7 @@ export const BETTING_BRAND_CATALOG: BettingBrandMeta[] = [
     accentColor: '#FFFFFF',
     fgColor: '#FFFFFF',
     monogram: 'S',
-    glyph: 'lightning',
+    glyph: 'sportyCrest',
   },
   {
     id: 'bet9ja',

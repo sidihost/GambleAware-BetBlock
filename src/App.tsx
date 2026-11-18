@@ -28,6 +28,7 @@ import {
   NavItemConfig,
 } from './components/LiquidGlass';
 import { SpotlightTourOverlay } from './components/SpotlightTourOverlay';
+import { OfflineIndicator } from './components/PWAInstallModal';
 import {
   AnchorRoute,
   CloudRecoveryProfile,
@@ -45,7 +46,7 @@ import { AdminDashboardScreen } from './screens/AdminDashboardScreen';
 import { BlocklistScreen } from './screens/BlocklistScreen';
 import { DownloadScreen } from './screens/DownloadScreen';
 import { LockSettingsScreen } from './screens/LockSettingsScreen';
-import { ResourcesScreen } from './screens/ResourcesScreen';
+import { ResourcesScreen, ResourcesTab } from './screens/ResourcesScreen';
 import { ShieldScreen } from './screens/ShieldScreen';
 import {
   createSupportTicketInCloud,
@@ -139,6 +140,7 @@ export function App() {
     clearEventHistory,
     submitSurveyAssessment,
     applySurveyRecommendationPreset,
+    applyAdaptiveMlHardening,
     logRelapseAndReset,
     restoreFromVaultBackup,
     forceBackupSync,
@@ -168,6 +170,10 @@ export function App() {
   });
 
   const [route, setRoute] = useState<Exclude<AnchorRoute, 'download'>>('shield');
+  const [resourcesTabState, setResourcesTabState] = useState<{
+    tab: ResourcesTab;
+    nonce: number;
+  }>({ tab: 'all', nonce: 0 });
   const [showGoalReminder, setShowGoalReminder] = useState(true);
   const [goalModalPrefill, setGoalModalPrefill] = useState<{
     open: boolean;
@@ -313,16 +319,16 @@ export function App() {
         await syncSettingsAndLockToCloud(user, uiState);
         await syncUserRecoveryProfile(user, uiState);
         if (!restored.restoredLock) {
-          showBanner(`Cloud Sync active (${user.email})`);
+          showBanner(`Backup sync active (${user.email})`);
         }
       } else {
-        showBanner('Verify your Google email to enable Cloud Lock Sync');
+        showBanner('Verify your Google email to enable cloud lock backup');
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Could not complete Google Sign-In';
       if (!msg.includes('popup-closed')) {
         setCloudError(msg);
-        showBanner('Google Sign-In failed — try again');
+        showBanner('Google sign-in failed — please try again');
       }
     } finally {
       setIsSyncingCloud(false);
@@ -332,7 +338,7 @@ export function App() {
   const handleGoogleSignOut = useCallback(async () => {
     try {
       await signOutFirebase();
-      showBanner('Signed out of Cloud Sync — on-device protection stays active');
+      showBanner('Signed out — your on-device blocklist stays active');
     } catch {
       showBanner('Could not sign out right now');
     }
@@ -392,7 +398,7 @@ export function App() {
       setPinError(null);
       setPinPrompt({
         title: 'Enter 4-Digit PIN',
-        subtitle: `Confirm your Accountability PIN to ${label.toLowerCase()}.`,
+        subtitle: `Enter your 4-digit PIN to ${label.toLowerCase()}.`,
         onVerified: () => {
           setPinPrompt(null);
           action();
@@ -456,11 +462,11 @@ export function App() {
       shareUrl,
     });
     if (outcome.status === 'shared') {
-      showBanner('Clean streak shared');
+      showBanner('Streak shared');
     } else if (outcome.status === 'copied') {
-      showBanner('Clean streak copied to clipboard — ready to paste & share');
+      showBanner('Streak copied — ready to paste and share');
     } else if (outcome.status === 'unavailable') {
-      showBanner('Share unavailable in this browser context');
+      showBanner('Sharing is not available in this browser');
     }
   };
 
@@ -494,7 +500,7 @@ export function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-16 right-3 left-3 z-40 flex items-center justify-between gap-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--surface)] px-3.5 py-2 shadow-lg sm:right-5 sm:left-auto sm:w-auto sm:max-w-sm"
+          className="fixed right-3 bottom-20 left-3 z-40 flex items-center justify-between gap-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--surface)] px-3.5 py-2 shadow-lg md:bottom-5 sm:right-5 sm:left-auto sm:w-auto sm:max-w-sm"
         >
           <div className="flex min-w-0 items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
@@ -547,11 +553,16 @@ export function App() {
                 onNavigateToRules={() => handleSelectRoute('blocklist')}
                 onNavigateToProgress={() => handleSelectRoute('activity')}
                 onNavigateToLock={() => handleSelectRoute('lock')}
+                onOpenSurvey={() => {
+                  setResourcesTabState((prev) => ({ tab: 'survey', nonce: prev.nonce + 1 }));
+                  handleSelectRoute('resources');
+                }}
+                onApplyAdaptiveHardening={applyAdaptiveMlHardening}
                 onLaunchCalmReset={() =>
                   setInterventionPayload({
-                    target: '60s Guided Urge Reset',
+                    target: '60s Breathing Reset',
                     source: 'Calm Reset',
-                    category: 'Recovery Tool',
+                    category: 'Breathing Exercise',
                     isAntiTamper: false,
                     autoStartBreathing: true,
                   })
@@ -649,9 +660,9 @@ export function App() {
                 onOpenUrgeJournal={() => setUrgeModalOpen(true)}
                 onLaunchCalmReset={() =>
                   setInterventionPayload({
-                    target: '60s Guided Urge Reset',
+                    target: '60s Breathing Reset',
                     source: 'Calm Reset',
-                    category: 'Recovery Tool',
+                    category: 'Breathing Exercise',
                     isAntiTamper: false,
                     autoStartBreathing: true,
                   })
@@ -672,6 +683,8 @@ export function App() {
                 userEmail={authUser?.email ?? null}
                 cloudError={cloudError}
                 userTickets={userTickets}
+                initialTab={resourcesTabState.tab}
+                tabNonce={resourcesTabState.nonce}
                 onSignIn={() => void handleGoogleSignIn()}
                 onSubmitSurvey={(answers) => {
                   const evaluated = submitSurveyAssessment(answers);
@@ -957,8 +970,7 @@ export function App() {
             </div>
 
             <p className="mt-1.5 text-xs text-[var(--ink-muted)]">
-              Recording what triggered an urge builds pattern awareness so you can outsmart it next
-              time.
+              Noting what sparked an urge helps you spot patterns and stay ahead of them.
             </p>
 
             <div className="mt-3">
@@ -1046,8 +1058,8 @@ export function App() {
             </div>
 
             <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-              You do not have to fight gambling urges alone. Reach free, confidential human support
-              anytime — zero judgment, private, and available 24/7.
+              You do not have to handle gambling urges on your own. Free, private support is
+              available 24/7.
             </p>
 
             <div className="mt-3 space-y-2">
@@ -1088,9 +1100,9 @@ export function App() {
                 onClick={() => {
                   setSupportModalOpen(false);
                   setInterventionPayload({
-                    target: '60s Guided Urge Reset',
+                    target: '60s Breathing Reset',
                     source: 'Calm Reset',
-                    category: 'Recovery Tool',
+                    category: 'Breathing Exercise',
                     isAntiTamper: false,
                     autoStartBreathing: true,
                   });
@@ -1098,7 +1110,7 @@ export function App() {
                 className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 <Wind className="h-3.5 w-3.5" />
-                <span>Start 60s Calm</span>
+                <span>Start 60s Breather</span>
               </button>
               <button
                 type="button"
@@ -1244,6 +1256,7 @@ export function App() {
           </form>
         </div>
       ) : null}
+      <OfflineIndicator />
     </LiquidGlassBackdrop>
   );
 }

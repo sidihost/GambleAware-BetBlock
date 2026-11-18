@@ -201,18 +201,18 @@ export function evaluateRecoverySurvey(
     {
       id: 'preset_shield',
       priority: 'ESSENTIAL',
-      title: `Arm ${recommendedLockDays}-Day Commitment Lock & Strict Guards`,
-      description: `Matches your ${riskTier.toLowerCase()} risk profile by locking Categories, Cashier/Booking-Code Firewall, and High-Risk schedules around ${answers.peakWindow.toLowerCase()}.`,
-      actionLabel: 'Apply Recommended Preset',
+      title: `Set a ${recommendedLockDays}-day lock timer and strict filters`,
+      description: `Matches your ${riskTier.toLowerCase()} risk profile by turning on deposit blocking, strict keyword matching, and extra protection around ${answers.peakWindow.toLowerCase()}.`,
+      actionLabel: 'Apply Recommended Settings',
       actionTarget: 'apply_preset',
     },
     {
       id: 'bank_card_block',
       priority: riskTier === 'CRITICAL' || riskTier === 'HIGH' ? 'ESSENTIAL' : 'HIGH',
-      title: 'Enable Bank Gambling Card & Transfer Friction',
+      title: 'Turn on bank card gambling blocks',
       description:
-        'Blocking websites stops impulse taps, while bank merchant freezes or secondary savings vaults stop deposits during late-night or payday urges.',
-      actionLabel: 'Open Bank Block Guides',
+        'Software blocks keep betting apps and sites closed; bank card blocks and locked savings stop deposits if an urge hits late at night or on payday.',
+      actionLabel: 'View Bank Guides',
       actionTarget: 'resources_bank',
     },
   ];
@@ -225,10 +225,10 @@ export function evaluateRecoverySurvey(
     recommendations.push({
       id: 'buddy_colock',
       priority: 'HIGH',
-      title: 'Pair Device Admin Lock with Trusted Buddy Co-Lock',
+      title: 'Pair Device Admin with a partner unlock code',
       description:
-        'Prevent impulsive uninstalls on Android and require a trusted partner verification code before any early lock changes.',
-      actionLabel: 'Configure Lock & Buddy',
+        'Prevent impulsive uninstalls on Android and require a 6-digit approval code from someone you trust before ending a lock early.',
+      actionLabel: 'Open Lock Settings',
       actionTarget: 'lock',
     });
   }
@@ -241,9 +241,9 @@ export function evaluateRecoverySurvey(
     recommendations.push({
       id: 'relapse_protocol',
       priority: 'ESSENTIAL',
-      title: 'Use the 48-Hour Post-Relapse Reset Protocol & Support Desk',
+      title: 'Use the 48-hour reset plan and support desk',
       description:
-        'Break the shame-to-chase cycle immediately: pause new deposits, review the exact slip trigger, and message our confidential support team if you need guidance.',
+        'Stop chasing losses right away, review what led to the slip, and message our confidential support team if you need guidance.',
       actionLabel: 'Open Support Desk',
       actionTarget: 'support',
     });
@@ -251,24 +251,24 @@ export function evaluateRecoverySurvey(
     recommendations.push({
       id: 'app_guard_social',
       priority: 'RECOMMENDED',
-      title: 'Block Social & Secondary Browsers Used to Open Slip Links',
+      title: 'Guard browsers and social apps used for betting links',
       description:
-        'Most relapses happen through forwarded X, Telegram, or Chrome links. Add your most-tempted browsers and social viewers to App Guard.',
-      actionLabel: 'Open App & Site Blocklist',
+        'Many slips start from a link inside X, Telegram, or Chrome. Include your most-used browsers in Blocked Apps.',
+      actionLabel: 'Review Blocklist',
       actionTarget: 'blocklist',
     });
   }
 
   const tierHeadline =
     riskTier === 'CRITICAL'
-      ? 'Critical Protection Needed'
+      ? 'High-Protection Plan'
       : riskTier === 'HIGH'
-        ? 'High-Friction Multi-Layer Plan'
+        ? 'Strong Multi-Layer Plan'
         : riskTier === 'MODERATE'
-          ? 'Structured Daily Shield Plan'
-          : 'Preventative Foundation Plan';
+          ? 'Balanced Daily Plan'
+          : 'Preventative Plan';
 
-  const summary = `${tierHeadline}: Focused on ${answers.primaryFormat} with ${answers.peakWindow.toLowerCase()} risk hardening, a recommended ${recommendedLockDays}-day Commitment Lock, and ₦${recommendedDailySpendNgn.toLocaleString('en-NG')}/day savings tracking.`;
+  const summary = `${tierHeadline}: Tailored for ${answers.primaryFormat} around ${answers.peakWindow.toLowerCase()}, with a ${recommendedLockDays}-day lock timer and ₦${recommendedDailySpendNgn.toLocaleString('en-NG')}/day savings baseline.`;
 
   return {
     answers,

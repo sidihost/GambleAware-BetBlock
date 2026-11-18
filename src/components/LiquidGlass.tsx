@@ -18,6 +18,7 @@ interface LiquidGlassCardProps {
   onClick?: () => void;
   tourKey?: string;
   muted?: boolean;
+  'data-testid'?: string;
 }
 
 export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
@@ -26,6 +27,7 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
   onClick,
   tourKey,
   muted = false,
+  'data-testid': dataTestId,
 }) => {
   const baseClass = `rounded-2xl border transition-colors duration-150 ${
     muted
@@ -39,6 +41,7 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
         type="button"
         onClick={onClick}
         data-tour-key={tourKey}
+        data-testid={dataTestId}
         className={`${baseClass} w-full cursor-pointer text-left hover:border-[var(--glass-border)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]`}
       >
         {children}
@@ -47,7 +50,7 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
   }
 
   return (
-    <div data-tour-key={tourKey} className={baseClass}>
+    <div data-tour-key={tourKey} data-testid={dataTestId} className={baseClass}>
       {children}
     </div>
   );

@@ -29,52 +29,52 @@ export function evaluateShieldLeakAudit(params: {
   const layers: ShieldDiagnosticLayer[] = [
     {
       id: 'dns',
-      label: 'Accessibility All-Browser Shield',
+      label: 'All-Browser Site Shield',
       detail:
         settings.isProtectionEnabled && settings.browserShieldEnabled && isAccessibilityEnabled
-          ? 'Blocks while typing across Chrome, Firefox, Opera, Brave, Edge & in-app browsers — zero VPN required'
-          : 'Enable core Shield & Accessibility Browser Guard to intercept betting sites without a VPN',
+          ? 'Blocks sites as you type in Chrome, Firefox, Opera, Brave, Edge, and in-app browsers without taking a VPN slot'
+          : 'Turn on Shield and Accessibility access to block sites across browsers without a VPN',
       isHealthy: settings.isProtectionEnabled && settings.browserShieldEnabled && isAccessibilityEnabled,
       weight: 25,
     },
     {
       id: 'admin_uninstall',
-      label: 'Device Admin & Settings Guard',
+      label: 'Device Admin Uninstall Lock',
       detail: isDeviceAdminEnabled
-        ? 'Blocks App Info uninstall, Force Stop, and Device Admin deactivation until your timer expires'
-        : 'Arm Device Admin in Lock Settings to stop impulsive uninstall or tampering',
+        ? 'Prevents App Info uninstall, Force Stop, and Admin removal while locked'
+        : 'Enable Device Admin in Lock settings to stop impulsive uninstalls',
       isHealthy: isDeviceAdminEnabled,
       weight: 25,
     },
     {
       id: 'search_redirect',
-      label: 'Ad, Popunder & Redirect Guard',
+      label: 'Gambling Ad & Redirect Filter',
       detail:
         settings.searchGuardEnabled && settings.strictKeywordFilter && adGuardOn
-          ? 'Blocks gambling ads, popunders, affiliate links, social redirects & spoofed URLs'
-          : 'Enable Ad Blocker, Search Guard & Strict Keywords to catch promos and redirects',
+          ? 'Filters betting ad networks, popunders, affiliate links, and lookalike domains'
+          : 'Enable Ad Blocker, Search Guard, and strict keywords to catch redirects',
       isHealthy: settings.searchGuardEnabled && settings.strictKeywordFilter && adGuardOn,
       weight: 20,
     },
     {
       id: 'deposit_guard',
-      label: 'Cashier, Booking-Code & App Firewall',
+      label: 'App, Cashier & Booking-Code Block',
       detail:
         settings.appShieldEnabled && settings.depositGuardEnabled !== false
-          ? 'Blocks 150+ betting apps, deposit checkouts & shared booking codes'
-          : 'Enable App & Deposit Firewall to stop checkout redirects',
+          ? 'Covers 150+ betting apps, deposit checkouts, and shared slip links'
+          : 'Enable App & Deposit protection to block checkout pages',
       isHealthy: settings.appShieldEnabled && settings.depositGuardEnabled !== false,
       weight: 15,
     },
     {
       id: 'tamper_lock',
-      label: 'Commitment Timer & Cloud Sync',
+      label: 'Lock Timer & Rule Protection',
       detail:
         isTimeLocked || Boolean(settings.pinHash) || settings.antiTamperLockEnabled
           ? isTimeLocked
-            ? 'Countdown Commitment Lock active — rule weakening disabled'
-            : 'Tamper Guard & PIN armed against moment-of-weakness edits'
-          : 'Set a PIN or Commitment Timer in Lock Settings',
+            ? 'Countdown lock active — weakening rules is disabled'
+            : 'PIN and rule protection active against impulse changes'
+          : 'Set a PIN or lock timer in Lock settings',
       isHealthy: isTimeLocked || Boolean(settings.pinHash) || settings.antiTamperLockEnabled,
       weight: 15,
     },

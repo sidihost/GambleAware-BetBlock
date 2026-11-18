@@ -83,14 +83,14 @@ export const RECOVERY_RESOURCES: RecoveryResourceItem[] = [
     id: 'talkbanstop',
     category: 'SELF_EXCLUSION',
     region: 'Multi-Layer Standard',
-    title: 'The Multi-Layer Exclusion Stack (Gamban-Standard Defense)',
+    title: 'Combining Device, Bank & Operator Blocks',
     subtitle:
-      'No single tool is complete alone. Combine software blocking + bank merchant freezes + operator self-exclusion + accountability.',
+      'No single barrier covers everything on its own. Layering device blocking, bank freezes, and self-exclusion closes the usual workarounds.',
     steps: [
-      'Layer 1 (Device): Keep GambleAware All-Browser & Ad Shield + Device Admin Lock armed.',
-      'Layer 2 (Money): Lock disposable funds & enable bank card gambling merchant blocks.',
-      'Layer 3 (Operators): Opt out of promo SMS/email lists and request permanent account closure from past bookmakers.',
-      'Layer 4 (Human): Pair Buddy Co-Lock or speak confidentially via Support Desk after any close call.',
+      'Device: Keep GambleAware site, app, and Device Admin locks turned on.',
+      'Banking: Move spare money into a locked vault and enable bank card gambling blocks.',
+      'Operators: Unsubscribe from promo SMS and request permanent closure on old accounts.',
+      'Accountability: Add a Partner Unlock code or reach out to Support after any close call.',
     ],
   },
   {
@@ -154,48 +154,48 @@ export const RECOVERY_RESOURCES: RecoveryResourceItem[] = [
   {
     id: 'cbt-relapse-reset',
     category: 'RELAPSE_CBT',
-    region: 'Relapse Recovery Protocol',
-    title: 'If You Relapsed Today: The 48-Hour Damage-Control Protocol',
+    region: 'Recovery Plan',
+    title: 'If You Had a Slip Today: 48-Hour Reset',
     subtitle:
-      'A slip does NOT erase weeks of brain rewiring. What determines the outcome is preventing a single slip from turning into a chasing-losses binge.',
+      'One slip does not wipe out the progress you have already made. The priority right now is stopping a single bet from turning into chasing losses.',
     steps: [
-      '1. Accept the money already lost as a sunk cost — chasing never returns it and multiplies damage.',
-      '2. Immediately move any remaining cash to a locked vault or trusted person for 48 hours.',
-      '3. Close the vulnerability that bypassed your shield (add that mirror URL, app, or payment route right now).',
-      '4. Extend your Commitment Lock and run the "I Relapsed — Reset & Harden" tool below without self-hatred.',
+      '1. Treat what was spent as gone — trying to win it back almost always leads to bigger losses.',
+      '2. Move any available balance into a locked savings vault or ask someone you trust to hold it for 48 hours.',
+      '3. Close whatever let you through (add that mirror link, app, or browser to your blocklist now).',
+      '4. Extend your lock timer and run the 48-hour reset tool below.',
     ],
   },
   {
     id: 'cbt-urge-wave',
     category: 'RELAPSE_CBT',
-    region: 'Behavioral Science',
-    title: 'Urge Surfing: Outlasting the 15-Minute Dopamine Peak',
+    region: 'Practical Habit',
+    title: 'Waiting Out a 15-Minute Urge',
     subtitle:
-      'Gambling cravings behave like ocean waves — they spike sharply for 10 to 20 minutes and subside if not fed.',
+      'Most betting urges peak for 10 to 20 minutes and fade when you do not act on them.',
     steps: [
-      'Trigger the 60s Guided Calm Reset immediately instead of arguing with the urge.',
-      'Change your physical room for 10 minutes: leave your phone charging away from your bed at night.',
-      'Remind yourself: bookmakers win on volume & overround margin (7%–15% per slip), never player luck.',
+      'Start the 60-second breathing reset right away instead of debating with yourself.',
+      'Leave your phone charging across the room or step outside for 10 minutes.',
+      'Remember the math: bookmakers build a 7% to 15% margin into multi-leg slips over time.',
     ],
   },
   {
     id: 'cbt-payday-plan',
     category: 'RELAPSE_CBT',
-    region: 'Money & Debt Repair',
-    title: 'Payday Defense & Rebuilding Financially',
+    region: 'Money Management',
+    title: 'Protecting Paydays & Rebuilding Savings',
     subtitle:
-      'Most relapses happen within 48 hours of receiving salary, bonuses, or business payouts.',
+      'A large share of slips happen within 48 hours of getting paid or receiving extra cash.',
     steps: [
-      'Pay rent, food, family obligations, and utility bills the same morning income arrives.',
-      'Use your Savings & Recovery Ledger to turn weekly saved stakes into concrete life purchases.',
-      'Turn on Payday Surge Guard (25th–3rd) so strict keyword & cashier firewalls auto-arm every payday.',
+      'Handle rent, bills, food, and family transfers the same morning money lands.',
+      'Track what you did not bet so you can put it toward something tangible.',
+      'Keep Payday rules (25th–3rd) turned on so stricter filtering runs automatically on paydays.',
     ],
   },
 ];
 
 export const RELAPSE_QUICK_ACTIONS = [
-  'Stop the session now — walk away from screen/phone for 15 minutes',
-  'Transfer remaining balance out of reach before another deposit urge hits',
-  'Add the site/app mirror that slipped through to Custom Blocklist',
-  'Re-arm Commitment Lock (at least 30 days) and message Support Desk if needed',
+  'Stop the session now and step away from your phone for 15 minutes',
+  'Move any remaining balance out of easy reach before another urge hits',
+  'Add the site or app that got through to your Custom Blocklist',
+  'Extend your lock timer (at least 30 days) or message Support',
 ];

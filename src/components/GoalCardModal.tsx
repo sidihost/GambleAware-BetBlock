@@ -81,7 +81,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
               <Target className="h-4 w-4" />
             </div>
-            <h2 className="font-display text-base font-bold">Create Recovery Goal</h2>
+            <h2 className="font-display text-base font-bold">New Goal</h2>
           </div>
           <button
             type="button"
@@ -94,8 +94,8 @@ export const GoalModal: React.FC<GoalModalProps> = ({
         </div>
 
         <p className="mt-1.5 text-xs text-[var(--ink-muted)]">
-          Set your own personal target so GambleAware keeps your real &ldquo;why&rdquo; front and
-          center whenever temptation strikes.
+          Pick something concrete you want your saved money or clean days to go toward. It will
+          appear whenever a betting site is blocked.
         </p>
 
         {/* 1-Tap Quick Templates */}
@@ -292,8 +292,8 @@ export const GoalReminderBanner: React.FC<{
           <div className="flex items-center justify-between gap-2">
             <p className="truncate font-display text-xs font-bold text-[var(--ink)] sm:text-sm">
               {firstName
-                ? `${firstName}, set your personal recovery goal`
-                : 'Set your personal recovery goal'}
+                ? `${firstName}, add a savings or clean-day goal`
+                : 'Add a savings or clean-day goal'}
             </p>
             <button
               type="button"
@@ -305,7 +305,7 @@ export const GoalReminderBanner: React.FC<{
             </button>
           </div>
           <p className="truncate text-[11px] text-[var(--ink-muted)]">
-            A concrete Naira or clean-day target keeps you focused during urges.
+            Give yourself a clear target for what your saved money goes toward.
           </p>
         </div>
       </div>
@@ -362,8 +362,8 @@ export const ActiveGoalsCard: React.FC<{
     <LiquidGlassCard className="p-3.5 sm:p-4">
       <div className="flex items-center justify-between gap-2.5">
         <LiquidSectionHeader
-          title="Personal Recovery Goals"
-          subtitle="Tracked automatically against your streak & savings"
+          title="Goals"
+          subtitle="Updated automatically from your clean days and estimated savings"
         />
         <button
           type="button"

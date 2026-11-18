@@ -53,6 +53,7 @@ import {
 import { formatNaira } from '../utils/currency';
 import { evaluateHighRiskGuard } from '../utils/highRiskGuard';
 import { evaluateShieldLeakAudit } from '../utils/leakDiagnostics';
+import { evaluateMlRecoveryRisk } from '../utils/mlRiskModel';
 import {
   buildNotificationPayload,
   NotificationKind,
@@ -145,7 +146,7 @@ export function useGambleAwareState() {
       setDurableStatus(res.status);
       if (res.restoredStore) {
         setStore(res.restoredStore);
-        setStatusBannerMessage('Protection state auto-restored from Recovery Vault');
+        setStatusBannerMessage('Restored your settings from local backup');
       }
     });
     return () => {
@@ -298,6 +299,19 @@ export function useGambleAwareState() {
       isDeviceAdminEnabled: store.isDeviceAdminEnabled,
       nowMs,
     });
+    const mlRisk = evaluateMlRecoveryRisk({
+      blockedEvents: store.events,
+      urgeLogs: store.urgeLogs,
+      relapseLogs: store.relapseLogs,
+      latestSurvey: store.latestSurvey,
+      cleanExactDays,
+      highRiskSchedule: settings.highRiskSchedule,
+      isTimeLockedNow,
+      depositGuardEnabled: settings.depositGuardEnabled,
+      strictKeywordFilter: settings.strictKeywordFilter,
+      bankedUrgeCount: settings.bankedUrgeCount || 0,
+      nowMs,
+    });
 
     const todayStart = new Date(nowMs);
     todayStart.setHours(0, 0, 0, 0);
@@ -355,6 +369,7 @@ export function useGambleAwareState() {
       durableStatus,
       tiltRadar,
       leakAudit,
+      mlRisk,
     };
   }, [
     store,
@@ -421,7 +436,7 @@ export function useGambleAwareState() {
           prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : Date.now(),
       },
     }));
-    setStatusBannerMessage('Uninstall & Admin lock active');
+    setStatusBannerMessage('Uninstall lock turned on');
   }, [mutateStore]);
 
   const deactivateDeviceAdmin = useCallback(() => {
@@ -429,7 +444,7 @@ export function useGambleAwareState() {
       storeRef.current.settings.lockUntilEpochMs > Date.now() ||
       storeRef.current.settings.antiTamperLockEnabled
     ) {
-      setStatusBannerMessage('Uninstall Lock stays armed until your Commitment Lock ends');
+      setStatusBannerMessage('Uninstall lock stays on until your lock timer ends');
       return;
     }
     mutateStore((prev) => ({ ...prev, isDeviceAdminEnabled: false }));
@@ -504,9 +519,7 @@ export function useGambleAwareState() {
     (enabled: boolean) => {
       updateSettings((s) => ({ ...s, adBlockerEnabled: enabled }));
       setStatusBannerMessage(
-        enabled
-          ? 'Gambling Ad, Popunder & Affiliate Blocker active'
-          : 'Gambling Ad Blocker paused',
+        enabled ? 'Gambling ad and pop-up blocker turned on' : 'Gambling ad blocker paused',
       );
     },
     [updateSettings],
@@ -516,7 +529,7 @@ export function useGambleAwareState() {
     (enabled: boolean) => {
       updateSettings((s) => ({ ...s, depositGuardEnabled: enabled }));
       setStatusBannerMessage(
-        enabled ? 'Cashier & Booking-Code Guard enabled' : 'Cashier Guard paused',
+        enabled ? 'Deposit and booking-code blocker turned on' : 'Deposit blocker paused',
       );
     },
     [updateSettings],
@@ -549,9 +562,7 @@ export function useGambleAwareState() {
         bankedUrgeSavingsNgn: (s.bankedUrgeSavingsNgn || 0) + safeAmount,
         bankedUrgeCount: (s.bankedUrgeCount || 0) + 1,
       }));
-      setStatusBannerMessage(
-        `Banked ₦${safeAmount.toLocaleString('en-NG')} into Recovery Vault instead of betting`,
-      );
+      setStatusBannerMessage(`Saved ₦${safeAmount.toLocaleString('en-NG')} instead of betting`);
     },
     [updateSettings],
   );
@@ -565,7 +576,7 @@ export function useGambleAwareState() {
         buddyPartnerName: cleanName,
         buddyChallengeCode: challengeCode,
       }));
-      setStatusBannerMessage(`Buddy Co-Lock armed with ${cleanName} (${challengeCode})`);
+      setStatusBannerMessage(`Partner unlock set with ${cleanName} (${challengeCode})`);
       return challengeCode;
     },
     [updateSettings],
@@ -602,7 +613,7 @@ export function useGambleAwareState() {
             buddyChallengeCode: '',
           },
         }));
-        setStatusBannerMessage('Trusted Buddy approval verified — Commitment Lock unlocked');
+        setStatusBannerMessage('Partner approval confirmed — lock removed');
       }
       return ok;
     },
@@ -618,7 +629,7 @@ export function useGambleAwareState() {
           [key]: enabled,
         },
       }));
-      setStatusBannerMessage(enabled ? 'High-risk window guard armed' : 'Schedule window paused');
+      setStatusBannerMessage(enabled ? 'Extra schedule protection turned on' : 'Schedule rule paused');
     },
     [updateSettings],
   );
@@ -720,7 +731,7 @@ export function useGambleAwareState() {
         setStatusBannerMessage(
           cleanName
             ? `Locked for ${spanLabel} — welcome, ${cleanName.split(' ')[0]}`
-            : `Protection & Lock armed for ${spanLabel}`,
+            : `Lock timer turned on for ${spanLabel}`,
         );
       } else {
         setStatusBannerMessage(
@@ -1084,7 +1095,7 @@ export function useGambleAwareState() {
   const forceBackupSync = useCallback(async () => {
     const status = await persistToAllLayers(storeRef.current, durableStatus.persistentGranted);
     setDurableStatus(status);
-    setStatusBannerMessage('Vault snapshot saved across Local, IndexedDB & Cache');
+    setStatusBannerMessage('Local backup saved');
   }, [durableStatus.persistentGranted]);
 
   const submitSurveyAssessment = useCallback(
@@ -1135,6 +1146,34 @@ export function useGambleAwareState() {
     },
     [mutateStore],
   );
+
+  const applyAdaptiveMlHardening = useCallback(() => {
+    const ml = uiState.mlRisk;
+    const now = Date.now();
+    const lockUntil = now + ml.recommendedLockDays * 86_400_000;
+    mutateStore((prev) => ({
+      ...prev,
+      isAccessibilityEnabled: true,
+      isDeviceAdminEnabled: true,
+      settings: {
+        ...prev.settings,
+        isProtectionEnabled: true,
+        strictKeywordFilter: true,
+        depositGuardEnabled: true,
+        searchGuardEnabled: true,
+        browserShieldEnabled: true,
+        appShieldEnabled: true,
+        antiTamperLockEnabled: true,
+        highRiskSchedule: ml.recommendedSchedule,
+        lockUntilEpochMs: Math.max(prev.settings.lockUntilEpochMs, lockUntil),
+        protectionStartedAtMs:
+          prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : now,
+      },
+    }));
+    setStatusBannerMessage(
+      `Applied ${ml.recommendedLockDays}-day lock and schedule protection`,
+    );
+  }, [mutateStore, uiState.mlRisk]);
 
   const sendNotificationAlert = useCallback(
     async (
@@ -1195,7 +1234,7 @@ export function useGambleAwareState() {
       if (storeRef.current.settings.notificationsEnabled) {
         void requestAndDispatchNotification(buildNotificationPayload('relapse_support'), false);
       }
-      setStatusBannerMessage('Shield hardened · Focus on the next 24 hours');
+      setStatusBannerMessage('Filters tightened — take the next 24 hours one step at a time');
     },
     [mutateStore],
   );
@@ -1395,6 +1434,7 @@ export function useGambleAwareState() {
     clearEventHistory,
     submitSurveyAssessment,
     applySurveyRecommendationPreset,
+    applyAdaptiveMlHardening,
     sendNotificationAlert,
     logRelapseAndReset,
     restoreFromVaultBackup,

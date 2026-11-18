@@ -23,22 +23,22 @@ export const HighRiskGuardCard: React.FC<HighRiskGuardCardProps> = ({
   }> = [
     {
       key: 'lateNightLockout',
-      title: 'Late-Night Urge Lockout (10 PM – 5 AM)',
-      subtitle: 'Auto-heightens strict keyword & search blocking overnight',
+      title: 'Late-Night Protection (10 PM – 5 AM)',
+      subtitle: 'Tightens keyword and search filters overnight',
       icon: <MoonStar className="h-4 w-4 text-[var(--accent-ink)]" />,
       checked: schedule.lateNightLockout,
     },
     {
       key: 'matchdayWeekendGuard',
-      title: 'Matchday Weekend Shield (Fri 6 PM – Sun)',
-      subtitle: 'Extra guard during Premier League & weekend fixtures',
+      title: 'Weekend Match Schedule (Fri 6 PM – Sun)',
+      subtitle: 'Extra filtering during weekend football fixtures',
       icon: <Flame className="h-4 w-4 text-[var(--accent-ink)]" />,
       checked: schedule.matchdayWeekendGuard,
     },
     {
       key: 'paydaySurgeGuard',
-      title: 'Payday Surge Guard (25th – 3rd of Month)',
-      subtitle: 'Keeps salary days locked against deposit urges',
+      title: 'Payday Protection (25th – 3rd of Month)',
+      subtitle: 'Keeps filters stricter around salary days',
       icon: <Wallet className="h-4 w-4 text-[var(--accent-ink)]" />,
       checked: schedule.paydaySurgeGuard,
     },
@@ -52,16 +52,16 @@ export const HighRiskGuardCard: React.FC<HighRiskGuardCardProps> = ({
             <CalendarClock className="h-4 w-4" />
           </div>
           <LiquidSectionHeader
-            title="Smart High-Risk Schedule"
-            subtitle="Automatically tightens protection during peak temptation hours"
+            title="Scheduled Extra Protection"
+            subtitle="Tightens filters automatically during hours when urges are common"
           />
         </div>
         <span
-          className={`shrink-0 font-mono text-[10px] font-semibold ${
+          className={`shrink-0 font-mono text-[11px] font-semibold ${
             status.isActive ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-muted)]'
           }`}
         >
-          {status.isActive ? 'HEIGHTENED' : 'STANDBY'}
+          {status.isActive ? 'Active' : 'Scheduled'}
         </span>
       </div>
 
@@ -69,7 +69,7 @@ export const HighRiskGuardCard: React.FC<HighRiskGuardCardProps> = ({
         <p className="font-semibold text-[var(--ink)]">
           {status.isActive
             ? `Active now: ${status.activeLabels.join(' · ')}`
-            : 'Standing watch'}
+            : 'Waiting for next scheduled window'}
         </p>
         <p className="mt-0.5 text-[11px] text-[var(--ink-muted)]">{status.nextWindowHint}</p>
       </div>

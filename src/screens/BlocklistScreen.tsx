@@ -107,8 +107,8 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
           title="Gambling Categories"
           subtitle={
             state.isAnyLockActive
-              ? 'Turning categories off requires unlocking'
-              : 'All 5 categories active by default'
+              ? 'Unlock required before turning a category off'
+              : 'All five gambling categories are on by default'
           }
         />
         <div className="mt-3 divide-y divide-[var(--subtle-border)]/45">
@@ -143,8 +143,8 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             onChange={(v) => onToggleCategory(GamblingCategory.FANTASY_LOTTERY, v)}
           />
           <CategorySwitchRow
-            title="Block New Copycat Sites"
-            subtitle="Automatically catches new betting lookalike sites and links"
+            title="Block Lookalike & Mirror Sites"
+            subtitle="Catches new betting mirror links and lookalike domains"
             checked={state.settings.strictKeywordFilter}
             onChange={onToggleStrictKeywords}
           />
@@ -154,8 +154,8 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       {/* Where Protection Works */}
       <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="blocklist_guards">
         <LiquidSectionHeader
-          title="Protection Coverage"
-          subtitle="Blocks gambling across browsers, searches, and phone apps"
+          title="Where Protection Applies"
+          subtitle="Covers mobile browsers, searches, betting ads, and phone apps"
         />
         <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/45">
           <CategorySwitchRow
@@ -172,19 +172,19 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
           />
           <CategorySwitchRow
             title="Betting Searches & Redirect Unwrap"
-            subtitle="Blocks betting searches & social redirects while keeping recovery portals open"
+            subtitle="Blocks betting searches and social redirects while keeping support links open"
             checked={state.settings.searchGuardEnabled}
             onChange={onToggleSearchGuard}
           />
           <CategorySwitchRow
-            title="Cashier & Booking-Code Firewall"
-            subtitle="Stops bet-slip booking links, promo codes & deposit pages while keeping safe fintechs open"
+            title="Deposit & Booking-Code Blocker"
+            subtitle="Stops bet-slip booking links, promo codes, and deposit pages while keeping regular banking open"
             checked={state.settings.depositGuardEnabled}
             onChange={onToggleDepositGuard}
           />
           <CategorySwitchRow
-            title="Gambling Ads, Popunders & Affiliates"
-            subtitle="Blocks betting ad networks, popunders & promo links — works alongside other VPNs"
+            title="Gambling Ads & Pop-Ups"
+            subtitle="Blocks betting ad networks, pop-ups, and promo links while leaving your VPN free"
             checked={state.settings.adBlockerEnabled !== false}
             onChange={onToggleAdBlocker}
           />
@@ -195,8 +195,8 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       {/* Covered Betting Platforms Logo Showcase */}
       <LiquidGlassCard className="p-3.5 sm:p-4">
         <LiquidSectionHeader
-          title="Major Covered Platforms"
-          subtitle={`Exact brand recognition across ${state.builtInDomainCount}+ sportsbooks, casinos, crash sites & poker rooms`}
+          title="Covered Betting Brands"
+          subtitle={`${state.builtInDomainCount}+ sportsbooks, casinos, crash sites, and poker rooms blocked out of the box`}
         />
         <div className="mt-3">
           <FeaturedBrandsWall
@@ -300,7 +300,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
               Extra Blocked Apps
             </h3>
             <p className="text-xs text-[var(--ink-muted)]">
-              Built-in list covers 120+ betting apps automatically
+              Over 120 betting apps are already blocked by default
             </p>
           </div>
           <button
@@ -315,7 +315,8 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
 
         {state.customBlockedApps.length === 0 ? (
           <p className="mt-3 text-xs text-[var(--ink-muted)]">
-            No extra apps added yet. Tap Add App to pick extra browsers or social apps to guard.
+            No extra apps added. Tap Add App if you also want to block links inside a browser or
+            social app.
           </p>
         ) : (
           <div className="mt-3 flex flex-col gap-2">

@@ -36,8 +36,8 @@ export function evaluateTiltRadar(
       attemptsLast10Min,
       attemptsLast60Min,
       cooldownSuggestedSec: 300,
-      headline: 'Chasing-Loss Spike Detected',
-      guidance: `${attemptsLast10Min} rapid attempts in 10 min. Lock your Commitment Timer and bank this stake instead of chasing.`,
+      headline: 'High activity right now',
+      guidance: `${attemptsLast10Min} blocked attempts in 10 minutes. Step away from your screen and log this stake as saved instead.`,
     };
   }
 
@@ -47,8 +47,8 @@ export function evaluateTiltRadar(
       attemptsLast10Min,
       attemptsLast60Min,
       cooldownSuggestedSec: 90,
-      headline: 'Impulse Velocity Rising',
-      guidance: `${attemptsLast60Min} blocked attempts this hour. Pause for 60s breathing before opening any browser.`,
+      headline: 'Frequent attempts this hour',
+      guidance: `${attemptsLast60Min} blocked attempts in the past hour. Take a 60-second break before opening a browser.`,
     };
   }
 
@@ -57,8 +57,8 @@ export function evaluateTiltRadar(
     attemptsLast10Min,
     attemptsLast60Min,
     cooldownSuggestedSec: 0,
-    headline: 'Baseline Calm',
-    guidance: 'Zero impulse spikes in the last hour. Your shields are holding steady.',
+    headline: 'Steady',
+    guidance: 'No burst of blocked attempts in the last hour.',
   };
 }
 
@@ -103,10 +103,10 @@ export function analyzePromoAndExpectedLoss(
   const expectedLossAfter30BetsNgn = Math.round(cleanStake * 30 * (houseEdgePercent / 100));
 
   const summary = depositRedirectDetected
-    ? `Deposit gateway neutralized. At ${houseEdgePercent}% bookmaker margin, 30 repeated stakes average ₦${expectedLossAfter30BetsNgn.toLocaleString('en-NG')} lost to house edge.`
+    ? `Deposit page blocked. With a typical ${houseEdgePercent}% bookmaker margin, 30 bets of ₦${cleanStake.toLocaleString('en-NG')} cost about ₦${expectedLossAfter30BetsNgn.toLocaleString('en-NG')} on average.`
     : hasPromoOrBookingCode
-      ? `Promo/booking slip neutralized (${detectedCodes.join(', ') || 'bonus lure'}). "Risk-free" bonuses lock you into high-margin rollover traps.`
-      : `At typical ${houseEdgePercent}% house margin, 30 bets of ₦${cleanStake.toLocaleString('en-NG')} statistically drain ₦${expectedLossAfter30BetsNgn.toLocaleString('en-NG')}.`;
+      ? `Booking or promo link blocked (${detectedCodes.join(', ') || 'bonus link'}). Most "free bet" promos require high-rollover wagers that favor the house.`
+      : `At a typical ${houseEdgePercent}% house margin, 30 repeated bets of ₦${cleanStake.toLocaleString('en-NG')} leave an expected loss of ₦${expectedLossAfter30BetsNgn.toLocaleString('en-NG')}.`;
 
   return {
     hasPromoOrBookingCode,

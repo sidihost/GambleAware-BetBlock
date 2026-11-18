@@ -32,6 +32,8 @@ import {
   LiquidShieldOrb,
   LiquidStatusButton,
 } from '../components/LiquidGlass';
+import { MlRiskPredictorCard } from '../components/MlRiskPredictorCard';
+import { PWAInstallButton } from '../components/PWAInstallModal';
 import { RecoveryVaultCard } from '../components/RecoveryVaultCard';
 import { TiltRadarCard } from '../components/TiltRadarCard';
 import { PersistedStore } from '../data/storage';
@@ -78,6 +80,8 @@ interface ShieldScreenProps {
   onNavigateToRules: () => void;
   onNavigateToProgress: () => void;
   onNavigateToLock: () => void;
+  onOpenSurvey: () => void;
+  onApplyAdaptiveHardening: () => void;
   onLaunchCalmReset: () => void;
   onOpenUrgeJournal: () => void;
   onOpenSafeSupport: () => void;
@@ -107,6 +111,8 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
   onNavigateToRules,
   onNavigateToProgress,
   onNavigateToLock,
+  onOpenSurvey,
+  onApplyAdaptiveHardening,
   onLaunchCalmReset,
   onOpenUrgeJournal,
   onOpenSafeSupport,
@@ -125,19 +131,19 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 
   const statusTitle =
     isArmed && state.isDeviceAdminEnabled && isLocked
-      ? 'Full Lock & Blocker Active'
+      ? 'Locked & Protected'
       : isArmed && state.isDeviceAdminEnabled
-        ? 'Blocker + Delete Lock Active'
+        ? 'Protected & Uninstall-Locked'
         : isArmed
-          ? 'Protection Is On'
+          ? 'Shield Is On'
           : !state.isAccessibilityEnabled
             ? 'Turn On GambleAware'
             : 'Protection Paused';
 
   const statusSubtitle = isArmed
-    ? 'Automatically blocks SportyBet, Bet9ja, Bet365, 1xBet, betting logins, and gambling apps.'
+    ? 'Blocking SportyBet, Bet9ja, Bet365, 1xBet, betting logins, and gambling apps.'
     : !state.isAccessibilityEnabled
-      ? 'Turn on GambleAware to block betting sites, sign-in pages, and gambling apps automatically.'
+      ? 'Turn on GambleAware to start blocking betting sites, logins, and gambling apps.'
       : 'Tap below whenever you are ready to turn blocking back on.';
 
   const primaryBtnLabel =
@@ -169,11 +175,11 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <p className="text-[10px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
-              {isArmed ? 'Protection Active' : 'Protection Paused'}
+              {isArmed ? 'Shield On' : 'Shield Paused'}
             </p>
             {state.highRiskStatus.isActive ? (
               <span className="font-mono text-[10px] font-semibold text-[var(--accent-ink)] uppercase">
-                · High-Risk Guard On
+                · Extra Guard Active
               </span>
             ) : null}
           </div>
@@ -261,7 +267,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             <div className="flex flex-col items-center">
               <div className="flex w-full items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
-                  Blocker Status
+                  Shield Status
                 </span>
                 {isLocked ? (
                   <LiquidStatusButton
@@ -377,6 +383,13 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             onToggleComplete={onToggleGoalComplete}
             onDeleteGoal={onDeleteGoal}
           />
+
+          {/* Adaptive On-Device ML Risk Predictor + Recovery Survey Launcher */}
+          <MlRiskPredictorCard
+            evaluation={state.mlRisk}
+            onOpenSurvey={onOpenSurvey}
+            onApplyAdaptiveHardening={onApplyAdaptiveHardening}
+          />
         </div>
 
         {/* Right Column: Site Check, High-Risk Guard, GambleAware AI, Setup, Calm & Vault */}
@@ -384,8 +397,8 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           {/* Check or Block a Website */}
           <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="domain_lookup">
             <LiquidSectionHeader
-              title="Check or Block a Platform"
-              subtitle="Type a betting name (e.g. sporty, bet9j, 1xbe) — blocked as you type"
+              title="Check or Block a Site"
+              subtitle="Type a betting name (such as sporty, bet9j, or 1xbe) to check or block it right away."
             />
             <form
               onSubmit={(e) => {
@@ -536,7 +549,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 
             <div className="mt-2.5">
               <p className="text-[10px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
-                Flagship Blocked Platforms ({state.builtInDomainCount}+)
+                Popular Covered Sites ({state.builtInDomainCount}+)
               </p>
               <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 {[
@@ -553,10 +566,10 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                     key={brand.domain}
                     type="button"
                     onClick={() => onTestOrRedirectUrl(brand.domain)}
-                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2 py-1.5 text-left transition-colors hover:bg-[var(--muted-fill)]"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2.5 py-2 text-left transition-colors hover:border-[var(--glass-border)] hover:bg-[var(--muted-fill)]"
                   >
-                    <BettingBrandLogo target={brand.domain} size="xs" />
-                    <span className="truncate text-[11px] font-semibold text-[var(--ink)]">
+                    <BettingBrandLogo target={brand.domain} size="sm" />
+                    <span className="truncate text-xs font-semibold text-[var(--ink)]">
                       {brand.label}
                     </span>
                   </button>
@@ -605,28 +618,28 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           {showQuickOnboarding ? (
             <LiquidGlassCard className="p-3.5 sm:p-4">
               <LiquidSectionHeader
-                title="3 Simple Steps to Stay Protected"
-                subtitle="Set these up once so it stays hard to gamble during an urge"
+                title="Three Steps to Finish Setup"
+                subtitle="Turn these on once so protection holds during tough moments."
               />
               <div className="mt-2.5 flex flex-col gap-1.5">
                 <SetupStepRow
                   step="1"
-                  title={isIOS ? 'Turn On Safari & Site Shield' : 'Turn On All-Browser & Ad Shield'}
+                  title={isIOS ? 'Turn On Safari & Site Shield' : 'Turn On Browser & Ad Shield'}
                   subtitle={
                     state.isAccessibilityEnabled
                       ? 'Active'
-                      : 'Blocks betting websites, sign-ins, and gambling portals'
+                      : 'Blocks betting websites, sign-in pages, and gambling portals'
                   }
                   done={state.isAccessibilityEnabled}
                   onClick={onEnableAccessibility}
                 />
                 <SetupStepRow
                   step="2"
-                  title={isIOS ? 'Enable Anti-Tamper Lock' : 'Protect Shield Controls'}
+                  title={isIOS ? 'Turn On Tamper Lock' : 'Turn On Uninstall & Tamper Lock'}
                   subtitle={
                     state.isDeviceAdminEnabled
                       ? 'Active'
-                      : 'Keeps rules locked against impulsive edits when tempted'
+                      : 'Prevents turning off rules or removing the app during an urge'
                   }
                   done={state.isDeviceAdminEnabled}
                   onClick={onRequestDeviceAdmin}
@@ -637,7 +650,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   subtitle={
                     isLocked
                       ? `Locked for ${state.lockCountdownFormatted}`
-                      : 'Locks your blocker until your countdown finishes'
+                      : 'Keeps your blocker locked until the countdown ends'
                   }
                   done={isLocked}
                   onClick={onNavigateToLock}
@@ -646,12 +659,12 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             </LiquidGlassCard>
           ) : null}
 
-          {/* SOS Calm Support + Zero-Loss Recovery Vault */}
+          {/* SOS Calm Support + Local Backup */}
           <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
             <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="sos_calm_bar">
               <LiquidSectionHeader
-                title="Calm & Support Tools"
-                subtitle="Quick help whenever an urge hits"
+                title="Quick Support"
+                subtitle="Immediate help when an urge hits"
               />
               <div className="mt-2.5 grid grid-cols-2 gap-2">
                 <button
@@ -660,7 +673,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   className="flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90"
                 >
                   <Wind className="h-3.5 w-3.5 shrink-0" />
-                  <span>60s Calm</span>
+                  <span>60s Breather</span>
                 </button>
                 <button
                   type="button"
@@ -700,20 +713,21 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-display text-xs font-semibold text-[var(--ink)] sm:text-sm">
-                Get GambleAware on Your Phone
+                Install GambleAware on Your Device
               </p>
               <p className="truncate text-[11px] text-[var(--ink-muted)]">
                 {isIOS
-                  ? 'Safari Share → Add to Home Screen + Screen Time blocker list'
-                  : 'Download Android APK for Zero-VPN All-Browser, Ad & Anti-Uninstall Guard'}
+                  ? 'Add to Home Screen in Safari and paste the Screen Time list'
+                  : 'Install as a Web App or download the Android APK for browser & uninstall lock'}
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+            <PWAInstallButton variant="header" label="Install App" />
             <button
               type="button"
               onClick={onOpenDownloadPage}
-              className="inline-flex h-8 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:flex-initial"
+              className="inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90"
             >
               <span>{isIOS ? 'iPhone Guide' : 'Get Android APK'}</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -734,8 +748,8 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
       <LiquidGlassCard className="p-3.5 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <LiquidSectionHeader
-            title="Where to Go Next"
-            subtitle="Everything you need is one tap away"
+            title="Quick Links"
+            subtitle="Jump directly to rules, progress, or lock settings"
           />
         </div>
         <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">

@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   BookOpen,
   CheckCircle2,
   ClipboardCheck,
+  Cpu,
   ExternalLink,
   Landmark,
   LifeBuoy,
@@ -38,11 +39,15 @@ import {
   SurveySupportReadiness,
 } from '../utils/recoverySurvey';
 
+export type ResourcesTab = 'all' | 'survey' | 'library' | 'support';
+
 interface ResourcesScreenProps {
   state: DerivedMainState;
   userEmail: string | null;
   cloudError: string | null;
   userTickets: SupportTicketRecord[];
+  initialTab?: ResourcesTab;
+  tabNonce?: number;
   onSignIn: () => void;
   onSubmitSurvey: (answers: RecoverySurveyAnswers) => EvaluatedSurveyProfile;
   onApplySurveyPreset: (profile: EvaluatedSurveyProfile) => void;
@@ -61,8 +66,6 @@ interface ResourcesScreenProps {
   onNavigateToLock: () => void;
   onNavigateToBlocklist: () => void;
 }
-
-type ResourcesTab = 'all' | 'survey' | 'library' | 'support';
 
 const PRIMARY_FORMATS: SurveyPrimaryFormat[] = [
   'Sports & Live Odds',
@@ -121,6 +124,8 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
   userEmail,
   cloudError,
   userTickets,
+  initialTab = 'all',
+  tabNonce = 0,
   onSignIn,
   onSubmitSurvey,
   onApplySurveyPreset,
@@ -129,8 +134,14 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
   onNavigateToLock,
   onNavigateToBlocklist,
 }) => {
-  const [activeTab, setActiveTab] = useState<ResourcesTab>('all');
+  const [activeTab, setActiveTab] = useState<ResourcesTab>(initialTab);
   const [resourceFilter, setResourceFilter] = useState<'ALL' | ResourceCategory>('ALL');
+
+  useEffect(() => {
+    if (tabNonce > 0) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, tabNonce]);
 
   // Survey state seeded with last saved assessment if available
   const [surveyAnswers, setSurveyAnswers] = useState<RecoverySurveyAnswers>(
@@ -252,8 +263,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
             Recovery Resources &amp; Support
           </h1>
           <p className="text-xs text-[var(--ink-muted)]">
-            Personalized assessment, bank card freezes, national self-exclusion, relapse recovery &amp;
-            private support desk
+            Short check-in, bank card freezes, national self-exclusion, and private support
           </p>
         </div>
 
@@ -301,7 +311,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-display text-[15px] font-bold text-[var(--ink)]">
-                  I Relapsed — 48-Hour Reset Protocol
+                  Had a Slip? 48-Hour Reset
                 </h2>
                 {state.relapseLogs.length > 0 ? (
                   <span className="font-mono text-[11px] font-semibold text-[var(--ink-muted)]">
@@ -311,8 +321,8 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 ) : null}
               </div>
               <p className="mt-1 text-xs leading-relaxed text-[var(--ink-muted)]">
-                A slip does not erase weeks of brain rewiring. Stop chasing immediately, tighten
-                filters, extend your lock, and stabilize the next 48 hours without shame.
+                One slip does not wipe out your progress. Stop chasing losses right away, tighten
+                your filters, extend your lock, and give yourself 48 calm hours.
               </p>
               <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
                 {RELAPSE_QUICK_ACTIONS.map((step) => (
@@ -331,7 +341,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
             className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90"
           >
             <ShieldAlert className="h-4 w-4" />
-            <span>Start Reset &amp; Harden Shield</span>
+            <span>Start 48-Hour Reset</span>
           </button>
         </div>
       </LiquidGlassCard>
@@ -345,8 +355,8 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 <ClipboardCheck className="h-4 w-4" />
               </div>
               <LiquidSectionHeader
-                title="Personalized Recovery Assessment"
-                subtitle="Answer 6 quick questions to calibrate your Shield, Lock length & high-risk schedule"
+                title="6-Question Check-In"
+                subtitle="Answer six short questions to pick a suitable lock length and schedule."
               />
             </div>
 
@@ -521,7 +531,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 <ClipboardCheck className="h-4 w-4" />
-                <span>Generate Personalized Protection Plan</span>
+                <span>See Suggested Plan</span>
               </button>
             </form>
           </LiquidGlassCard>
@@ -533,10 +543,10 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="font-mono text-[11px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
-                      RISK TIER · {surveyResult.riskTier}
+                      Priority · {surveyResult.riskTier}
                     </p>
                     <h2 className="mt-0.5 font-display text-lg font-bold text-[var(--ink)]">
-                      Your Tailored Blueprint
+                      Suggested Plan
                     </h2>
                   </div>
                   <div className="rounded-[12px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 py-1.5 text-right">
@@ -559,11 +569,29 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                     </p>
                   </div>
                   <div className="rounded-[14px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2">
-                    <p className="text-[10px] text-[var(--ink-muted)]">Daily Baseline</p>
+                    <p className="text-[10px] text-[var(--ink-muted)]">Daily Spend Estimate</p>
                     <p className="mt-0.5 font-mono text-sm font-bold text-[var(--accent-ink)] tabular-nums">
                       {formatNaira(surveyResult.recommendedDailySpendNgn)}
                     </p>
                   </div>
+                </div>
+
+                {/* Live ML Engine Sync Readout */}
+                <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[14px] border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Cpu className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-semibold text-[var(--ink)]">
+                        Risk Estimate ({state.mlRisk.confidencePct}% confidence)
+                      </p>
+                      <p className="truncate text-[10px] text-[var(--ink-muted)]">
+                        Higher-risk window: {state.mlRisk.predictedPeakWindow}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 font-mono text-xs font-bold text-[var(--accent-ink)] tabular-nums">
+                    {state.mlRisk.relapseProbabilityPct}%
+                  </span>
                 </div>
 
                 <div className="mt-3.5 space-y-2.5">
@@ -602,11 +630,11 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                   <ShieldCheck className="h-6 w-6" />
                 </div>
                 <h2 className="mt-3 font-display text-base font-bold text-[var(--ink)]">
-                  Calibrate Your Defense Stack
+                  Check-In Summary
                 </h2>
                 <p className="mt-1 max-w-xs text-xs leading-relaxed text-[var(--ink-muted)]">
-                  Complete the 6-question assessment to receive a risk score, lock preset, high-risk
-                  window configuration, and bank-blocking steps tailored to your habits.
+                  Complete the six questions on the left to get a suggested lock length, schedule,
+                  and bank-blocking steps tailored to your habits.
                 </p>
               </div>
             )}
@@ -623,8 +651,8 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 <BookOpen className="h-4 w-4" />
               </div>
               <LiquidSectionHeader
-                title="Bank Blocks, Self-Exclusion & Practical Guides"
-                subtitle="Multi-layer protection combining software blocking, card freezes & national registers"
+                title="Bank Blocks &amp; Self-Exclusion"
+                subtitle="Pair device blocking with card freezes and national exclusion tools"
               />
             </div>
           </div>
@@ -734,8 +762,8 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 <LifeBuoy className="h-4 w-4" />
               </div>
               <LiquidSectionHeader
-                title="Confidential Recovery Support Desk"
-                subtitle="Private direct help for relapse recovery, bank freeze questions & bypass reports"
+                title="Private Support"
+                subtitle="Message our team about slip recovery, bank blocks, or sites that bypassed protection"
               />
             </div>
 
@@ -945,7 +973,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
                   <LockKeyhole className="h-4 w-4" />
                 </div>
-                <h2 className="font-display text-base font-bold">48-Hour Reset &amp; Harden</h2>
+                <h2 className="font-display text-base font-bold">48-Hour Reset</h2>
               </div>
               <button
                 type="button"
@@ -958,8 +986,8 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
             </div>
 
             <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
-              Log what happened without judgment. Submitting immediately tightens keyword, search &amp;
-              cashier firewalls so a slip stops here.
+              Note what triggered the slip. Submitting tightens keyword, search, and deposit blocking
+              right away so things stay steady from here.
             </p>
 
             <div className="mt-3.5">
@@ -1054,7 +1082,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 data-testid="confirm-relapse-reset-button"
                 className="h-10 flex-[1.5] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
-                Harden Shield &amp; Reset
+                Apply Reset &amp; Tighten Rules
               </button>
             </div>
           </form>

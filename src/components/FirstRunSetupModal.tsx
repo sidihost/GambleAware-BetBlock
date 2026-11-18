@@ -63,11 +63,11 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
           <div className="flex items-center gap-2.5">
             <BrandGMark className="h-8 w-8 shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="font-mono text-[10px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
+              <p className="font-mono text-[10px] font-semibold text-[var(--accent-ink)]">
                 Quick Setup · Optional
               </p>
               <h2 className="mt-0.5 font-display text-base leading-tight font-bold text-[var(--ink)] sm:text-lg">
-                Choose Your Protection Setup
+                Set Up Your Preferences
               </h2>
             </div>
           </div>
@@ -76,7 +76,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
         {/* Scrollable Middle Body */}
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 sm:px-5">
           <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
-            Every layer is your choice. Enable what you want now, or skip to explore first.
+            Turn on what you want now, or skip and change any setting later.
           </p>
 
           {/* Optional Personalization */}
@@ -85,7 +85,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
               htmlFor="setup-first-name"
               className="mb-1 block text-xs font-semibold text-[var(--ink)]"
             >
-              First Name <span className="font-normal text-[var(--ink-muted)]">(Optional)</span>
+              First name <span className="font-normal text-[var(--ink-muted)]">(optional)</span>
             </label>
             <input
               id="setup-first-name"
@@ -93,7 +93,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
               maxLength={40}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter first name (e.g. Tunde)"
+              placeholder="e.g. Tunde"
               className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
           </div>
@@ -123,12 +123,12 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-[var(--ink)] sm:text-sm">
-                  {isIOS ? 'Safari & Betting Site Shield' : 'Real-Time Betting Site Shield'}
+                  {isIOS ? 'Safari & Site Blocking' : 'Betting Site & App Blocker'}
                 </p>
                 <p className="text-[11px] leading-snug text-[var(--ink-muted)]">
                   {enableShield
-                    ? 'Selected — blocks gambling URLs & logins immediately'
-                    : 'Optional — tap to enable instant site guard'}
+                    ? 'Selected — blocks gambling URLs and sign-in pages'
+                    : 'Optional — tap to turn on site blocking'}
                 </p>
               </div>
               {enableShield ? (
@@ -164,12 +164,12 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-[var(--ink)] sm:text-sm">
-                  {isIOS ? 'Anti-Tamper & Alerts Guard' : 'Anti-Tamper Rule Guard'}
+                  Rule &amp; Uninstall Lock
                 </p>
                 <p className="text-[11px] leading-snug text-[var(--ink-muted)]">
                   {enableAntiTamper || lockDays > 0
-                    ? 'Selected — guards rules against quick changes'
-                    : 'Optional — enable only if you want extra friction'}
+                    ? 'Selected — prevents quick rule changes when tempted'
+                    : 'Optional — add friction before rules can be edited'}
                 </p>
               </div>
               {enableAntiTamper || lockDays > 0 ? (
@@ -188,12 +188,12 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-[var(--ink)] sm:text-sm">
-                  Commitment Lock <span className="font-normal text-[var(--ink-muted)]">(Optional)</span>
+                  Lock Timer <span className="font-normal text-[var(--ink-muted)]">(optional)</span>
                 </p>
                 <p className="text-[11px] text-[var(--ink-muted)]">
                   {lockDays > 0
-                    ? `Locks weakening rules for ${formatLockDurationAdjective(lockDays).toLowerCase()}`
-                    : 'No lock armed — decide anytime inside Lock settings'}
+                    ? `Locks rules for ${formatLockDurationAdjective(lockDays).toLowerCase()}`
+                    : 'No timer set — you can lock anytime in Lock settings'}
                 </p>
               </div>
               <LockKeyhole className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
@@ -209,7 +209,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
                     : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
                 }`}
               >
-                No Lock Timer (Decide Later)
+                Decide Later
               </button>
 
               {LOCK_DURATION_PRESETS.map((opt) => {
@@ -233,7 +233,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
 
             <div className="mt-2.5">
               <p className="mb-1 text-[11px] font-semibold text-[var(--ink-muted)]">
-                Daily Betting Spend Baseline (₦)
+                Typical daily stake (₦)
               </p>
               <div className="grid grid-cols-4 gap-1.5">
                 {DAILY_SPEND_OPTIONS_NGN.slice(0, 4).map((amt) => {
@@ -269,8 +269,8 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             {lockDays > 0 ? <LockKeyhole className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
             <span>
               {lockDays > 0
-                ? `Save & Arm ${formatLockDurationAdjective(lockDays)} Lock`
-                : 'Save Preferences & Enter App'}
+                ? `Save & Start ${formatLockDurationAdjective(lockDays)} Lock`
+                : 'Save & Continue'}
             </span>
           </button>
 
@@ -280,7 +280,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             data-testid="setup-skip-button"
             className="flex h-9 w-full cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink-muted)] transition-colors hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]"
           >
-            Skip for Now — Explore App First
+            Skip for Now
           </button>
         </div>
       </div>

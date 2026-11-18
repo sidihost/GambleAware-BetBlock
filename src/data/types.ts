@@ -2,6 +2,7 @@ import { BlockMatchResult } from '../blocker/blocklistMatcher';
 import { GamblingCategory } from '../blocker/gamblingCategory';
 import type { GroupedBlockedSite } from '../utils/blockedLogGrouping';
 import type { ShieldLeakAudit } from '../utils/leakDiagnostics';
+import type { MlRiskEvaluation } from '../utils/mlRiskModel';
 import type { EvaluatedSurveyProfile } from '../utils/recoverySurvey';
 import type { TiltRadarEvaluation } from '../utils/tiltRadar';
 
@@ -256,4 +257,5 @@ export interface DerivedMainState {
   durableStatus: DurableStorageStatus;
   tiltRadar: TiltRadarEvaluation;
   leakAudit: ShieldLeakAudit;
+  mlRisk: MlRiskEvaluation;
 }

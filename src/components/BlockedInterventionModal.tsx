@@ -109,8 +109,8 @@ export const BlockedInterventionModal: React.FC<{
               <BettingBrandLogo target={payload.target} size="md" />
             )}
             <div className="min-w-0 text-left">
-              <p className="font-mono text-[10px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
-                GambleAware · Redirected Safely
+              <p className="font-mono text-[11px] font-semibold text-[var(--accent-ink)]">
+                GambleAware
               </p>
               <h2 className="font-display text-base leading-tight font-bold text-[var(--ink)] sm:text-lg">
                 {payload.isAntiTamper
@@ -125,10 +125,10 @@ export const BlockedInterventionModal: React.FC<{
           </div>
           <p className="mt-1.5 text-left text-xs leading-snug text-[var(--ink-muted)]">
             {payload.isAntiTamper
-              ? 'Your GambleAware Device Admin & Commitment Lock prevents uninstalling the app or weakening rules until your timer completes.'
+              ? 'Device Admin and your lock timer prevent uninstalling the app or changing rules until the countdown finishes.'
               : payload.isLoginRedirect
-                ? 'GambleAware intercepted this gambling sign-in attempt before you could place a bet.'
-                : 'GambleAware intercepted this platform before it could pull you back in. Urges fade within a few minutes.'}
+                ? 'Blocked before the sign-in page could open.'
+                : 'Blocked before the page could load. Most betting urges pass within a few minutes.'}
           </p>
         </div>
 
@@ -141,15 +141,15 @@ export const BlockedInterventionModal: React.FC<{
                 <BettingBrandLogo target={payload.target} size="sm" />
               ) : null}
               <div className="min-w-0 flex-1">
-                <p className="font-mono text-[10px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
+                <p className="font-mono text-[10px] font-semibold text-[var(--accent-ink)]">
                   {payload.isAntiTamper
-                    ? 'Commitment Lock Active'
+                    ? 'Lock timer active'
                     : payload.source.toLowerCase().includes('app') ||
                         payload.source.toLowerCase().includes('install')
-                      ? 'Betting App Blocked'
+                      ? 'Betting app blocked'
                       : isCalmResetTool
-                        ? '60s Urge Reset'
-                        : 'Betting Site Blocked'}
+                        ? '60s urge reset'
+                        : 'Betting site blocked'}
                 </p>
                 <p className="mt-0.5 truncate font-display text-sm font-bold text-[var(--ink)]">
                   {displayTarget}
@@ -169,8 +169,8 @@ export const BlockedInterventionModal: React.FC<{
 
           {promoInsight ? (
             <div className="w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2 text-left">
-              <p className="font-mono text-[10px] font-bold tracking-wide text-[var(--accent-ink)] uppercase">
-                House-Edge Reality Check
+              <p className="font-mono text-[10px] font-semibold text-[var(--accent-ink)]">
+                Odds &amp; House Margin
               </p>
               <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
                 {promoInsight.summary}
@@ -192,8 +192,8 @@ export const BlockedInterventionModal: React.FC<{
               <PiggyBank className="h-4 w-4 shrink-0" />
               <span>
                 {bankedStakeDone
-                  ? `Banked ${formatNaira(stakeToBank)} Into Your Vault`
-                  : `Bank ${formatNaira(stakeToBank)} Stake Into Vault Instead`}
+                  ? `Added ${formatNaira(stakeToBank)} to Savings`
+                  : `Save ${formatNaira(stakeToBank)} Instead`}
               </span>
             </button>
           ) : null}
@@ -236,10 +236,10 @@ export const BlockedInterventionModal: React.FC<{
                 <Target className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
                 <div>
                   <p className="text-xs font-bold text-[var(--ink)]">
-                    Create a recovery goal to stay locked in
+                    Add a savings goal to keep focus
                   </p>
                   <p className="text-[11px] text-[var(--ink-muted)]">
-                    Tap to set your Naira savings or clean-days target
+                    Set a Naira or clean-days target
                   </p>
                 </div>
               </div>
@@ -256,7 +256,7 @@ export const BlockedInterventionModal: React.FC<{
               <div className="flex items-center gap-2">
                 <Wind className="h-4 w-4 text-[var(--ink)]" />
                 <span className="text-xs font-semibold text-[var(--ink)] sm:text-sm">
-                  60s Calm Reset
+                  60s Breathing Reset
                 </span>
               </div>
               <span className="font-mono text-xs tabular-nums text-[var(--ink-muted)]">
@@ -312,11 +312,9 @@ export const BlockedInterventionModal: React.FC<{
             data-testid="modal-return-home-button"
             className="h-10 w-full cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
           >
-            Return Safely Home
+            Back to GambleAware
           </button>
-          <p className="mt-1.5 text-[10px] text-[var(--ink-muted)]">
-            A product of Imoogle Technology
-          </p>
+          <p className="mt-1.5 text-[10px] text-[var(--ink-muted)]">Imoogle Technology</p>
         </div>
       </div>
     </div>

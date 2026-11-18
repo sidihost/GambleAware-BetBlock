@@ -2,11 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import {
+  buildStandaloneInstallUrl,
   detectClientPlatform,
   formatIosBlocklistText,
   getDefaultInstallGuideTarget,
   getOrderedPlatformCards,
   resolveInitialViewMode,
+  resolveInstallActionMode,
   shouldPromoteWebApp,
   shouldSkipPreloader,
   TOP_BETTING_DOMAINS_FOR_IOS,
@@ -84,4 +86,31 @@ test('TOP_BETTING_DOMAINS_FOR_IOS are all valid built-in gambling domains', () =
   }
   const lines = formatIosBlocklistText().split('\n');
   assert.equal(lines.length, TOP_BETTING_DOMAINS_FOR_IOS.length);
+});
+
+test('resolveInstallActionMode selects native prompt, standalone tab escape, or manual guide cleanly', () => {
+  assert.equal(
+    resolveInstallActionMode({ isInstalled: true, hasDeferredPrompt: true, isInIframe: false }),
+    'installed',
+  );
+  assert.equal(
+    resolveInstallActionMode({ isInstalled: false, hasDeferredPrompt: true, isInIframe: false }),
+    'native_prompt',
+  );
+  assert.equal(
+    resolveInstallActionMode({ isInstalled: false, hasDeferredPrompt: false, isInIframe: true }),
+    'open_standalone_tab',
+  );
+  assert.equal(
+    resolveInstallActionMode({ isInstalled: false, hasDeferredPrompt: false, isInIframe: false }),
+    'guided_manual',
+  );
+});
+
+test('buildStandaloneInstallUrl preserves origin and sets app=1 cleanly', () => {
+  assert.equal(
+    buildStandaloneInstallUrl('https://gbb.sidihost.sbs/?tab=shield'),
+    'https://gbb.sidihost.sbs/?tab=shield&app=1',
+  );
+  assert.equal(buildStandaloneInstallUrl('invalid-url'), '/?app=1');
 });

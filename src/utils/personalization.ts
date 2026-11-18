@@ -68,10 +68,10 @@ export function getTimeOfDayGreeting(firstName?: string | null, date: Date = new
   const headline = cleanName ? `${salutation}, ${cleanName}` : `${salutation}`;
   const subline =
     hour < 12
-      ? 'Start today protected. Your guard and recovery goals are watching over every tab.'
+      ? 'Your blocker and goals are active for the day.'
       : hour < 17
-        ? 'Stay steady through the afternoon. Every clean hour builds real Naira savings.'
-        : 'Evening protection is active — late-night urges pass fast when your guard holds the line.';
+        ? 'Every betting-free day keeps money where it belongs.'
+        : 'Evening protection is active. Step back for a minute if an urge shows up.';
   return { headline, salutation, subline };
 }
 

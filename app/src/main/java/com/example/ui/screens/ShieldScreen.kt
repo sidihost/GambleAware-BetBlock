@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.blocker.BrandCatalog
+import com.example.blocker.MlRiskRegime
 import com.example.blocker.TiltRiskLevel
 import com.example.ui.MainUiState
 import com.example.ui.components.BettingBrandLogo
@@ -604,10 +605,10 @@ fun ShieldScreen(
                                 ) {
                                     BettingBrandLogo(
                                         target = domain,
-                                        size = 24.dp,
-                                        cornerRadius = 7.dp,
+                                        size = 28.dp,
+                                        cornerRadius = 8.dp,
                                     )
-                                    Spacer(modifier = Modifier.width(7.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = resolved.displayName,
                                         style = MaterialTheme.typography.labelSmall,
@@ -654,6 +655,105 @@ fun ShieldScreen(
                             ),
                         ) {
                             Text("Browse Blocklist", maxLines = 1)
+                        }
+                    }
+                }
+            }
+
+            // On-Device Adaptive ML Risk Predictor Card
+            item {
+                val ml = state.mlRisk
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 18.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            LiquidSectionHeader(
+                                title = "Adaptive ML Risk Predictor",
+                                subtitle = "On-device behavioral relapse probability & timing model",
+                            )
+                        }
+                        Text(
+                            text = "${ml.riskRegime.name} • ${ml.confidencePct}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = MonoFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = if (ml.riskRegime == MlRiskRegime.HIGH || ml.riskRegime == MlRiskRegime.CRITICAL) {
+                                liquid.accentInk
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(liquid.controlFill)
+                            .border(1.dp, liquid.subtleBorder, RoundedCornerShape(14.dp))
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = ml.headline,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            Text(
+                                text = "Peak window: ${ml.predictedPeakWindow}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "${ml.relapseProbabilityPct}%",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontFamily = MonoFontFamily,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = liquid.accentInk,
+                        )
+                    }
+                    if (ml.topFactors.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            ml.topFactors.take(3).forEach { factor ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "${factor.label} • ${factor.detail}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "${if (factor.isProtective) "-" else "+"}${factor.impactPct}%",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontFamily = MonoFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (factor.isProtective) {
+                                            MaterialTheme.colorScheme.onBackground
+                                        } else {
+                                            liquid.accentInk
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
                 }

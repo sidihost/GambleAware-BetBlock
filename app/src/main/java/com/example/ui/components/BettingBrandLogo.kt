@@ -3,7 +3,10 @@ package com.example.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +26,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -60,165 +64,262 @@ fun BettingBrandLogo(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .padding((size.value * 0.12f).dp),
+                .padding((size.value * 0.10f).dp),
         ) {
             val w = this.size.width
             val h = this.size.height
             val minDim = minOf(w, h)
 
-            // Subtle corner aura highlight
-            drawCircle(
-                color = accent.copy(alpha = 0.16f),
-                radius = minDim * 0.46f,
-                center = Offset(w * 0.78f, h * 0.22f),
-            )
-
             when (brandId) {
                 "sportybet" -> {
-                    val bolt = Path().apply {
-                        moveTo(w * 0.56f, h * 0.10f)
-                        lineTo(w * 0.24f, h * 0.55f)
-                        lineTo(w * 0.49f, h * 0.55f)
-                        lineTo(w * 0.41f, h * 0.90f)
-                        lineTo(w * 0.76f, h * 0.43f)
-                        lineTo(w * 0.51f, h * 0.43f)
-                        close()
+                    // Authentic SportyBet crimson app mark: curved white 'S' ribbon + upper-right & lower-left ball dots
+                    val sRibbon = Path().apply {
+                        moveTo(w * 0.68f, h * 0.25f)
+                        cubicTo(w * 0.36f, h * 0.14f, w * 0.26f, h * 0.43f, w * 0.50f, h * 0.49f)
+                        cubicTo(w * 0.75f, h * 0.55f, w * 0.68f, h * 0.86f, w * 0.30f, h * 0.77f)
                     }
-                    drawPath(bolt, color = fg)
+                    drawPath(
+                        sRibbon,
+                        color = fg,
+                        style = Stroke(
+                            width = (minDim * 0.19f).coerceAtLeast(2.4f),
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round,
+                        ),
+                    )
+                    // Top-right & bottom-left signature SportyBet ball dots
+                    drawCircle(
+                        color = fg,
+                        radius = minDim * 0.135f,
+                        center = Offset(w * 0.77f, h * 0.22f),
+                    )
+                    drawCircle(
+                        color = fg,
+                        radius = minDim * 0.135f,
+                        center = Offset(w * 0.23f, h * 0.78f),
+                    )
                 }
 
                 "bet9ja" -> {
-                    drawCircle(
-                        color = accent,
-                        radius = minDim * 0.42f,
-                        center = Offset(w * 0.50f, h * 0.50f),
-                        style = Stroke(width = (minDim * 0.09f).coerceAtLeast(1.6f)),
+                    // Red curved pitch swoosh beneath gold 9 + white ja
+                    val arc = Path().apply {
+                        moveTo(w * 0.14f, h * 0.78f)
+                        quadraticTo(w * 0.50f, h * 0.90f, w * 0.86f, h * 0.75f)
+                    }
+                    drawPath(
+                        arc,
+                        color = Color(0xFFEF4444),
+                        style = Stroke(
+                            width = (minDim * 0.085f).coerceAtLeast(1.6f),
+                            cap = StrokeCap.Round,
+                        ),
                     )
                 }
 
                 "betking", "draftkings", "roobet" -> {
                     val crown = Path().apply {
-                        moveTo(w * 0.14f, h * 0.74f)
-                        lineTo(w * 0.18f, h * 0.30f)
-                        lineTo(w * 0.36f, h * 0.52f)
-                        lineTo(w * 0.50f, h * 0.22f)
-                        lineTo(w * 0.64f, h * 0.52f)
-                        lineTo(w * 0.82f, h * 0.30f)
-                        lineTo(w * 0.86f, h * 0.74f)
+                        moveTo(w * 0.16f, h * 0.46f)
+                        lineTo(w * 0.20f, h * 0.18f)
+                        lineTo(w * 0.37f, h * 0.33f)
+                        lineTo(w * 0.50f, h * 0.12f)
+                        lineTo(w * 0.63f, h * 0.33f)
+                        lineTo(w * 0.80f, h * 0.18f)
+                        lineTo(w * 0.84f, h * 0.46f)
                         close()
                     }
                     drawPath(crown, color = accent)
-                    drawRoundRect(
-                        color = fg.copy(alpha = 0.85f),
-                        topLeft = Offset(w * 0.18f, h * 0.78f),
-                        size = Size(w * 0.64f, h * 0.08f),
-                        cornerRadius = CornerRadius(4f, 4f),
-                    )
                 }
 
                 "1xbet" -> {
-                    val strokeW = (minDim * 0.14f).coerceAtLeast(2.2f)
+                    // Geometric white '1' on left + sky-blue tilted 'X' on right
+                    val oneStroke = (minDim * 0.12f).coerceAtLeast(1.8f)
                     drawLine(
                         color = fg,
-                        start = Offset(w * 0.20f, h * 0.20f),
-                        end = Offset(w * 0.80f, h * 0.80f),
-                        strokeWidth = strokeW,
+                        start = Offset(w * 0.25f, h * 0.22f),
+                        end = Offset(w * 0.25f, h * 0.78f),
+                        strokeWidth = oneStroke,
+                        cap = StrokeCap.Round,
+                    )
+                    drawLine(
+                        color = fg,
+                        start = Offset(w * 0.14f, h * 0.34f),
+                        end = Offset(w * 0.25f, h * 0.22f),
+                        strokeWidth = oneStroke,
+                        cap = StrokeCap.Round,
+                    )
+                    val xStroke = (minDim * 0.125f).coerceAtLeast(2f)
+                    drawLine(
+                        color = accent,
+                        start = Offset(w * 0.44f, h * 0.22f),
+                        end = Offset(w * 0.86f, h * 0.78f),
+                        strokeWidth = xStroke,
                         cap = StrokeCap.Round,
                     )
                     drawLine(
                         color = accent,
-                        start = Offset(w * 0.80f, h * 0.20f),
-                        end = Offset(w * 0.20f, h * 0.80f),
-                        strokeWidth = strokeW,
+                        start = Offset(w * 0.86f, h * 0.22f),
+                        end = Offset(w * 0.44f, h * 0.78f),
+                        strokeWidth = xStroke,
                         cap = StrokeCap.Round,
                     )
                 }
 
-                "bet365", "ladbrokes", "paddypower" -> {
+                "bet365" -> {
+                    // Authentic stacked forest green tile frame accent
                     drawRoundRect(
-                        color = accent.copy(alpha = 0.24f),
-                        topLeft = Offset(w * 0.08f, h * 0.14f),
-                        size = Size(w * 0.84f, h * 0.72f),
-                        cornerRadius = CornerRadius(minDim * 0.22f, minDim * 0.22f),
-                        style = Stroke(width = (minDim * 0.07f).coerceAtLeast(1.4f)),
+                        color = accent.copy(alpha = 0.20f),
+                        topLeft = Offset(w * 0.06f, h * 0.08f),
+                        size = Size(w * 0.88f, h * 0.84f),
+                        cornerRadius = CornerRadius(minDim * 0.20f, minDim * 0.20f),
+                        style = Stroke(width = (minDim * 0.055f).coerceAtLeast(1.2f)),
                     )
                 }
 
-                "betway", "parimatch", "fanduel" -> {
-                    val strokeW = (minDim * 0.13f).coerceAtLeast(2f)
-                    drawLine(
-                        color = accent,
-                        start = Offset(w * 0.18f, h * 0.78f),
-                        end = Offset(w * 0.50f, h * 0.22f),
-                        strokeWidth = strokeW,
-                        cap = StrokeCap.Round,
-                    )
+                "betway" -> {
+                    // Crisp white lowercase geometric 'b' + signature solid green dot
+                    val stemW = (minDim * 0.13f).coerceAtLeast(2f)
                     drawLine(
                         color = fg,
-                        start = Offset(w * 0.46f, h * 0.78f),
-                        end = Offset(w * 0.78f, h * 0.22f),
-                        strokeWidth = strokeW,
+                        start = Offset(w * 0.26f, h * 0.18f),
+                        end = Offset(w * 0.26f, h * 0.76f),
+                        strokeWidth = stemW,
                         cap = StrokeCap.Round,
+                    )
+                    drawCircle(
+                        color = fg,
+                        radius = minDim * 0.17f,
+                        center = Offset(w * 0.39f, h * 0.59f),
+                        style = Stroke(width = stemW),
+                    )
+                    drawCircle(
+                        color = accent,
+                        radius = minDim * 0.145f,
+                        center = Offset(w * 0.74f, h * 0.64f),
                     )
                 }
 
-                "stake", "nairabet" -> {
+                "stake" -> {
+                    // Signature white flowing cursive 'S' + neon green dot
                     val sCurve = Path().apply {
-                        moveTo(w * 0.74f, h * 0.24f)
-                        cubicTo(w * 0.30f, h * 0.12f, w * 0.24f, h * 0.46f, w * 0.52f, h * 0.50f)
-                        cubicTo(w * 0.80f, h * 0.54f, w * 0.72f, h * 0.88f, w * 0.24f, h * 0.76f)
+                        moveTo(w * 0.72f, h * 0.24f)
+                        cubicTo(w * 0.32f, h * 0.12f, w * 0.25f, h * 0.45f, w * 0.52f, h * 0.50f)
+                        cubicTo(w * 0.79f, h * 0.55f, w * 0.70f, h * 0.88f, w * 0.26f, h * 0.76f)
                     }
                     drawPath(
                         sCurve,
-                        color = accent,
+                        color = fg,
                         style = Stroke(
                             width = (minDim * 0.14f).coerceAtLeast(2.2f),
                             cap = StrokeCap.Round,
                         ),
                     )
+                    drawCircle(
+                        color = accent,
+                        radius = minDim * 0.095f,
+                        center = Offset(w * 0.76f, h * 0.76f),
+                    )
                 }
 
-                "msport", "merrybet", "williamhill" -> {
+                "msport" -> {
+                    // Aerodynamic yellow geometric wing 'M' + crimson speed underline
                     val mWing = Path().apply {
-                        moveTo(w * 0.14f, h * 0.78f)
-                        lineTo(w * 0.22f, h * 0.24f)
-                        lineTo(w * 0.50f, h * 0.56f)
-                        lineTo(w * 0.78f, h * 0.24f)
-                        lineTo(w * 0.86f, h * 0.78f)
+                        moveTo(w * 0.12f, h * 0.74f)
+                        lineTo(w * 0.24f, h * 0.22f)
+                        lineTo(w * 0.50f, h * 0.54f)
+                        lineTo(w * 0.76f, h * 0.22f)
+                        lineTo(w * 0.88f, h * 0.74f)
                     }
                     drawPath(
                         mWing,
                         color = accent,
                         style = Stroke(
-                            width = (minDim * 0.12f).coerceAtLeast(2f),
+                            width = (minDim * 0.135f).coerceAtLeast(2.2f),
                             cap = StrokeCap.Round,
                             join = StrokeJoin.Round,
                         ),
                     )
+                    drawLine(
+                        color = Color(0xFFEF4444),
+                        start = Offset(w * 0.20f, h * 0.85f),
+                        end = Offset(w * 0.80f, h * 0.85f),
+                        strokeWidth = (minDim * 0.07f).coerceAtLeast(1.4f),
+                        cap = StrokeCap.Round,
+                    )
                 }
 
                 "betpawa" -> {
-                    drawCircle(color = accent, radius = minDim * 0.09f, center = Offset(w * 0.28f, h * 0.32f))
-                    drawCircle(color = accent, radius = minDim * 0.09f, center = Offset(w * 0.50f, h * 0.22f))
-                    drawCircle(color = accent, radius = minDim * 0.09f, center = Offset(w * 0.72f, h * 0.32f))
-                    drawCircle(color = fg, radius = minDim * 0.21f, center = Offset(w * 0.50f, h * 0.64f))
+                    // Neon lime top-right paw toes
+                    drawCircle(color = accent, radius = minDim * 0.07f, center = Offset(w * 0.68f, h * 0.22f))
+                    drawCircle(color = accent, radius = minDim * 0.065f, center = Offset(w * 0.82f, h * 0.28f))
+                    drawCircle(color = accent, radius = minDim * 0.065f, center = Offset(w * 0.56f, h * 0.28f))
                 }
 
-                "bangbet", "hollywoodbets", "betfair" -> {
-                    val star = Path()
-                    val cx = w * 0.50f
-                    val cy = h * 0.50f
-                    val outerR = minDim * 0.42f
-                    val innerR = minDim * 0.18f
-                    for (i in 0 until 10) {
-                        val angle = (-90.0 + i * 36.0) * (PI / 180.0)
-                        val r = if (i % 2 == 0) outerR else innerR
-                        val px = cx + (cos(angle) * r).toFloat()
-                        val py = cy + (sin(angle) * r).toFloat()
-                        if (i == 0) star.moveTo(px, py) else star.lineTo(px, py)
+                "parimatch" -> {
+                    // Yellow racing top bar
+                    val bar = Path().apply {
+                        moveTo(w * 0.10f, h * 0.16f)
+                        lineTo(w * 0.90f, h * 0.16f)
+                        lineTo(w * 0.82f, h * 0.32f)
+                        lineTo(w * 0.10f, h * 0.32f)
+                        close()
                     }
-                    star.close()
-                    drawPath(star, color = accent)
+                    drawPath(bar, color = accent)
+                }
+
+                "22bet" -> {
+                    // Crimson diagonal pitch stripe beneath '22'
+                    val stripe = Path().apply {
+                        moveTo(w * 0.10f, h * 0.76f)
+                        lineTo(w * 0.90f, h * 0.68f)
+                        lineTo(w * 0.90f, h * 0.80f)
+                        lineTo(w * 0.10f, h * 0.86f)
+                        close()
+                    }
+                    drawPath(stripe, color = accent)
+                }
+
+                "paripesa" -> {
+                    val diag = Path().apply {
+                        moveTo(0f, h * 0.75f)
+                        lineTo(w, h * 0.25f)
+                        lineTo(w, h)
+                        lineTo(0f, h)
+                        close()
+                    }
+                    drawPath(diag, color = accent.copy(alpha = 0.42f))
+                }
+
+                "ladbrokes" -> {
+                    // Clean geometric white 'L' ticket badge
+                    val lPath = Path().apply {
+                        moveTo(w * 0.28f, h * 0.20f)
+                        lineTo(w * 0.44f, h * 0.20f)
+                        lineTo(w * 0.44f, h * 0.64f)
+                        lineTo(w * 0.76f, h * 0.64f)
+                        lineTo(w * 0.76f, h * 0.80f)
+                        lineTo(w * 0.28f, h * 0.80f)
+                        close()
+                    }
+                    drawPath(lPath, color = fg)
+                }
+
+                "betfair" -> {
+                    // Opposing exchange arrows in crisp black
+                    val sw = (minDim * 0.12f).coerceAtLeast(2f)
+                    drawLine(
+                        color = fg,
+                        start = Offset(w * 0.32f, h * 0.20f),
+                        end = Offset(w * 0.32f, h * 0.76f),
+                        strokeWidth = sw,
+                        cap = StrokeCap.Round,
+                    )
+                    drawLine(
+                        color = fg,
+                        start = Offset(w * 0.68f, h * 0.80f),
+                        end = Offset(w * 0.68f, h * 0.24f),
+                        strokeWidth = sw,
+                        cap = StrokeCap.Round,
+                    )
                 }
 
                 "pokerstars" -> {
@@ -234,11 +335,28 @@ fun BettingBrandLogo(
                     drawPath(spade, color = accent)
                 }
 
-                "rollbit", "bcgame", "22bet", "paripesa" -> {
+                "bangbet", "hollywoodbets" -> {
+                    val star = Path()
+                    val cx = w * 0.50f
+                    val cy = if (brandId == "hollywoodbets") h * 0.30f else h * 0.26f
+                    val outerR = minDim * 0.20f
+                    val innerR = minDim * 0.085f
+                    for (i in 0 until 10) {
+                        val angle = (-90.0 + i * 36.0) * (PI / 180.0)
+                        val r = if (i % 2 == 0) outerR else innerR
+                        val px = cx + (cos(angle) * r).toFloat()
+                        val py = cy + (sin(angle) * r).toFloat()
+                        if (i == 0) star.moveTo(px, py) else star.lineTo(px, py)
+                    }
+                    star.close()
+                    drawPath(star, color = accent)
+                }
+
+                "rollbit", "bcgame" -> {
                     val hex = Path()
                     val cx = w * 0.50f
                     val cy = h * 0.50f
-                    val r = minDim * 0.42f
+                    val r = minDim * 0.43f
                     for (i in 0 until 6) {
                         val angle = (-30.0 + i * 60.0) * (PI / 180.0)
                         val px = cx + (cos(angle) * r).toFloat()
@@ -249,7 +367,7 @@ fun BettingBrandLogo(
                     drawPath(
                         hex,
                         color = accent,
-                        style = Stroke(width = (minDim * 0.09f).coerceAtLeast(1.8f), join = StrokeJoin.Round),
+                        style = Stroke(width = (minDim * 0.085f).coerceAtLeast(1.6f), join = StrokeJoin.Round),
                     )
                 }
 
@@ -261,45 +379,112 @@ fun BettingBrandLogo(
                         lineTo(w * 0.12f, h * 0.50f)
                         close()
                     }
-                    drawPath(diamond, color = accent.copy(alpha = 0.25f))
+                    drawPath(diamond, color = accent.copy(alpha = 0.24f))
                     drawPath(
                         diamond,
                         color = accent,
-                        style = Stroke(width = (minDim * 0.08f).coerceAtLeast(1.6f)),
+                        style = Stroke(width = (minDim * 0.075f).coerceAtLeast(1.5f)),
                     )
                 }
 
                 else -> {
-                    // Clean geometric shield outline for non-emblem brands or fallback monograms
                     drawCircle(
-                        color = accent.copy(alpha = 0.28f),
+                        color = accent.copy(alpha = 0.30f),
                         radius = minDim * 0.40f,
                         center = Offset(w * 0.50f, h * 0.50f),
-                        style = Stroke(width = (minDim * 0.07f).coerceAtLeast(1.4f)),
+                        style = Stroke(width = (minDim * 0.065f).coerceAtLeast(1.4f)),
                     )
                 }
             }
         }
 
-        val showCenterText = when (brandId) {
-            "bet9ja", "bet365", "ladbrokes", "paddypower", "22bet", "paripesa",
-            "melbet", "betwinner", "betmgm", "caesars", "rollbit", "bcgame", null -> true
-            else -> size >= 44.dp
-        }
-        if (showCenterText) {
-            val fontSize = when {
-                size <= 26.dp -> if (identity.monogram.length >= 3) 7.sp else 9.sp
-                size <= 34.dp -> if (identity.monogram.length >= 3) 9.sp else 11.sp
-                size <= 46.dp -> if (identity.monogram.length >= 3) 10.sp else 13.sp
-                else -> if (identity.monogram.length >= 3) 14.sp else 18.sp
+        // Authentic brand typography overlays matched per real platform identity
+        when (brandId) {
+            "sportybet", "1xbet", "betway", "stake", "msport", "ladbrokes", "betfair", "pokerstars" -> {
+                // Pure custom vector icon drawn cleanly above — zero redundant letter overlay
             }
-            Text(
-                text = identity.monogram,
-                fontSize = fontSize,
-                fontWeight = FontWeight.ExtraBold,
-                color = fg,
-                maxLines = 1,
-            )
+
+            "bet9ja" -> {
+                val baseSp = when {
+                    size <= 26.dp -> 8.sp
+                    size <= 34.dp -> 10.sp
+                    size <= 46.dp -> 12.sp
+                    else -> 16.sp
+                }
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = "9",
+                        fontSize = (baseSp.value * 1.25f).sp,
+                        fontWeight = FontWeight.Black,
+                        fontStyle = FontStyle.Italic,
+                        color = accent,
+                    )
+                    Text(
+                        text = "ja",
+                        fontSize = baseSp,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontStyle = FontStyle.Italic,
+                        color = fg,
+                    )
+                }
+            }
+
+            "bet365" -> {
+                val topSp = if (size <= 34.dp) 7.sp else 9.sp
+                val numSp = if (size <= 34.dp) 8.sp else 11.sp
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "bet",
+                        fontSize = topSp,
+                        lineHeight = topSp,
+                        fontWeight = FontWeight.Bold,
+                        color = fg,
+                    )
+                    Text(
+                        text = "365",
+                        fontSize = numSp,
+                        lineHeight = numSp,
+                        fontWeight = FontWeight.Black,
+                        color = accent,
+                    )
+                }
+            }
+
+            "betking", "draftkings", "roobet", "hollywoodbets", "bangbet", "parimatch" -> {
+                val fontSize = when {
+                    size <= 26.dp -> 7.sp
+                    size <= 34.dp -> 9.sp
+                    size <= 46.dp -> 10.sp
+                    else -> 14.sp
+                }
+                Text(
+                    text = identity.monogram,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = if (brandId == "parimatch") accent else fg,
+                    maxLines = 1,
+                    modifier = Modifier.padding(top = (size.value * 0.20f).dp),
+                )
+            }
+
+            else -> {
+                val fontSize = when {
+                    size <= 26.dp -> if (identity.monogram.length >= 3) 7.sp else 9.sp
+                    size <= 34.dp -> if (identity.monogram.length >= 3) 9.sp else 11.sp
+                    size <= 46.dp -> if (identity.monogram.length >= 3) 10.sp else 13.sp
+                    else -> if (identity.monogram.length >= 3) 14.sp else 18.sp
+                }
+                Text(
+                    text = identity.monogram,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = if (brandId == "betpawa" || brandId == "bcgame") accent else fg,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }

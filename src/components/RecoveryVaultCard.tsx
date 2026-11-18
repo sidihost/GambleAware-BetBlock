@@ -103,35 +103,33 @@ export const RecoveryVaultCard: React.FC<RecoveryVaultCardProps> = ({
             <ShieldCheck className="h-4 w-4" />
           </div>
           <LiquidSectionHeader
-            title="Zero-Loss Recovery Vault"
-            subtitle="Auto-saved across 3 device layers — zero account required"
+            title="Local Backup"
+            subtitle="Saved in three browser storage areas without needing an account"
           />
         </div>
         <button
           type="button"
           onClick={onForceSaveVault}
-          title="Refresh 3-layer snapshot"
-          aria-label="Refresh recovery vault snapshot"
+          title="Refresh local backup"
+          aria-label="Refresh local backup"
           className="inline-flex h-7 w-fit shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 text-[10px] font-semibold text-[var(--ink)] hover:opacity-90"
         >
           <HardDrive className="h-3 w-3 text-[var(--accent-ink)]" />
-          <span>{activeLayersCount}/3 Active</span>
+          <span>{activeLayersCount}/3 saved</span>
         </button>
       </div>
 
-      {/* Layer Summary */}
+      {/* Storage Summary */}
       <div className="mt-2.5 rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span className="font-semibold text-[var(--ink)]">
-            Cache-Clear Auto-Heal Protection
-          </span>
+          <span className="font-semibold text-[var(--ink)]">Protected across cache clears</span>
           <span className="font-mono text-[10px] font-semibold text-[var(--accent-ink)]">
-            Local · IndexedDB · Cache Vault
+            Local · IndexedDB · Cache
           </span>
         </div>
         <p className="mt-1 text-[11px] leading-snug text-[var(--ink-muted)]">
-          Clearing browser cache keeps your streak, goals, and rules safe automatically. Save your
-          Recovery Key or backup file below so even wiping all phone data restores everything in 1 tap.
+          Your streak, goals, and blocklist stay intact if browser cache is cleared. Copy your
+          Recovery Key or save a backup file to move data to a new phone.
         </p>
       </div>
 
@@ -152,7 +150,7 @@ export const RecoveryVaultCard: React.FC<RecoveryVaultCardProps> = ({
           className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
         >
           <Download className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-          <span>Save Backup File</span>
+          <span>Export Backup File</span>
         </button>
       </div>
 
@@ -166,10 +164,10 @@ export const RecoveryVaultCard: React.FC<RecoveryVaultCardProps> = ({
           className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-[var(--accent-ink)] hover:underline"
         >
           <RotateCcw className="h-3 w-3" />
-          <span>{showRestoreBox ? 'Hide Restore Panel' : 'Restore from Key or File'}</span>
+          <span>{showRestoreBox ? 'Hide Restore' : 'Restore from Key or File'}</span>
         </button>
         <span className="font-mono text-[10px] text-[var(--ink-muted)]">
-          {durableStatus.persistentGranted ? 'OS Storage Locked' : 'Triple-Mirrored'}
+          {durableStatus.persistentGranted ? 'Persistent storage' : '3 local copies'}
         </span>
       </div>
 
