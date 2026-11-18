@@ -33,7 +33,7 @@
     },
     "UserPrivateInfo": {
       "title": "UserPrivateInfo",
-      "description": "Isolated PII document storing Google email and display name accessible strictly to the owner.",
+      "description": "Isolated PII document storing email, display name, and preferred greeting name accessible strictly to the owner.",
       "type": "object",
       "properties": {
         "ownerId": {
@@ -56,6 +56,12 @@
           "minLength": 0,
           "maxLength": 120
         },
+        "preferredName": {
+          "type": "string",
+          "description": "Personalized first or preferred name shown in daily greetings.",
+          "minLength": 0,
+          "maxLength": 60
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -65,11 +71,11 @@
           "format": "date-time"
         }
       },
-      "required": ["ownerId", "email", "displayName", "createdAt", "updatedAt"]
+      "required": ["ownerId", "email", "displayName", "preferredName", "createdAt", "updatedAt"]
     },
     "UserSettings": {
       "title": "UserSettings",
-      "description": "Persistent GambleAware blocker configuration, streak baseline, commitment lock, and UI preferences.",
+      "description": "Persistent GambleAware blocker configuration, streak baseline, commitment lock, AI agent toggles, and UI preferences.",
       "type": "object",
       "properties": {
         "ownerId": {
@@ -104,6 +110,8 @@
         "hasCompletedTour": { "type": "boolean" },
         "notificationsEnabled": { "type": "boolean" },
         "lastNotifiedMilestoneDay": { "type": "number" },
+        "aiAutoBlockEnabled": { "type": "boolean" },
+        "goalReminderEnabled": { "type": "boolean" },
         "isAccessibilityEnabled": { "type": "boolean" },
         "isDeviceAdminEnabled": { "type": "boolean" },
         "privateDnsActive": { "type": "boolean" },
@@ -135,10 +143,69 @@
         "hasCompletedTour",
         "notificationsEnabled",
         "lastNotifiedMilestoneDay",
+        "aiAutoBlockEnabled",
+        "goalReminderEnabled",
         "isAccessibilityEnabled",
         "isDeviceAdminEnabled",
         "privateDnsActive",
         "privateDnsHost",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserGoal": {
+      "title": "UserGoal",
+      "description": "Personalized betting-free recovery or Naira savings goal created by the user or AI coach.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "goalId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "category": {
+          "type": "string",
+          "enum": ["savings", "streak", "milestone"],
+          "maxLength": 24
+        },
+        "targetDays": { "type": "number" },
+        "targetAmountNgn": { "type": "number" },
+        "whyNote": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 280
+        },
+        "isPrimary": { "type": "boolean" },
+        "isCompleted": { "type": "boolean" },
+        "lockDurationDays": { "type": "number" },
+        "createdAtMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "goalId",
+        "title",
+        "category",
+        "targetDays",
+        "targetAmountNgn",
+        "whyNote",
+        "isPrimary",
+        "isCompleted",
+        "lockDurationDays",
+        "createdAtMs",
         "createdAt",
         "updatedAt"
       ]
@@ -234,7 +301,7 @@
         },
         "source": {
           "type": "string",
-          "enum": ["Web Shield", "In-App WebView", "App Shield", "Install Guard"],
+          "enum": ["Web Shield", "In-App WebView", "App Shield", "Install Guard", "AI Agent"],
           "maxLength": 32
         },
         "categoryName": {
@@ -297,11 +364,15 @@
     },
     "/users/{userId}/private/{docId}": {
       "schema": { "$ref": "#/entities/UserPrivateInfo" },
-      "description": "Isolated PII document (email & displayName) strictly owned by userId."
+      "description": "Isolated PII document (email, displayName, preferredName) strictly owned by userId."
     },
     "/users/{userId}/profile/{docId}": {
       "schema": { "$ref": "#/entities/UserSettings" },
       "description": "Synced protection settings & Naira baseline document (docId == settings)."
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/UserGoal" },
+      "description": "Personalized recovery and Naira savings goals strictly owned by userId."
     },
     "/users/{userId}/domains/{domainId}": {
       "schema": { "$ref": "#/entities/CustomDomainRule" },

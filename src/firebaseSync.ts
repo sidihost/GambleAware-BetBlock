@@ -21,15 +21,19 @@ import {
   BlockedDomainEntity,
   BlockedEventEntity,
   ProtectionSettingsState,
+  RecoveryGoalEntity,
   ThemeMode,
   UrgeLogEntity,
 } from './data/types';
 import { OperationType, db, handleFirestoreError } from './firebase';
 import {
   BLUEPRINT_LIMITS,
+  isValidFirestoreDocId,
   sanitizeDomainForBlueprint,
   sanitizeEventTarget,
+  sanitizeGoalFields,
   sanitizePackageForBlueprint,
+  sanitizePreferredName,
   sanitizeUrgeFields,
   toSafeFirestoreDocId,
 } from './firebaseValidation';
@@ -56,13 +60,15 @@ function buildSettingsPayloadFields(uid: string, store: PersistedStore) {
       0,
       Math.min(BLUEPRINT_LIMITS.maxDailyBetSpendNgn, Math.floor(s.dailyBetSpendEstimate || 0)),
     ),
-    themeMode: Object.values(ThemeMode).includes(s.themeMode) ? s.themeMode : ThemeMode.DARK,
+    themeMode: Object.values(ThemeMode).includes(s.themeMode) ? s.themeMode : ThemeMode.LIGHT,
     hasCompletedTour: Boolean(s.hasCompletedTour),
     notificationsEnabled: Boolean(s.notificationsEnabled),
     lastNotifiedMilestoneDay: Math.max(
       0,
       Math.min(36500, Math.floor(s.lastNotifiedMilestoneDay || 0)),
     ),
+    aiAutoBlockEnabled: Boolean(s.aiAutoBlockEnabled),
+    goalReminderEnabled: Boolean(s.goalReminderEnabled),
     isAccessibilityEnabled: Boolean(store.isAccessibilityEnabled),
     isDeviceAdminEnabled: Boolean(store.isDeviceAdminEnabled),
     privateDnsActive: Boolean(store.privateDnsStatus.isActive),
@@ -108,15 +114,19 @@ export async function bootstrapUserCloudAccount(
       0,
       BLUEPRINT_LIMITS.emailMaxLength,
     );
-    const safeDisplayName = (user.displayName ?? '').slice(
+    const safeDisplayName = (user.displayName ?? localStore.preferredName ?? '').slice(
       0,
       BLUEPRINT_LIMITS.displayNameMaxLength,
+    );
+    const safePreferredName = sanitizePreferredName(
+      localStore.preferredName || (privateSnap.exists() ? String(privateSnap.data().preferredName ?? '') : '') || safeDisplayName.split(/\s+/)[0] || '',
     );
     if (!privateSnap.exists()) {
       await setDoc(privateDocRef, {
         ownerId: uid,
         email: safeEmail,
         displayName: safeDisplayName,
+        preferredName: safePreferredName,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -124,6 +134,7 @@ export async function bootstrapUserCloudAccount(
       await updateDoc(privateDocRef, {
         email: safeEmail,
         displayName: safeDisplayName,
+        preferredName: safePreferredName,
         updatedAt: serverTimestamp(),
       });
     }
@@ -142,8 +153,23 @@ export async function bootstrapUserCloudAccount(
         updatedAt: serverTimestamp(),
       });
 
-      // Seed any pre-existing local domains, apps, events, and urge logs into Cloud Firestore
       const batch = writeBatch(db);
+      for (const goal of localStore.goals.slice(0, 25)) {
+        const cleanId = toSafeFirestoreDocId(goal.goalId);
+        if (!isValidFirestoreDocId(cleanId)) continue;
+        const cleanFields = sanitizeGoalFields(goal);
+        const goalRef = doc(db, 'users', uid, 'goals', cleanId);
+        batch.set(goalRef, {
+          ownerId: uid,
+          goalId: cleanId,
+          ...cleanFields,
+          isPrimary: Boolean(goal.isPrimary),
+          isCompleted: Boolean(goal.isCompleted),
+          createdAtMs: Math.max(1, Math.floor(goal.createdAtMs || Date.now())),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
       for (const domainItem of localStore.domains) {
         const cleanDomain = sanitizeDomainForBlueprint(domainItem.domain);
         if (!BLUEPRINT_LIMITS.domainPattern.test(cleanDomain)) continue;
@@ -219,6 +245,37 @@ export async function bootstrapUserCloudAccount(
   return { hydratedFromCloud };
 }
 
+export async function updatePreferredNameInCloud(
+  uid: string,
+  email: string,
+  displayName: string,
+  preferredName: string,
+): Promise<void> {
+  const path = `users/${uid}/private/account`;
+  const ref = doc(db, 'users', uid, 'private', 'account');
+  const safePreferred = sanitizePreferredName(preferredName);
+  try {
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        ownerId: uid,
+        email: (email || 'user@gambleaware.local').slice(0, BLUEPRINT_LIMITS.emailMaxLength),
+        displayName: (displayName || safePreferred).slice(0, BLUEPRINT_LIMITS.displayNameMaxLength),
+        preferredName: safePreferred,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(ref, {
+        preferredName: safePreferred,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
 export async function syncSettingsToCloud(uid: string, store: PersistedStore): Promise<void> {
   const path = `users/${uid}/profile/settings`;
   const settingsRef = doc(db, 'users', uid, 'profile', 'settings');
@@ -240,6 +297,48 @@ export async function syncSettingsToCloud(uid: string, store: PersistedStore): P
     }
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export async function upsertGoalInCloud(uid: string, goal: RecoveryGoalEntity): Promise<void> {
+  const safeId = toSafeFirestoreDocId(goal.goalId);
+  if (!isValidFirestoreDocId(safeId)) return;
+  const path = `users/${uid}/goals/${safeId}`;
+  const ref = doc(db, 'users', uid, 'goals', safeId);
+  const cleanFields = sanitizeGoalFields(goal);
+  try {
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        ownerId: uid,
+        goalId: safeId,
+        ...cleanFields,
+        isPrimary: Boolean(goal.isPrimary),
+        isCompleted: Boolean(goal.isCompleted),
+        createdAtMs: Math.max(1, Math.floor(goal.createdAtMs || Date.now())),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(ref, {
+        ...cleanFields,
+        isPrimary: Boolean(goal.isPrimary),
+        isCompleted: Boolean(goal.isCompleted),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function deleteGoalFromCloud(uid: string, goalId: string): Promise<void> {
+  const safeId = toSafeFirestoreDocId(goalId);
+  const path = `users/${uid}/goals/${safeId}`;
+  try {
+    await deleteDoc(doc(db, 'users', uid, 'goals', safeId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
   }
 }
 
@@ -406,6 +505,7 @@ export async function createUrgeLogInCloud(uid: string, log: UrgeLogEntity): Pro
 }
 
 export interface CloudListenersCallbacks {
+  onPrivateInfoUpdate: (preferredName: string) => void;
   onSettingsUpdate: (patch: {
     settings: ProtectionSettingsState;
     isAccessibilityEnabled: boolean;
@@ -413,6 +513,7 @@ export interface CloudListenersCallbacks {
     privateDnsActive: boolean;
     privateDnsHost: string | null;
   }) => void;
+  onGoalsUpdate: (goals: RecoveryGoalEntity[]) => void;
   onDomainsUpdate: (domains: BlockedDomainEntity[]) => void;
   onBlockedAppsUpdate: (apps: BlockedAppEntity[]) => void;
   onEventsUpdate: (events: BlockedEventEntity[]) => void;
@@ -424,6 +525,24 @@ export function attachUserCloudListeners(
   callbacks: CloudListenersCallbacks,
 ): () => void {
   const unsubscribers: Unsubscribe[] = [];
+
+  const privatePath = `users/${uid}/private/account`;
+  unsubscribers.push(
+    onSnapshot(
+      doc(db, 'users', uid, 'private', 'account'),
+      (snap) => {
+        if (!snap.exists()) return;
+        const d = snap.data();
+        const pref = typeof d.preferredName === 'string' ? d.preferredName : '';
+        if (pref) {
+          callbacks.onPrivateInfoUpdate(pref);
+        }
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, privatePath);
+      },
+    ),
+  );
 
   const settingsPath = `users/${uid}/profile/settings`;
   unsubscribers.push(
@@ -451,10 +570,12 @@ export function attachUserCloudListeners(
             dailyBetSpendEstimate: Number(d.dailyBetSpendEstimate ?? 5000),
             themeMode: Object.values(ThemeMode).includes(d.themeMode)
               ? (d.themeMode as ThemeMode)
-              : ThemeMode.DARK,
+              : ThemeMode.LIGHT,
             hasCompletedTour: Boolean(d.hasCompletedTour),
             notificationsEnabled: Boolean(d.notificationsEnabled),
             lastNotifiedMilestoneDay: Number(d.lastNotifiedMilestoneDay ?? 0),
+            aiAutoBlockEnabled: d.aiAutoBlockEnabled !== undefined ? Boolean(d.aiAutoBlockEnabled) : true,
+            goalReminderEnabled: d.goalReminderEnabled !== undefined ? Boolean(d.goalReminderEnabled) : true,
           },
           isAccessibilityEnabled: Boolean(d.isAccessibilityEnabled),
           isDeviceAdminEnabled: Boolean(d.isDeviceAdminEnabled),
@@ -467,6 +588,39 @@ export function attachUserCloudListeners(
       },
       (error) => {
         handleFirestoreError(error, OperationType.GET, settingsPath);
+      },
+    ),
+  );
+
+  const goalsPath = `users/${uid}/goals`;
+  unsubscribers.push(
+    onSnapshot(
+      query(
+        collection(db, 'users', uid, 'goals'),
+        where('ownerId', '==', uid),
+        orderBy('createdAtMs', 'desc'),
+      ),
+      (snap) => {
+        const list: RecoveryGoalEntity[] = snap.docs.map((docSnap) => {
+          const d = docSnap.data();
+          return {
+            goalId: String(d.goalId ?? docSnap.id),
+            title: String(d.title ?? 'Recovery Goal'),
+            category:
+              d.category === 'savings' || d.category === 'milestone' ? d.category : 'streak',
+            targetDays: Number(d.targetDays ?? 30),
+            targetAmountNgn: Number(d.targetAmountNgn ?? 0),
+            whyNote: String(d.whyNote ?? ''),
+            isPrimary: Boolean(d.isPrimary),
+            isCompleted: Boolean(d.isCompleted),
+            lockDurationDays: Number(d.lockDurationDays ?? 0),
+            createdAtMs: Number(d.createdAtMs ?? Date.now()),
+          };
+        });
+        callbacks.onGoalsUpdate(list);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, goalsPath);
       },
     ),
   );

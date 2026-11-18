@@ -15,9 +15,9 @@ export default defineConfig({
         name: 'GambleAware',
         short_name: 'GambleAware',
         description:
-          'GambleAware by Imoogle Technology — Zero-VPN gambling site and app blocker with Naira (₦) savings tracking, anti-uninstall commitment lock, and free cloud sync.',
-        theme_color: '#060608',
-        background_color: '#060608',
+          'GambleAware by Imoogle Technology — gambling site and app blocker with Naira (₦) savings tracking, recovery goals, lock timers, and free cloud sync.',
+        theme_color: '#FFFFFF',
+        background_color: '#FFFFFF',
         display: 'standalone',
         start_url: '/',
         scope: '/',

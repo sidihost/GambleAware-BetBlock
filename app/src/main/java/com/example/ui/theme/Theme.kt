@@ -58,7 +58,7 @@ private val DarkLiquidColors = LiquidColors(
     blobThree = DarkBlobTertiary,
 )
 
-val LocalLiquidColors = staticCompositionLocalOf { DarkLiquidColors }
+val LocalLiquidColors = staticCompositionLocalOf { LightLiquidColors }
 
 private val LightColorScheme = lightColorScheme(
     primary = GamblePinkDeep,

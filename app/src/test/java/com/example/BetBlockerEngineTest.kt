@@ -156,4 +156,24 @@ class BetBlockerEngineTest {
         assertTrue(BlocklistMatcher.matchAppPackage("com.bet9ja.android", defaultConfig, "Bet9ja").isBlocked)
         assertTrue(BlocklistMatcher.matchAppPackage("com.kingmakers.betking", defaultConfig, "BetKing").isBlocked)
     }
+
+    @Test
+    fun chromeNewTabAndInternalPagesNeverTriggerFalsePositiveClose() {
+        val defaultConfig = BlockFilterConfig()
+        assertFalse(BlocklistMatcher.matchDomainOrUrl("chrome://newtab", defaultConfig).isBlocked)
+        assertFalse(BlocklistMatcher.matchDomainOrUrl("chrome-native://newtab/", defaultConfig).isBlocked)
+        assertFalse(BlocklistMatcher.matchBrowserAddressText("Search or type web address", defaultConfig).isBlocked)
+        assertFalse(BlocklistMatcher.matchAppPackage("com.android.chrome", defaultConfig, "Chrome").isBlocked)
+        assertFalse(BlocklistMatcher.matchAppPackage("com.chrome.beta", defaultConfig, "Chrome Beta").isBlocked)
+        assertFalse(
+            BlocklistMatcher.matchWebViewContent(
+                visibleTexts = listOf("Discover", "Football headlines", "sportybet.com odds review", "Search or type web address"),
+                hasWebView = false,
+                config = defaultConfig,
+            ).isBlocked,
+        )
+        assertTrue(
+            BlocklistMatcher.matchDomainOrUrl("https://www.sportybet.com/ng/m/login", defaultConfig).isBlocked,
+        )
+    }
 }

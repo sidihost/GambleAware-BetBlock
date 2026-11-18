@@ -7,7 +7,7 @@ import {
   Download,
   LockKeyhole,
   Share2,
-  Sparkles,
+  Smartphone,
   TrendingUp,
 } from 'lucide-react';
 import { LiquidGlassCard } from '../components/LiquidGlass';
@@ -27,61 +27,61 @@ type ShowcaseTab = 'guard' | 'savings' | 'lock';
 const FEATURES = [
   {
     num: '01',
-    title: 'Zero-VPN Web & In-App WebView Guard',
-    body: 'Stops SportyBet, Bet9ja, BetKing, 1xBet, Stake, and betting links inside Chrome, Opera, Brave, Custom Tabs, and social feeds without slowing your connection or draining battery.',
+    title: 'Works Across Browsers & Social Apps',
+    body: 'Stops SportyBet, Bet9ja, BetKing, 1xBet, Stake, and betting links inside Chrome, Safari, Instagram, TikTok, and Telegram without slowing your phone.',
   },
   {
     num: '02',
-    title: '640+ Betting Domains & 130+ Android Apps',
-    body: 'Preloaded sportsbooks, live casinos, virtuals, and crash games paired with an automatic Install Guard that blocks newly sideloaded betting APKs.',
+    title: '640+ Betting Sites & 130+ Betting Apps',
+    body: 'Preloaded sportsbooks, casinos, virtuals, and crash games blocked right away — including new betting apps if you try to install them.',
   },
   {
     num: '03',
-    title: 'Tamper-Proof Commitment Lock & Device Admin',
-    body: 'Commit for 24 hours up to 90 days. Once active, GambleAware locks uninstalls, Settings tampering, and blocklist weakening until your countdown finishes.',
+    title: 'Lock Timer That Prevents Deleting the App',
+    body: 'Lock your protection from 1 to 90 days. Once active, GambleAware cannot be turned off or deleted until your countdown reaches zero.',
   },
   {
     num: '04',
-    title: 'Real-Time Naira (₦) Recovery Tracking',
-    body: 'Set your daily betting spend baseline in Naira and convert every betting-free hour directly into visible savings you retain.',
+    title: 'Live Naira (₦) Savings Tracker',
+    body: 'Set what you used to spend each day on betting and watch your real Naira savings add up every single day you stay clean.',
   },
   {
     num: '05',
-    title: 'Free Cloud Sync Across Devices',
-    body: 'Connect your Google account at ₦0 cost to keep your clean streak, Naira baseline, custom domain rules, and urge journal securely synced.',
+    title: 'Free Online Backup Across Devices',
+    body: 'Sign in with Google or email at ₦0 cost to keep your streak, Naira savings, personal goals, and blocked websites synced.',
   },
   {
     num: '06',
-    title: '60s Calm Reset & Recovery Helplines',
-    body: 'Built-in 4-4-4 guided breathing exercises when impulses spike, alongside direct one-tap access to confidential support organizations.',
+    title: '60s Calm Reset & Real Support Links',
+    body: 'Built-in 60-second guided breathing exercises when urges hit hard, plus direct access to confidential recovery help.',
   },
 ];
 
 const COMPARISON_ROWS = [
   {
-    capability: '640+ Betting Sites & Mirror Keyword Blocker',
-    apk: 'System-wide (All Browsers)',
-    pwa: 'Rule Lookup & Registry',
+    capability: '640+ Betting Sites & New Lookalike Links',
+    apk: 'All Browsers & Social Apps',
+    pwa: 'Site Checker & Custom List',
   },
   {
-    capability: 'In-App Social WebView & Chrome Custom Tabs',
-    apk: 'Real-Time Accessibility Guard',
-    pwa: 'Browser Shield Config',
+    capability: 'Betting Sign-In Blocker & Redirect',
+    apk: 'Automatic On Your Phone',
+    pwa: 'Instant Web Redirect',
   },
   {
-    capability: '130+ Betting Apps & APK Install Guard',
-    apk: 'Instant App Intercept',
-    pwa: 'Package Registry',
+    capability: '130+ Betting Apps Blocked Automatically',
+    apk: 'Blocks Apps From Opening',
+    pwa: 'App Blocklist Rules',
   },
   {
-    capability: 'Anti-Uninstall Device Admin & 90-Day Lock',
-    apk: 'OS-Level Lock Enforced',
-    pwa: 'Timer & 4-Digit PIN',
+    capability: 'Prevent Uninstalling Until Timer Ends',
+    apk: 'Phone Delete Lock Enforced',
+    pwa: 'Lock Timer & 4-Digit PIN',
   },
   {
-    capability: 'Naira (₦) Savings Chart & Free Cloud Sync',
-    apk: 'Included (₦0 Forever)',
-    pwa: 'Included (₦0 Forever)',
+    capability: 'Personal Goals, Naira Saved & Cloud Backup',
+    apk: 'Included (Free Forever)',
+    pwa: 'Included (Free Forever)',
   },
 ];
 
@@ -110,8 +110,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
       {/* Hero Split Section */}
       <section className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
         <div className="flex flex-col items-start lg:col-span-6">
-          <p className="font-mono text-xs font-semibold tracking-widest text-[var(--accent-ink)] uppercase">
-            Zero-VPN Protection · 100% Free Forever
+          <p className="text-xs font-semibold tracking-widest text-[var(--accent-ink)] uppercase">
+            Free Gambling Blocker · Built for Everyday Use
           </p>
 
           <h1 className="mt-3 font-display text-4xl leading-[1.06] font-bold tracking-tight text-[var(--ink)] sm:text-5xl">
@@ -119,9 +119,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
           </h1>
 
           <p className="mt-4 max-w-xl text-base leading-relaxed text-[var(--ink-muted)]">
-            System-wide protection across browsers, in-app WebViews, and {builtInDomainCount}+
-            betting platforms — complete with live Naira (₦) savings tracking, guided calm resets,
-            and free Cloud Sync.
+            Full protection across mobile browsers, social apps, and {builtInDomainCount}+ betting
+            websites — with live Naira (₦) savings, personal goals, and free backup.
           </p>
 
           {/* Primary + Secondary Action Cluster */}
@@ -132,13 +131,13 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
               className="inline-flex h-12 items-center justify-center gap-2.5 rounded-full bg-[var(--active-fill)] px-6 text-sm font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90"
             >
               <Download className="h-4 w-4 shrink-0" />
-              <span>Download Android APK</span>
+              <span>Download Android App</span>
             </a>
 
             {isInstalled ? (
               <span className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--muted-fill)] px-5 text-sm font-semibold text-[var(--accent-ink)]">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>Installed on Home Screen</span>
+                <span>Saved on Home Screen</span>
               </span>
             ) : isInstallable ? (
               <button
@@ -146,8 +145,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                 onClick={install}
                 className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-5 text-sm font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)]"
               >
-                <Sparkles className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
-                <span>Install Web App (PWA)</span>
+                <Smartphone className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                <span>Save Web App to Phone</span>
               </button>
             ) : (
               <button
@@ -156,7 +155,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                 className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-5 text-sm font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)]"
               >
                 <Share2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
-                <span>Install Web App Guide</span>
+                <span>How to Add to Home Screen</span>
               </button>
             )}
           </div>
@@ -167,21 +166,20 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                 <p>
                   <strong className="text-[var(--ink)]">iPhone &amp; iPad (Safari):</strong> Tap
                   the <strong>Share</strong> icon in Safari, then choose{' '}
-                  <strong>Add to Home Screen</strong> to install GambleAware offline.
+                  <strong>Add to Home Screen</strong> to keep GambleAware one tap away.
                 </p>
               ) : (
                 <p>
-                  <strong className="text-[var(--ink)]">Chrome / Edge / Android Browser:</strong>{' '}
-                  Open your browser menu (&vellip;) and choose <strong>Install app</strong> or{' '}
-                  <strong>Add to Home screen</strong>. For full OS-level blocking &amp; anti-uninstall
-                  lock, download the native <strong>Android APK</strong> above.
+                  <strong className="text-[var(--ink)]">Android / Chrome / Edge:</strong> Open your
+                  browser menu (&vellip;) and choose <strong>Add to Home screen</strong>. For full
+                  automatic blocking across apps, tap <strong>Download Android App</strong> above.
                 </p>
               )}
             </div>
           ) : null}
 
-          <p className="mt-4 font-mono text-xs text-[var(--ink-muted)]">
-            Android 7.0+ · 19 MB Signed APK · Zero VPN Battery Drain · ₦0 Forever
+          <p className="mt-4 text-xs text-[var(--ink-muted)]">
+            Android 7.0+ · Easy 2-minute install · Battery friendly · Free Forever
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-4 text-xs font-medium">
@@ -190,7 +188,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
               onClick={onOpenBlocker}
               className="inline-flex cursor-pointer items-center gap-1 text-[var(--accent-ink)] hover:underline"
             >
-              <span>Open Live Protection Dashboard</span>
+              <span>Back to Home Dashboard</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
             {!isSignedIn ? (
@@ -199,7 +197,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                 onClick={onSignInGoogle}
                 className="inline-flex cursor-pointer items-center gap-1 text-[var(--ink-muted)] hover:text-[var(--ink)]"
               >
-                <span>Connect Google for Free Cloud Sync</span>
+                <span>Sign in with Google to save progress</span>
               </button>
             ) : null}
           </div>
@@ -264,7 +262,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                 <div className="flex items-center justify-between px-5 pt-3 pb-2 text-[10px] font-mono text-white/75">
                   <span>{state.isFullyArmed ? 'GUARD ON' : 'STANDBY'}</span>
                   <div className="h-3.5 w-3.5 rounded-full border border-white/15 bg-black" />
-                  <span>ZERO-VPN</span>
+                  <span>PRIVATE</span>
                 </div>
 
                 {activeTab === 'guard' ? (
@@ -272,7 +270,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                     <div className="flex w-full items-center justify-between text-xs">
                       <span className="font-display font-bold text-white">GambleAware</span>
                       <span className="rounded-full bg-[#FF3D9A] px-2 py-0.5 font-mono text-[10px] font-semibold text-black">
-                        {state.isFullyArmed ? 'ARMED' : 'PAUSED'}
+                        {state.isFullyArmed ? 'ACTIVE' : 'PAUSED'}
                       </span>
                     </div>
 
@@ -446,15 +444,15 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                     <div className="mt-3 space-y-2 text-[11px]">
                       {[
                         {
-                          label: 'Device Admin Uninstall Lock',
+                          label: 'Prevent Deleting App',
                           on: state.isDeviceAdminEnabled,
                         },
                         {
-                          label: 'Anti-Tamper Guard',
+                          label: 'Keep Blocker Locked',
                           on: state.settings.antiTamperLockEnabled,
                         },
                         {
-                          label: 'Free Firestore Cloud Sync',
+                          label: 'Online Account Backup',
                           on: isSignedIn,
                         },
                       ].map((row) => (
@@ -511,32 +509,32 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
         </div>
       </section>
 
-      {/* 3-Step APK Setup + Platform Comparison */}
+      {/* 3-Step Setup + Comparison */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <LiquidGlassCard className="p-5 sm:p-6 lg:col-span-5">
-          <p className="font-mono text-xs font-semibold text-[var(--accent-ink)] uppercase">
-            2-Minute Android Setup
+          <p className="text-xs font-semibold text-[var(--accent-ink)] uppercase">
+            Quick Phone Setup
           </p>
           <h2 className="mt-1.5 font-display text-xl font-bold text-[var(--ink)]">
-            How to install the APK
+            How to install on Android
           </h2>
 
           <ol className="mt-4 space-y-4">
             {[
               {
                 step: '1',
-                title: 'Download GambleAware.apk',
-                desc: 'Tap "Download Android APK" above to save the signed 19 MB Android installer directly.',
+                title: 'Download the GambleAware app',
+                desc: 'Tap "Download Android App" above to save the installer to your phone.',
               },
               {
                 step: '2',
-                title: 'Confirm browser install permission',
-                desc: 'Open the downloaded file and enable "Install unknown apps" once for Chrome or Files.',
+                title: 'Allow installation on your phone',
+                desc: 'Open the downloaded file and tap Allow when Android asks for permission.',
               },
               {
                 step: '3',
-                title: 'Enable Guard, Device Admin & Timer Lock',
-                desc: 'Activate Web/App Accessibility Guard, Device Admin anti-uninstall, and optional Google Cloud Sync.',
+                title: 'Turn on your Blocker & Lock Timer',
+                desc: 'Follow the 3 simple on-screen steps and sign in to save your goals online.',
               },
             ].map((item) => (
               <li key={item.step} className="flex gap-3">
@@ -559,23 +557,44 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
             className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
           >
             <Download className="h-4 w-4" />
-            <span>Download Android APK Now</span>
+            <span>Download Android App Now</span>
           </a>
         </LiquidGlassCard>
 
         <LiquidGlassCard className="p-5 sm:p-6 lg:col-span-7">
-          <p className="font-mono text-xs font-semibold text-[var(--accent-ink)] uppercase">
-            Choose Your Setup
+          <p className="text-xs font-semibold text-[var(--accent-ink)] uppercase">
+            Choose Your Option
           </p>
           <h2 className="mt-1.5 font-display text-xl font-bold text-[var(--ink)]">
-            Native Android APK vs. Quick Web App
+            Android Phone App vs. Web Dashboard
           </h2>
 
-          <div className="mt-4 divide-y divide-[var(--subtle-border)]/60">
-            <div className="grid grid-cols-12 gap-2 pb-2 text-[11px] font-mono text-[var(--ink-muted)] uppercase">
-              <span className="col-span-6">Capability</span>
-              <span className="col-span-3 text-[var(--accent-ink)]">Android APK</span>
-              <span className="col-span-3">Web PWA</span>
+          {/* Mobile stacked comparison cards */}
+          <div className="mt-4 divide-y divide-[var(--subtle-border)]/60 sm:hidden">
+            {COMPARISON_ROWS.map((row) => (
+              <div key={row.capability} className="space-y-1.5 py-3 text-xs">
+                <p className="font-semibold text-[var(--ink)]">{row.capability}</p>
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <span className="text-[var(--ink-muted)]">Phone App:</span>
+                  <span className="inline-flex items-center gap-1 font-medium text-[var(--accent-ink)]">
+                    <Check className="h-3.5 w-3.5 shrink-0" />
+                    <span>{row.apk}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <span className="text-[var(--ink-muted)]">Web App:</span>
+                  <span className="text-[var(--ink-muted)]">{row.pwa}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop 12-col comparison table */}
+          <div className="mt-4 hidden divide-y divide-[var(--subtle-border)]/60 sm:block">
+            <div className="grid grid-cols-12 gap-2 pb-2 text-[11px] font-semibold text-[var(--ink-muted)] uppercase">
+              <span className="col-span-6">What you get</span>
+              <span className="col-span-3 text-[var(--accent-ink)]">Phone App</span>
+              <span className="col-span-3">Web App</span>
             </div>
             {COMPARISON_ROWS.map((row) => (
               <div
@@ -587,9 +606,9 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                 </span>
                 <span className="col-span-3 flex items-center gap-1 font-medium text-[var(--accent-ink)]">
                   <Check className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{row.apk}</span>
+                  <span>{row.apk}</span>
                 </span>
-                <span className="col-span-3 truncate text-[var(--ink-muted)]">{row.pwa}</span>
+                <span className="col-span-3 text-[var(--ink-muted)]">{row.pwa}</span>
               </div>
             ))}
           </div>

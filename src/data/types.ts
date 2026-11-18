@@ -9,9 +9,38 @@ export enum ThemeMode {
 
 export const THEME_MODE_LABELS: Record<ThemeMode, string> = {
   [ThemeMode.SYSTEM]: 'System',
-  [ThemeMode.LIGHT]: 'Blush',
+  [ThemeMode.LIGHT]: 'White',
   [ThemeMode.DARK]: 'Black & Pink',
 };
+
+export type RecoveryGoalCategory = 'savings' | 'streak' | 'milestone';
+
+export interface RecoveryGoalEntity {
+  goalId: string;
+  title: string;
+  category: RecoveryGoalCategory;
+  targetDays: number;
+  targetAmountNgn: number;
+  whyNote: string;
+  isPrimary: boolean;
+  isCompleted: boolean;
+  lockDurationDays: number;
+  createdAtMs: number;
+}
+
+export interface GeminiAgentAnalysis {
+  riskLevel: 'safe' | 'caution' | 'high_risk' | 'gambling_login' | string;
+  shouldAutoBlock: boolean;
+  isLoginAttempt: boolean;
+  detectedDomain: string;
+  category: string;
+  shouldRemindGoal: boolean;
+  coachMessage: string;
+  suggestedGoalTitle: string;
+  suggestedGoalTargetDays: number;
+  suggestedGoalAmountNgn: number;
+  suggestedGoalWhy: string;
+}
 
 export interface ProtectionSettingsState {
   isProtectionEnabled: boolean;
@@ -33,6 +62,8 @@ export interface ProtectionSettingsState {
   hasCompletedTour: boolean;
   notificationsEnabled: boolean;
   lastNotifiedMilestoneDay: number;
+  aiAutoBlockEnabled: boolean;
+  goalReminderEnabled: boolean;
 }
 
 export interface BlockedDomainEntity {
@@ -105,7 +136,7 @@ export const RECOVERY_MILESTONES: RecoveryMilestone[] = [
   { days: 365, label: '365d', title: 'One Year' },
 ];
 
-export type AnchorRoute = 'shield' | 'blocklist' | 'activity' | 'lock' | 'download';
+export type AnchorRoute = 'shield' | 'blocklist' | 'activity' | 'lock' | 'download' | 'auth';
 
 export type CloudSyncStatus = 'local' | 'connecting' | 'synced' | 'error';
 
@@ -114,6 +145,7 @@ export interface CloudAccountInfo {
   email: string;
   displayName: string;
   photoUrl: string | null;
+  emailVerified: boolean;
 }
 
 export interface InterventionPayload {
@@ -122,13 +154,19 @@ export interface InterventionPayload {
   category: string;
   isAntiTamper: boolean;
   autoStartBreathing: boolean;
+  isLoginRedirect?: boolean;
+  coachNote?: string;
 }
 
 export interface DerivedMainState {
   settings: ProtectionSettingsState;
+  preferredName: string;
+  firstName: string;
   isAccessibilityEnabled: boolean;
   isDeviceAdminEnabled: boolean;
   privateDnsStatus: PrivateDnsStatus;
+  goals: RecoveryGoalEntity[];
+  primaryGoal: RecoveryGoalEntity | null;
   customBlockedDomains: BlockedDomainEntity[];
   allowlistedDomains: BlockedDomainEntity[];
   customBlockedApps: BlockedAppEntity[];

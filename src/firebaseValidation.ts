@@ -3,6 +3,7 @@ export const BLUEPRINT_LIMITS = {
   ownerIdPattern: /^[a-zA-Z0-9_-]+$/,
   emailMaxLength: 254,
   displayNameMaxLength: 120,
+  preferredNameMaxLength: 60,
   pinHashMaxLength: 64,
   themeModeMaxLength: 16,
   privateDnsHostMaxLength: 253,
@@ -16,10 +17,15 @@ export const BLUEPRINT_LIMITS = {
   appLabelMaxLength: 80,
   targetMaxLength: 253,
   sourceMaxLength: 32,
-  validSources: ['Web Shield', 'In-App WebView', 'App Shield', 'Install Guard'] as const,
+  validSources: ['Web Shield', 'In-App WebView', 'App Shield', 'Install Guard', 'AI Agent'] as const,
   triggerTagMaxLength: 40,
   urgeNoteMaxLength: 280,
   maxDailyBetSpendNgn: 10_000_000,
+  goalTitleMaxLength: 100,
+  goalWhyMaxLength: 280,
+  goalMaxTargetDays: 3650,
+  goalMaxAmountNgn: 100_000_000,
+  validGoalCategories: ['savings', 'streak', 'milestone'] as const,
 } as const;
 
 export function toSafeFirestoreDocId(raw: string): string {
@@ -55,6 +61,36 @@ export function sanitizeUrgeFields(triggerTag: string, note: string): {
 
 export function sanitizeEventTarget(target: string): string {
   return (target.trim() || 'blocked.domain').slice(0, BLUEPRINT_LIMITS.targetMaxLength);
+}
+
+export function sanitizePreferredName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').slice(0, BLUEPRINT_LIMITS.preferredNameMaxLength);
+}
+
+export function sanitizeGoalFields(input: {
+  title: string;
+  category: string;
+  targetDays: number;
+  targetAmountNgn: number;
+  whyNote: string;
+  lockDurationDays: number;
+}) {
+  const safeCategory = BLUEPRINT_LIMITS.validGoalCategories.includes(
+    input.category as (typeof BLUEPRINT_LIMITS.validGoalCategories)[number],
+  )
+    ? (input.category as (typeof BLUEPRINT_LIMITS.validGoalCategories)[number])
+    : 'streak';
+  return {
+    title: input.title.trim().slice(0, BLUEPRINT_LIMITS.goalTitleMaxLength) || '30-Day Betting-Free Goal',
+    category: safeCategory,
+    targetDays: Math.max(1, Math.min(BLUEPRINT_LIMITS.goalMaxTargetDays, Math.round(input.targetDays || 30))),
+    targetAmountNgn: Math.max(
+      0,
+      Math.min(BLUEPRINT_LIMITS.goalMaxAmountNgn, Math.round(input.targetAmountNgn || 0)),
+    ),
+    whyNote: input.whyNote.trim().slice(0, BLUEPRINT_LIMITS.goalWhyMaxLength),
+    lockDurationDays: Math.max(0, Math.min(365, Math.round(input.lockDurationDays || 0))),
+  };
 }
 
 export function isValidFirestoreDocId(id: string): boolean {

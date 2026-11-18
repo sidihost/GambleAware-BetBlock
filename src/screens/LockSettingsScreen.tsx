@@ -77,6 +77,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   const [includeAntiTamper, setIncludeAntiTamper] = useState(true);
   const [showConfirmLock, setShowConfirmLock] = useState(false);
   const [showSetPin, setShowSetPin] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [confirmPinInput, setConfirmPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
@@ -113,10 +114,10 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
       <div className="px-1">
         <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
-          Commitment Lock &amp; Sync
+          Lock &amp; Settings
         </h1>
         <p className="text-xs text-[var(--ink-muted)]">
-          Prevent uninstalling, tampering, or pausing your guard — plus free Cloud Sync
+          Set a protection timer, create a 4-digit PIN, and adjust your savings &amp; theme
         </p>
       </div>
 
@@ -187,11 +188,10 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             <div className="mt-3.5 flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[var(--ink)]">
-                  Anti-Uninstall &amp; Tamper Guard
+                  Prevent Uninstalling &amp; Pausing
                 </p>
                 <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
-                  Blocks Settings App Info, Package Installer, Play Store uninstall, Accessibility
-                  &amp; Device Admin removal while locked
+                  Keeps your blocker turned on and stops app removal until your timer reaches zero
                 </p>
               </div>
               <LiquidSwitch
@@ -203,7 +203,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                     setIncludeAntiTamper(checked);
                   }
                 }}
-                ariaLabel="Anti-Uninstall & Tamper Guard"
+                ariaLabel="Prevent Uninstalling and Pausing"
               />
             </div>
 
@@ -221,19 +221,19 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             </button>
           </LiquidGlassCard>
 
-          {/* Device Admin Uninstall Lock */}
+          {/* Delete Protection */}
           <LiquidGlassCard className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
                 <div className="min-w-0">
                   <p className="font-display text-base font-semibold text-[var(--ink)]">
-                    Uninstall Lock
+                    Delete Protection
                   </p>
                   <p className="text-xs text-[var(--ink-muted)]">
                     {state.isDeviceAdminEnabled
-                      ? 'Active • Prevents uninstalling GambleAware'
-                      : 'Enable Device Admin to block impulsive app removal'}
+                      ? 'Active • Prevents impulsive removal of GambleAware'
+                      : 'Prevents deleting the app quickly during an urge'}
                   </p>
                 </div>
               </div>
@@ -242,7 +242,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                 onClick={onToggleDeviceAdmin}
                 className="shrink-0 cursor-pointer rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
-                {state.isDeviceAdminEnabled ? 'Disable' : 'Enable'}
+                {state.isDeviceAdminEnabled ? 'Turn Off' : 'Turn On'}
               </button>
             </div>
           </LiquidGlassCard>
@@ -327,26 +327,6 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             </div>
           </LiquidGlassCard>
 
-          {/* System Private DNS Guide */}
-          <LiquidGlassCard className="p-4 sm:p-5" onClick={onOpenPrivateDnsSettings}>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--muted-fill)] text-[var(--ink)]">
-                <Server className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-[var(--ink)]">
-                  System Private DNS (Zero-VPN)
-                </p>
-                <p className="text-xs text-[var(--ink-muted)]">
-                  {state.privateDnsStatus.isActive
-                    ? `Active: ${state.privateDnsStatus.serverHost ?? 'Automatic'}. Tap to adjust.`
-                    : 'Optional: Set Private DNS (e.g. family.adguard-dns.com) for OS-level DNS blocking with zero VPN.'}
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
-            </div>
-          </LiquidGlassCard>
-
           {/* Dedicated Download Page CTA */}
           <LiquidGlassCard className="p-4 sm:p-5" onClick={onOpenDownloadPage}>
             <div className="flex items-center gap-3">
@@ -355,15 +335,57 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[var(--ink)]">
-                  Download Android APK &amp; Web App
+                  Get GambleAware on Your Phone
                 </p>
                 <p className="text-xs text-[var(--ink-muted)]">
-                  Install the native Android APK for device-wide blocking or add GambleAware to your
-                  home screen
+                  Install the Android app for full phone-wide blocking or save to your home screen
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
             </div>
+          </LiquidGlassCard>
+
+          {/* Optional Advanced Phone Settings */}
+          <LiquidGlassCard className="p-4 sm:p-5">
+            <button
+              type="button"
+              onClick={() => setShowAdvancedSettings((v) => !v)}
+              className="flex w-full cursor-pointer items-center justify-between gap-3 text-left"
+            >
+              <div>
+                <p className="text-sm font-semibold text-[var(--ink)]">Advanced Phone Settings</p>
+                <p className="text-xs text-[var(--ink-muted)]">
+                  Optional network filtering for experienced users
+                </p>
+              </div>
+              <ChevronRight
+                className={`h-5 w-5 shrink-0 text-[var(--ink-muted)] transition-transform ${
+                  showAdvancedSettings ? 'rotate-90' : ''
+                }`}
+              />
+            </button>
+            {showAdvancedSettings ? (
+              <button
+                type="button"
+                onClick={onOpenPrivateDnsSettings}
+                className="mt-3 flex w-full cursor-pointer items-center gap-3 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3 text-left hover:opacity-90"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--surface)] text-[var(--ink)]">
+                  <Server className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-[var(--ink)]">
+                    System Private DNS (Optional)
+                  </p>
+                  <p className="text-[11px] text-[var(--ink-muted)]">
+                    {state.privateDnsStatus.isActive
+                      ? `Active: ${state.privateDnsStatus.serverHost ?? 'Automatic'}. Tap to adjust.`
+                      : 'Configure DNS-over-TLS hostname (e.g. family.adguard-dns.com)'}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-[var(--ink-muted)]" />
+              </button>
+            ) : null}
           </LiquidGlassCard>
 
           {/* Daily Spend Baseline & Appearance */}
@@ -394,8 +416,8 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
 
             <div className="mt-5">
               <LiquidSectionHeader
-                title="Black & Pink Theme"
-                subtitle="Signature obsidian black & pink liquid glass finish"
+                title="Appearance Theme"
+                subtitle="Crisp White default or Black &amp; Pink liquid glass finish"
               />
               <div className="mt-2.5 grid grid-cols-3 gap-2">
                 {(Object.values(ThemeMode) as ThemeMode[]).map((mode) => {
@@ -451,7 +473,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           aria-label={`Activate ${pendingLockDays}-Day Lock?`}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
         >
-          <div className="w-full max-w-[400px] rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]">
+          <div className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]">
             <h2 className="font-display text-lg font-bold">
               Activate {pendingLockDays}-Day Lock?
             </h2>
@@ -493,7 +515,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
         >
           <form
             onSubmit={handleSavePin}
-            className="w-full max-w-[400px] rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]"
+            className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]"
           >
             <h2 className="font-display text-lg font-bold">Set 4-Digit Accountability PIN</h2>
             <p className="mt-1.5 text-xs text-[var(--ink-muted)]">

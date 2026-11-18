@@ -9,7 +9,7 @@ import java.security.MessageDigest
 
 enum class ThemeMode(val label: String) {
     SYSTEM("System"),
-    LIGHT("Blush"),
+    LIGHT("White"),
     DARK("Black & Pink"),
 }
 
@@ -29,7 +29,7 @@ data class ProtectionSettingsState(
     val hasPin: Boolean = false,
     val protectionStartedAtMs: Long = 0L,
     val dailyBetSpendEstimate: Int = 5000,
-    val themeMode: ThemeMode = ThemeMode.DARK,
+    val themeMode: ThemeMode = ThemeMode.LIGHT,
     val hasCompletedTour: Boolean = false,
     val notificationsEnabled: Boolean = true,
     val lastNotifiedMilestoneDay: Int = 0,
@@ -58,7 +58,7 @@ class ProtectionPreferences private constructor(context: Context) {
     val state: StateFlow<ProtectionSettingsState> = _state.asStateFlow()
 
     private fun readState(): ProtectionSettingsState {
-        val themeOrdinal = prefs.getInt(KEY_THEME_MODE, ThemeMode.DARK.ordinal)
+        val themeOrdinal = prefs.getInt(KEY_THEME_MODE, ThemeMode.LIGHT.ordinal)
             .coerceIn(0, ThemeMode.entries.lastIndex)
         val startedAt = prefs.getLong(KEY_STARTED_AT_MS, 0L)
         val enabled = prefs.getBoolean(KEY_PROTECTION_ENABLED, true)

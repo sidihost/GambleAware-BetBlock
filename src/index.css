@@ -66,22 +66,22 @@
 }
 
 :root {
-  --canvas: #FFF7FA;
+  --canvas: #FFFFFF;
   --surface: #FFFFFF;
   --ink: #120B10;
-  --ink-muted: #6E5664;
+  --ink-muted: #5F4C57;
   --accent-ink: #D81B78;
-  --glass-fill: rgba(255, 255, 255, 0.86);
-  --glass-secondary: rgba(255, 224, 239, 0.72);
-  --glass-border: rgba(255, 61, 154, 0.24);
-  --subtle-border: #F2D3E2;
+  --glass-fill: rgba(255, 255, 255, 0.92);
+  --glass-secondary: rgba(255, 240, 247, 0.72);
+  --glass-border: rgba(216, 27, 120, 0.16);
+  --subtle-border: #ECE3E8;
   --active-fill: #D81B78;
   --active-content: #FFFFFF;
-  --muted-fill: #FCEAF3;
+  --muted-fill: #FFF5FA;
   --muted-content: #120B10;
-  --blob-one: #FFE0EE;
-  --blob-two: #FBD3E6;
-  --blob-three: #FFF0F6;
+  --blob-one: #FFF0F7;
+  --blob-two: #FDE7F2;
+  --blob-three: #FFFFFF;
   color-scheme: light;
 }
 

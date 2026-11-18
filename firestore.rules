@@ -72,14 +72,17 @@ service cloud.firestore {
     }
 
     function isValidUserPrivateInfo(data, userId) {
-      return data.keys().hasAll(['ownerId', 'email', 'displayName', 'createdAt', 'updatedAt']) &&
-        data.keys().hasOnly(['ownerId', 'email', 'displayName', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasAll(['ownerId', 'email', 'displayName', 'preferredName', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'email', 'displayName', 'preferredName', 'createdAt', 'updatedAt']) &&
         isValidOwnerField(data, userId) &&
         data.email is string &&
         data.email.size() >= 3 &&
         data.email.size() <= 254 &&
+        data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$') &&
         data.displayName is string &&
         data.displayName.size() <= 120 &&
+        data.preferredName is string &&
+        data.preferredName.size() <= 60 &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp;
     }
@@ -106,6 +109,8 @@ service cloud.firestore {
           'hasCompletedTour',
           'notificationsEnabled',
           'lastNotifiedMilestoneDay',
+          'aiAutoBlockEnabled',
+          'goalReminderEnabled',
           'isAccessibilityEnabled',
           'isDeviceAdminEnabled',
           'privateDnsActive',
@@ -134,6 +139,8 @@ service cloud.firestore {
           'hasCompletedTour',
           'notificationsEnabled',
           'lastNotifiedMilestoneDay',
+          'aiAutoBlockEnabled',
+          'goalReminderEnabled',
           'isAccessibilityEnabled',
           'isDeviceAdminEnabled',
           'privateDnsActive',
@@ -170,11 +177,72 @@ service cloud.firestore {
         data.lastNotifiedMilestoneDay is number &&
         data.lastNotifiedMilestoneDay >= 0 &&
         data.lastNotifiedMilestoneDay <= 36500 &&
+        data.aiAutoBlockEnabled is bool &&
+        data.goalReminderEnabled is bool &&
         data.isAccessibilityEnabled is bool &&
         data.isDeviceAdminEnabled is bool &&
         data.privateDnsActive is bool &&
         data.privateDnsHost is string &&
         data.privateDnsHost.size() <= 253 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserGoal(data, userId, docId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'goalId',
+          'title',
+          'category',
+          'targetDays',
+          'targetAmountNgn',
+          'whyNote',
+          'isPrimary',
+          'isCompleted',
+          'lockDurationDays',
+          'createdAtMs',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'goalId',
+          'title',
+          'category',
+          'targetDays',
+          'targetAmountNgn',
+          'whyNote',
+          'isPrimary',
+          'isCompleted',
+          'lockDurationDays',
+          'createdAtMs',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidOwnerField(data, userId) &&
+        data.goalId is string &&
+        data.goalId == docId &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 100 &&
+        data.category is string &&
+        data.category.size() <= 24 &&
+        data.category in ['savings', 'streak', 'milestone'] &&
+        data.targetDays is number &&
+        data.targetDays >= 1 &&
+        data.targetDays <= 3650 &&
+        data.targetAmountNgn is number &&
+        data.targetAmountNgn >= 0 &&
+        data.targetAmountNgn <= 100000000 &&
+        data.whyNote is string &&
+        data.whyNote.size() <= 280 &&
+        data.isPrimary is bool &&
+        data.isCompleted is bool &&
+        data.lockDurationDays is number &&
+        data.lockDurationDays >= 0 &&
+        data.lockDurationDays <= 365 &&
+        data.createdAtMs is number &&
+        data.createdAtMs > 0 &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp;
     }
@@ -271,7 +339,7 @@ service cloud.firestore {
         data.target.size() <= 253 &&
         data.source is string &&
         data.source.size() <= 32 &&
-        data.source in ['Web Shield', 'In-App WebView', 'App Shield', 'Install Guard'] &&
+        data.source in ['Web Shield', 'In-App WebView', 'App Shield', 'Install Guard', 'AI Agent'] &&
         data.categoryName is string &&
         data.categoryName.size() >= 1 &&
         data.categoryName.size() <= 64 &&
@@ -330,9 +398,9 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
         incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt']);
-      allow delete: if isValidId(userId) && isOwner(userId);
+      allow delete: if isVerifiedUser() && isValidId(userId) && isOwner(userId);
 
-      // Isolated PII Collection (email & displayName)
+      // Isolated PII Collection (email, displayName, preferredName)
       match /private/{docId} {
         allow get: if isValidId(userId) &&
           isValidId(docId) &&
@@ -358,11 +426,11 @@ service cloud.firestore {
           incoming().ownerId == existing().ownerId &&
           incoming().createdAt == existing().createdAt &&
           incoming().updatedAt == request.time &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'updatedAt']);
-        allow delete: if isValidId(userId) && isValidId(docId) && isOwner(userId);
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'preferredName', 'updatedAt']);
+        allow delete: if isVerifiedUser() && isValidId(userId) && isValidId(docId) && isOwner(userId);
       }
 
-      // Protection Profile & Blocker Settings
+      // Protection Profile & Blocker Settings (with Server-Side Commitment Lock Integrity)
       match /profile/{docId} {
         allow get: if isValidId(userId) &&
           isValidId(docId) &&
@@ -388,6 +456,15 @@ service cloud.firestore {
           incoming().ownerId == existing().ownerId &&
           incoming().createdAt == existing().createdAt &&
           incoming().updatedAt == request.time &&
+          (
+            existing().lockUntilEpochMs <= request.time.toMillis() ||
+            (
+              incoming().lockUntilEpochMs >= existing().lockUntilEpochMs &&
+              incoming().isProtectionEnabled == true &&
+              incoming().antiTamperLockEnabled == true &&
+              (existing().pinHash == '' || incoming().pinHash == existing().pinHash)
+            )
+          ) &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'isProtectionEnabled',
             'blockSportsbooks',
@@ -408,13 +485,56 @@ service cloud.firestore {
             'hasCompletedTour',
             'notificationsEnabled',
             'lastNotifiedMilestoneDay',
+            'aiAutoBlockEnabled',
+            'goalReminderEnabled',
             'isAccessibilityEnabled',
             'isDeviceAdminEnabled',
             'privateDnsActive',
             'privateDnsHost',
             'updatedAt'
           ]);
-        allow delete: if isValidId(userId) && isValidId(docId) && isOwner(userId);
+        allow delete: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          isOwner(userId) &&
+          existing().lockUntilEpochMs <= request.time.toMillis();
+      }
+
+      // Personalized Recovery & Savings Goals
+      match /goals/{goalId} {
+        allow get: if isValidId(userId) && isValidId(goalId) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(goalId) &&
+          isOwner(userId) &&
+          isValidUserGoal(incoming(), userId, goalId) &&
+          hasUserAnchor(userId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(goalId) &&
+          isOwner(userId) &&
+          isValidUserGoal(incoming(), userId, goalId) &&
+          hasUserAnchor(userId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().goalId == existing().goalId &&
+          incoming().createdAtMs == existing().createdAtMs &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title',
+            'category',
+            'targetDays',
+            'targetAmountNgn',
+            'whyNote',
+            'isPrimary',
+            'isCompleted',
+            'lockDurationDays',
+            'updatedAt'
+          ]);
+        allow delete: if isVerifiedUser() && isValidId(userId) && isValidId(goalId) && isOwner(userId);
       }
 
       // Custom Domain Rules (Blocked & Allowlisted)
@@ -444,7 +564,7 @@ service cloud.firestore {
             'addedAt',
             'updatedAt'
           ]);
-        allow delete: if isValidId(userId) && isValidId(domainId) && isOwner(userId);
+        allow delete: if isVerifiedUser() && isValidId(userId) && isValidId(domainId) && isOwner(userId);
       }
 
       // Custom Blocked Apps
@@ -473,7 +593,7 @@ service cloud.firestore {
             'addedAt',
             'updatedAt'
           ]);
-        allow delete: if isValidId(userId) && isValidId(packageId) && isOwner(userId);
+        allow delete: if isVerifiedUser() && isValidId(userId) && isValidId(packageId) && isOwner(userId);
       }
 
       // Blocked Event Telemetry (Append-Only; Delete Allowed Only For Clear History)
@@ -488,7 +608,7 @@ service cloud.firestore {
           hasUserAnchor(userId) &&
           incoming().createdAt == request.time;
         allow update: if false;
-        allow delete: if isValidId(userId) && isValidId(eventId) && isOwner(userId);
+        allow delete: if isVerifiedUser() && isValidId(userId) && isValidId(eventId) && isOwner(userId);
       }
 
       // Urge-Resisted Victory Journal (Append-Only)
@@ -503,7 +623,7 @@ service cloud.firestore {
           hasUserAnchor(userId) &&
           incoming().createdAt == request.time;
         allow update: if false;
-        allow delete: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+        allow delete: if isVerifiedUser() && isValidId(userId) && isValidId(logId) && isOwner(userId);
       }
     }
   }

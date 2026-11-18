@@ -32,9 +32,16 @@ object BlocklistMatcher {
     )
     private val searchQueryParamRegex = Regex("""[?&](?:q|p|query|text)=([^&#]+)""")
 
+    private val internalSchemePrefixes = listOf(
+        "chrome://", "chrome-native://", "about:", "edge://", "brave://",
+        "opera://", "vivaldi://", "duckduckgo://", "firefox://",
+        "file://", "content://", "data:", "blob:", "javascript:",
+    )
+
     fun normalizeDomain(rawInput: String): String {
         var s = rawInput.trim().lowercase()
         if (s.isEmpty()) return ""
+        if (internalSchemePrefixes.any { s.startsWith(it) }) return ""
         val schemeIndex = s.indexOf("://")
         if (schemeIndex >= 0) {
             s = s.substring(schemeIndex + 3)
@@ -67,6 +74,11 @@ object BlocklistMatcher {
     }
 
     fun matchDomainOrUrl(rawDomainOrUrl: String, config: BlockFilterConfig): BlockMatchResult {
+        val rawLower = rawDomainOrUrl.trim().lowercase()
+        if (internalSchemePrefixes.any { rawLower.startsWith(it) }) {
+            return BlockMatchResult(isBlocked = false)
+        }
+
         if (config.searchGuardEnabled) {
             val searchMatch = matchSearchQueryInUrl(rawDomainOrUrl)
             if (searchMatch.isBlocked) return searchMatch
@@ -168,13 +180,17 @@ object BlocklistMatcher {
     fun matchBrowserAddressText(addressText: String, config: BlockFilterConfig): BlockMatchResult {
         val trimmed = addressText.trim()
         if (trimmed.length < 4) return BlockMatchResult(isBlocked = false)
+        val lower = trimmed.lowercase()
+        if (internalSchemePrefixes.any { lower.startsWith(it) }) {
+            return BlockMatchResult(isBlocked = false)
+        }
 
         if (!trimmed.contains(' ')) {
             val direct = matchDomainOrUrl(trimmed, config)
             if (direct.isBlocked) return direct
         }
 
-        val tokenMatch = domainTokenRegex.find(trimmed.lowercase())
+        val tokenMatch = domainTokenRegex.find(lower)
         if (tokenMatch != null) {
             val domainResult = matchDomainOrUrl(tokenMatch.value, config)
             if (domainResult.isBlocked) return domainResult
@@ -206,9 +222,20 @@ object BlocklistMatcher {
             }
         }
 
-        for (text in visibleTexts) {
-            val match = matchBrowserAddressText(text, config)
-            if (match.isBlocked) return match
+        if (hasWebView) {
+            for (text in visibleTexts) {
+                val match = matchBrowserAddressText(text, config)
+                if (match.isBlocked) return match
+            }
+        } else {
+            // Outside an actual WebView, only match explicit http/https URLs (never Discover headlines or UI strings)
+            for (text in visibleTexts) {
+                val lower = text.trim().lowercase()
+                if (lower.startsWith("http://") || lower.startsWith("https://")) {
+                    val match = matchBrowserAddressText(text, config)
+                    if (match.isBlocked) return match
+                }
+            }
         }
 
         if (!hasWebView || !config.strictKeywordFilter) {
@@ -252,7 +279,7 @@ object BlocklistMatcher {
         val pkg = packageName.trim().lowercase()
         if (pkg.isEmpty()) return BlockMatchResult(isBlocked = false)
 
-        if (pkg in config.customBlockedPackages) {
+        if (config.customBlockedPackages.contains(pkg)) {
             return BlockMatchResult(
                 isBlocked = true,
                 matchedTarget = appLabel ?: pkg,
@@ -271,9 +298,11 @@ object BlocklistMatcher {
         }
 
         if (pkg.startsWith("com.android.") || pkg.startsWith("com.google.android.") ||
-            pkg.startsWith("org.mozilla.") || pkg.startsWith("com.sec.android.") ||
-            pkg.startsWith("com.microsoft.") || pkg.startsWith("com.brave.") ||
-            pkg.startsWith("com.opera.")
+            pkg.startsWith("com.chrome.") || pkg.startsWith("org.mozilla.") ||
+            pkg.startsWith("com.sec.android.") || pkg.startsWith("com.microsoft.") ||
+            pkg.startsWith("com.brave.") || pkg.startsWith("com.opera.") ||
+            pkg.startsWith("com.duckduckgo.") || pkg.startsWith("com.vivaldi.") ||
+            pkg.startsWith("com.kiwibrowser.") || pkg.startsWith("org.chromium.")
         ) {
             return BlockMatchResult(isBlocked = false)
         }

@@ -12,6 +12,7 @@ import {
   Wind,
 } from 'lucide-react';
 import { GAMBLING_CATEGORY_META } from '../blocker/gamblingCategory';
+import { ActiveGoalsCard } from '../components/GoalCardModal';
 import { LiquidGlassCard, LiquidSectionHeader } from '../components/LiquidGlass';
 import {
   BettingFreeProgressChart,
@@ -25,15 +26,30 @@ interface ActivityScreenProps {
   onClearHistory: () => void;
   onOpenUrgeJournal: () => void;
   onLaunchCalmReset: () => void;
+  onOpenGoalModal: () => void;
+  onSetPrimaryGoal: (goalId: string) => void;
+  onToggleGoalComplete: (goalId: string) => void;
+  onDeleteGoal: (goalId: string) => void;
 }
 
-const SOURCE_OPTIONS = ['All', 'Web Shield', 'In-App WebView', 'App Shield', 'Install Guard'];
+const SOURCE_FILTERS: Array<{ value: string; label: string }> = [
+  { value: 'All', label: 'All' },
+  { value: 'Web Shield', label: 'Websites' },
+  { value: 'In-App WebView', label: 'Social Links' },
+  { value: 'App Shield', label: 'Phone Apps' },
+  { value: 'Install Guard', label: 'App Installs' },
+  { value: 'AI Agent', label: 'GambleAware AI' },
+];
 
 export const ActivityScreen: React.FC<ActivityScreenProps> = ({
   state,
   onClearHistory,
   onOpenUrgeJournal,
   onLaunchCalmReset,
+  onOpenGoalModal,
+  onSetPrimaryGoal,
+  onToggleGoalComplete,
+  onDeleteGoal,
 }) => {
   const [selectedChartMode, setSelectedChartMode] = useState<0 | 1>(0);
   const [selectedSource, setSelectedSource] = useState<string>('All');
@@ -59,7 +75,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             Recovery Progress
           </h1>
           <p className="text-xs text-[var(--ink-muted)]">
-            Betting-free streak, savings &amp; intercept history
+            Betting-free streak, personal goals, savings &amp; intercept history
           </p>
         </div>
         {state.recentEvents.length > 0 ? (
@@ -74,17 +90,17 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         ) : null}
       </div>
 
-      <LiquidGlassCard className="p-5">
-        <div className="flex items-center justify-between gap-3">
+      <LiquidGlassCard className="p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[11px] font-medium tracking-wider text-[var(--ink-muted)]">
               BETTING-FREE STREAK
             </p>
-            <p className="mt-1 font-display text-4xl font-bold tabular-nums text-[var(--ink)]">
+            <p className="mt-1 font-display text-3xl font-bold tabular-nums text-[var(--ink)] sm:text-4xl">
               {state.cleanDays} Day{state.cleanDays === 1 ? '' : 's'}
             </p>
           </div>
-          <div className="rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-2 text-right">
+          <div className="rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3.5 py-2 text-left sm:text-right">
             <p className="font-mono text-sm font-semibold tabular-nums text-[var(--ink)]">
               {pad2(state.cleanHoursRemainder)}h : {pad2(state.cleanMinutesRemainder)}m :{' '}
               {pad2(state.cleanSecondsRemainder)}s
@@ -101,12 +117,47 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           />
         </div>
 
-        <div className="mt-3.5 grid grid-cols-3 gap-2">
-          <ProgressMiniStat label="Est. Saved" value={savedFormatted} accent />
+        <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <ProgressMiniStat
+            label="Est. Saved"
+            value={savedFormatted}
+            accent
+            className="col-span-2 sm:col-span-1"
+          />
           <ProgressMiniStat label="Urges Resisted" value={String(state.totalUrgeResistedCount)} />
           <ProgressMiniStat label="Blocked" value={String(state.totalBlockedCount)} />
         </div>
       </LiquidGlassCard>
+
+      {state.goals.length > 0 ? (
+        <ActiveGoalsCard
+          goals={state.goals}
+          cleanExactDays={state.cleanExactDays}
+          estimatedSavedAmount={state.estimatedSavedAmount}
+          onAddGoal={onOpenGoalModal}
+          onSetPrimary={onSetPrimaryGoal}
+          onToggleComplete={onToggleGoalComplete}
+          onDeleteGoal={onDeleteGoal}
+        />
+      ) : (
+        <LiquidGlassCard className="flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center sm:p-5">
+          <div>
+            <p className="font-display text-sm font-bold text-[var(--ink)]">
+              No personal recovery goal set yet
+            </p>
+            <p className="text-xs text-[var(--ink-muted)]">
+              Create a savings or streak target to track every clean day toward what matters most.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenGoalModal}
+            className="h-10 w-full shrink-0 cursor-pointer rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
+          >
+            Create Goal
+          </button>
+        </LiquidGlassCard>
+      )}
 
       {/* Interactive Visual Progress Chart */}
       <LiquidGlassCard className="p-4 sm:p-5" tourKey="progress_dashboard">
@@ -117,7 +168,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           <p className="text-xs text-[var(--ink-muted)]">
             {selectedChartMode === 0
               ? 'Touch & scrub across milestones'
-              : `${state.todayBlockedCount} today • ${state.totalBlockedCount} total`}
+              : `${state.todayBlockedCount} today · ${state.totalBlockedCount} total`}
           </p>
         </div>
 
@@ -161,97 +212,97 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       </LiquidGlassCard>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      {/* Recovery Milestone Badges */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <LiquidSectionHeader
-          title="Recovery Milestones"
-          subtitle="Badges unlock automatically as your betting-free days climb"
-        />
-        <div className="mt-3 flex flex-wrap gap-2">
-          {RECOVERY_MILESTONES.map((milestone) => {
-            const unlocked = state.cleanDays >= milestone.days;
-            return (
-              <span
-                key={milestone.days}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${
-                  unlocked
-                    ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                    : 'border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--ink-muted)]'
-                }`}
-              >
-                {unlocked ? (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                ) : (
-                  <LockKeyhole className="h-3.5 w-3.5" />
-                )}
-                <span>
-                  {milestone.label} • {milestone.title}
-                </span>
-              </span>
-            );
-          })}
-        </div>
-      </LiquidGlassCard>
-
-      {/* Urge Journal & Triggers */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <LiquidSectionHeader
-          title="Urge Journal & Triggers"
-          subtitle={`${state.totalUrgeResistedCount} urge victories recorded`}
-        />
-        {state.triggerBreakdown.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {state.triggerBreakdown.map((item) => (
-              <span
-                key={item.triggerTag}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-1.5 text-xs text-[var(--ink)]"
-              >
-                <span className="font-medium">{item.triggerTag}</span>
-                <span className="font-mono font-bold tabular-nums">{item.count}</span>
-              </span>
-            ))}
+        {/* Recovery Milestones */}
+        <LiquidGlassCard className="p-4 sm:p-5">
+          <LiquidSectionHeader
+            title="Recovery Milestones"
+            subtitle="Milestones unlock automatically as your betting-free days climb"
+          />
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {RECOVERY_MILESTONES.map((milestone) => {
+              const unlocked = state.cleanDays >= milestone.days;
+              return (
+                <div
+                  key={milestone.days}
+                  className={`flex items-center gap-2 rounded-[14px] border px-3 py-2 text-xs font-medium ${
+                    unlocked
+                      ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                      : 'border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--ink-muted)]'
+                  }`}
+                >
+                  {unlocked ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <LockKeyhole className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                  <span className="truncate">
+                    {milestone.label} · {milestone.title}
+                  </span>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <p className="mt-3 text-xs leading-relaxed text-[var(--ink-muted)]">
-            When you pass on a betting urge, log what triggered it to recognize patterns and protect
-            peak times.
-          </p>
-        )}
+        </LiquidGlassCard>
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={onOpenUrgeJournal}
-            className="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
-          >
-            <NotebookPen className="h-4 w-4 shrink-0" />
-            <span className="truncate">Log Urge Victory</span>
-          </button>
-          <button
-            type="button"
-            onClick={onLaunchCalmReset}
-            className="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-3 text-sm font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
-          >
-            <Wind className="h-4 w-4 shrink-0" />
-            <span className="truncate">60s SOS Calm</span>
-          </button>
-        </div>
-      </LiquidGlassCard>
+        {/* Urge Journal & Triggers */}
+        <LiquidGlassCard className="p-4 sm:p-5">
+          <LiquidSectionHeader
+            title="Urge Journal & Triggers"
+            subtitle={`${state.totalUrgeResistedCount} urge victories recorded`}
+          />
+          {state.triggerBreakdown.length > 0 ? (
+            <div className="mt-3 divide-y divide-[var(--subtle-border)]/50">
+              {state.triggerBreakdown.map((item) => (
+                <div
+                  key={item.triggerTag}
+                  className="flex items-center justify-between py-2 text-xs text-[var(--ink)]"
+                >
+                  <span className="font-medium">{item.triggerTag}</span>
+                  <span className="font-mono font-bold tabular-nums">{item.count}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-xs leading-relaxed text-[var(--ink-muted)]">
+              When you pass on a betting urge, log what triggered it to recognize patterns and
+              protect peak times.
+            </p>
+          )}
+
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={onOpenUrgeJournal}
+              className="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+            >
+              <NotebookPen className="h-4 w-4 shrink-0" />
+              <span>Log Urge Victory</span>
+            </button>
+            <button
+              type="button"
+              onClick={onLaunchCalmReset}
+              className="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-3 text-sm font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+            >
+              <Wind className="h-4 w-4 shrink-0" />
+              <span>60s SOS Calm</span>
+            </button>
+          </div>
+        </LiquidGlassCard>
       </div>
 
       {/* Blocked by Category */}
       {state.categoryBreakdown.length > 0 ? (
         <LiquidGlassCard className="p-4 sm:p-5">
           <LiquidSectionHeader title="Blocked by Category" subtitle="Recent distribution" />
-          <div className="mt-2.5 flex flex-wrap gap-2">
+          <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/50">
             {state.categoryBreakdown.map((entry) => (
-              <span
+              <div
                 key={entry.category}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-1.5 text-xs text-[var(--ink)]"
+                className="flex items-center justify-between py-2 text-xs text-[var(--ink)]"
               >
-                <span>{GAMBLING_CATEGORY_META[entry.category].displayName.split(' ')[0]}</span>
+                <span>{GAMBLING_CATEGORY_META[entry.category].displayName}</span>
                 <span className="font-mono font-bold tabular-nums">{entry.count}</span>
-              </span>
+              </div>
             ))}
           </div>
         </LiquidGlassCard>
@@ -259,20 +310,20 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
 
       {/* Source Filter Buttons */}
       <div className="flex flex-wrap gap-2">
-        {SOURCE_OPTIONS.map((source) => {
-          const selected = selectedSource === source;
+        {SOURCE_FILTERS.map((item) => {
+          const selected = selectedSource === item.value;
           return (
             <button
-              key={source}
+              key={item.value}
               type="button"
-              onClick={() => setSelectedSource(source)}
+              onClick={() => setSelectedSource(item.value)}
               className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
                 selected
                   ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                   : 'border-[var(--glass-border)] bg-[var(--glass-fill)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
               }`}
             >
-              {source}
+              {item.label}
             </button>
           );
         })}
@@ -288,8 +339,8 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             All Quiet Here
           </h3>
           <p className="mt-1 text-xs leading-relaxed text-[var(--ink-muted)]">
-            When GambleAware intercepts a gambling site, in-app WebView, or betting app, it will
-            appear in this timeline.
+            When GambleAware intercepts a gambling website, social app link, or betting app, it
+            will appear here.
           </p>
         </LiquidGlassCard>
       ) : (
@@ -339,12 +390,15 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
   );
 };
 
-const ProgressMiniStat: React.FC<{ label: string; value: string; accent?: boolean }> = ({
-  label,
-  value,
-  accent = false,
-}) => (
-  <div className="rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 py-2.5">
+const ProgressMiniStat: React.FC<{
+  label: string;
+  value: string;
+  accent?: boolean;
+  className?: string;
+}> = ({ label, value, accent = false, className = '' }) => (
+  <div
+    className={`rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 py-2.5 ${className}`}
+  >
     <p className="truncate text-[11px] text-[var(--ink-muted)]">{label}</p>
     <p
       className={`mt-0.5 truncate font-mono text-base font-bold tabular-nums ${

@@ -12,7 +12,9 @@ import {
   X,
 } from 'lucide-react';
 import { AppHeader } from './components/AppHeader';
+import { AuthScreen } from './components/AuthScreen';
 import { BlockedInterventionModal } from './components/BlockedInterventionModal';
+import { GoalModal } from './components/GoalCardModal';
 import {
   LiquidFloatingNavBar,
   LiquidGlassBackdrop,
@@ -27,6 +29,7 @@ import { BlocklistScreen } from './screens/BlocklistScreen';
 import { DownloadScreen } from './screens/DownloadScreen';
 import { LockSettingsScreen } from './screens/LockSettingsScreen';
 import { ShieldScreen } from './screens/ShieldScreen';
+import { shouldRemindToCreateGoal } from './utils/personalization';
 
 const TRIGGER_OPTIONS = ['Matchday', 'Boredom', 'Stress', 'Promo Ad', 'Late Night', 'Payday'];
 
@@ -66,9 +69,16 @@ export function App() {
     lastSyncedAtMs,
     cloudErrorMsg,
     signInWithGoogleCloud,
+    signUpWithEmailCloud,
+    signInWithEmailCloud,
+    resendVerificationEmail,
+    refreshEmailVerification,
+    sendPasswordReset,
     signOutGoogleCloud,
+    setPreferredName,
     forceSyncNow,
     updateDomainLookupQuery,
+    checkGamblingLoginAttempt,
     enableProtection,
     disableProtection,
     activateAccessibilityShield,
@@ -84,20 +94,34 @@ export function App() {
     setThemeMode,
     setDailySpendEstimate,
     setNotificationsEnabled,
+    setAiAutoBlockEnabled,
+    createGoal,
+    setPrimaryGoal,
+    toggleGoalCompleted,
+    deleteGoal,
     addCustomDomain,
     removeCustomDomain,
     addBlockedApp,
     removeBlockedApp,
     activateTimeLock,
     setPin,
-    verifyPin,
+    attemptPin,
     clearPin,
     resetStreak,
     completeTour,
     replayTour,
     logUrgeResisted,
+    logBlockedEvent,
     clearEventHistory,
   } = useGambleAwareState();
+
+  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.replace(/\/+$/, '').toLowerCase();
+      if (path === '/signup') return 'signup';
+    }
+    return 'signin';
+  });
 
   const [currentRoute, setCurrentRoute] = useState<AnchorRoute>(() => {
     if (typeof window !== 'undefined') {
@@ -106,11 +130,14 @@ export function App() {
       if (path === '/rules') return 'blocklist';
       if (path === '/progress') return 'activity';
       if (path === '/lock') return 'lock';
+      if (path === '/login' || path === '/signin' || path === '/signup') return 'auth';
       const routeParam = new URLSearchParams(window.location.search).get('page');
       if (routeParam === 'download') return 'download';
+      if (routeParam === 'login' || routeParam === 'signup') return 'auth';
     }
     return 'shield';
   });
+
   const [showAccessibilityDisclosure, setShowAccessibilityDisclosure] = useState(false);
   const [showPrivateDnsModal, setShowPrivateDnsModal] = useState(false);
   const [privateDnsInput, setPrivateDnsInput] = useState(
@@ -125,6 +152,9 @@ export function App() {
   const [selectedTrigger, setSelectedTrigger] = useState(TRIGGER_OPTIONS[0]);
   const [urgeNote, setUrgeNote] = useState('');
 
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [goalReminderDismissed, setGoalReminderDismissed] = useState(false);
+
   const [showSafeSupportSheet, setShowSafeSupportSheet] = useState(false);
   const [intervention, setIntervention] = useState<InterventionPayload | null>(null);
 
@@ -137,7 +167,15 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Apply Black & Pink Dark / Blush Light theme class & browser theme-color
+  const openAuthRoute = useCallback(
+    (mode: 'signin' | 'signup' = 'signin') => {
+      setAuthInitialMode(mode);
+      navigateTo('auth');
+    },
+    [navigateTo],
+  );
+
+  // Apply White (Light default) / Black & Pink Dark theme class & browser theme-color
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const applyTheme = () => {
@@ -147,7 +185,7 @@ export function App() {
       document.documentElement.classList.toggle('dark', isDark);
       const themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta) {
-        themeMeta.setAttribute('content', isDark ? '#060608' : '#FFF7FA');
+        themeMeta.setAttribute('content', isDark ? '#060608' : '#FFFFFF');
       }
     };
     applyTheme();
@@ -188,13 +226,61 @@ export function App() {
     });
   };
 
+  const handleTestOrRedirectUrl = useCallback(
+    (rawInput: string) => {
+      const check = checkGamblingLoginAttempt(rawInput);
+      if (check.intercepted) {
+        updateDomainLookupQuery('');
+        setIntervention({
+          target: check.target,
+          source: 'Web Shield',
+          category: check.category,
+          isAntiTamper: false,
+          autoStartBreathing: false,
+          isLoginRedirect: check.isGamblingLogin,
+        });
+      }
+    },
+    [checkGamblingLoginAttempt, updateDomainLookupQuery],
+  );
+
+  const handleAutoBlockFromAgent = useCallback(
+    (params: {
+      target: string;
+      category: string;
+      isLoginAttempt: boolean;
+      coachNote: string;
+    }) => {
+      if (params.target.includes('.')) {
+        addCustomDomain(params.target, false);
+      }
+      logBlockedEvent(params.target, 'AI Agent', params.category);
+      setIntervention({
+        target: params.target,
+        source: 'AI Agent',
+        category: params.category,
+        isAntiTamper: false,
+        autoStartBreathing: false,
+        isLoginRedirect: params.isLoginAttempt,
+        coachNote: params.coachNote,
+      });
+    },
+    [addCustomDomain, logBlockedEvent],
+  );
+
   const handleTourSelectStep = useCallback((step: SpotlightTourStep) => {
     setCurrentRoute(step.route);
   }, []);
 
+  const showGoalReminder = shouldRemindToCreateGoal({
+    goalsCount: uiState.goals.length,
+    goalReminderEnabled: uiState.settings.goalReminderEnabled,
+    reminderDismissedSession: goalReminderDismissed,
+  });
+
   const navItems: NavItemConfig[] = [
-    { route: 'shield', label: 'Protect', icon: <Anchor className="h-4 w-4" /> },
-    { route: 'blocklist', label: 'Rules', icon: <SlidersHorizontal className="h-4 w-4" /> },
+    { route: 'shield', label: 'Home', icon: <Anchor className="h-4 w-4" /> },
+    { route: 'blocklist', label: 'Blocked', icon: <SlidersHorizontal className="h-4 w-4" /> },
     { route: 'activity', label: 'Progress', icon: <TrendingUp className="h-4 w-4" /> },
     { route: 'lock', label: 'Lock', icon: <LockKeyhole className="h-4 w-4" /> },
     { route: 'download', label: 'Get App', icon: <Download className="h-4 w-4" /> },
@@ -207,14 +293,9 @@ export function App() {
         currentRoute={currentRoute}
         onSelectRoute={navigateTo}
         cloudUser={cloudUser}
+        firstName={uiState.firstName}
         cloudSyncStatus={cloudSyncStatus}
-        onSyncClick={() => {
-          if (cloudUser) {
-            navigateTo('lock');
-          } else {
-            void signInWithGoogleCloud();
-          }
-        }}
+        onAuthClick={() => openAuthRoute('signin')}
       />
 
       {/* Floating Status Toast */}
@@ -229,6 +310,26 @@ export function App() {
 
       {/* Main Route View */}
       <main className="min-h-[calc(100vh-4rem)]">
+        {currentRoute === 'auth' ? (
+          <AuthScreen
+            initialMode={authInitialMode}
+            cloudUser={cloudUser}
+            preferredName={uiState.preferredName}
+            goalsCount={uiState.goals.length}
+            cloudErrorMsg={cloudErrorMsg}
+            onSignInGoogle={signInWithGoogleCloud}
+            onSignUpEmail={signUpWithEmailCloud}
+            onSignInEmail={signInWithEmailCloud}
+            onSendPasswordReset={sendPasswordReset}
+            onRefreshVerification={refreshEmailVerification}
+            onCreateStarterGoal={(goalInput) => createGoal(goalInput)}
+            onSavePreferredName={setPreferredName}
+            onResendVerification={() => void resendVerificationEmail()}
+            onSignOut={signOutGoogleCloud}
+            onRedirectHome={() => navigateTo('shield')}
+          />
+        ) : null}
+
         {currentRoute === 'shield' ? (
           <ShieldScreen
             state={uiState}
@@ -237,6 +338,7 @@ export function App() {
             lastSyncedAtMs={lastSyncedAtMs}
             cloudErrorMsg={cloudErrorMsg}
             onSignInGoogle={() => void signInWithGoogleCloud()}
+            onOpenAuth={openAuthRoute}
             onSignOut={() => void signOutGoogleCloud()}
             onForceSync={() => void forceSyncNow()}
             onPrimaryShieldClick={() => {
@@ -250,13 +352,20 @@ export function App() {
             }}
             onEnableAccessibility={() => setShowAccessibilityDisclosure(true)}
             onRequestDeviceAdmin={handleRequestDeviceAdminToggle}
-            onOpenPrivateDnsSettings={() => {
-              setPrivateDnsInput(uiState.privateDnsStatus.serverHost ?? 'family.adguard-dns.com');
-              setShowPrivateDnsModal(true);
-            }}
             onDomainLookupChanged={updateDomainLookupQuery}
             onQuickBlockDomain={(domain) => addCustomDomain(domain, false)}
+            onTestOrRedirectUrl={handleTestOrRedirectUrl}
+            showGoalReminder={showGoalReminder}
+            onDismissGoalReminder={() => setGoalReminderDismissed(true)}
+            onOpenGoalModal={() => setShowGoalModal(true)}
+            onSetPrimaryGoal={setPrimaryGoal}
+            onToggleGoalComplete={toggleGoalCompleted}
+            onDeleteGoal={deleteGoal}
+            onToggleAiAutoBlock={setAiAutoBlockEnabled}
+            onAutoBlockFromAgent={handleAutoBlockFromAgent}
+            onCreateSuggestedGoal={(g) => createGoal(g)}
             onNavigateToRules={() => navigateTo('blocklist')}
+            onNavigateToProgress={() => navigateTo('activity')}
             onNavigateToLock={() => navigateTo('lock')}
             onLaunchCalmReset={launchSosCalmReset}
             onOpenUrgeJournal={() => setShowUrgeJournalSheet(true)}
@@ -313,6 +422,10 @@ export function App() {
             onClearHistory={() => guardRestrictedAction(() => clearEventHistory())}
             onOpenUrgeJournal={() => setShowUrgeJournalSheet(true)}
             onLaunchCalmReset={launchSosCalmReset}
+            onOpenGoalModal={() => setShowGoalModal(true)}
+            onSetPrimaryGoal={setPrimaryGoal}
+            onToggleGoalComplete={toggleGoalCompleted}
+            onDeleteGoal={deleteGoal}
           />
         ) : null}
 
@@ -362,7 +475,7 @@ export function App() {
           <DownloadScreen
             state={uiState}
             onOpenBlocker={() => navigateTo('shield')}
-            onSignInGoogle={() => void signInWithGoogleCloud()}
+            onSignInGoogle={() => openAuthRoute('signup')}
             isSignedIn={Boolean(cloudUser)}
           />
         ) : null}
@@ -371,17 +484,24 @@ export function App() {
       {/* Mobile Floating Liquid Glass Bottom Nav Bar */}
       <LiquidFloatingNavBar
         items={navItems}
-        selectedRoute={currentRoute}
+        selectedRoute={currentRoute === 'auth' ? 'shield' : currentRoute}
         onSelect={navigateTo}
       />
 
       {/* Interactive Guided Spotlight Tour */}
-      {!uiState.settings.hasCompletedTour && !autostartSkipped && currentRoute !== 'download' ? (
+      {!uiState.settings.hasCompletedTour &&
+      !autostartSkipped &&
+      currentRoute !== 'download' &&
+      currentRoute !== 'auth' ? (
         <SpotlightTourOverlay
           onSelectStep={handleTourSelectStep}
-          onDismissTour={completeTour}
+          onDismissTour={() => {
+            completeTour();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           onFinishAndEnableShield={() => {
             completeTour();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             if (!uiState.isAccessibilityEnabled) {
               setShowAccessibilityDisclosure(true);
             }
@@ -389,12 +509,24 @@ export function App() {
         />
       ) : null}
 
-      {/* Full-Screen Intervention / 60s Calm Reset */}
+      {/* Full-Screen Intervention / Gambling Login Redirect / 60s Calm Reset */}
       {intervention ? (
         <BlockedInterventionModal
           payload={intervention}
           cleanDays={uiState.cleanDays}
+          cleanExactDays={uiState.cleanExactDays}
+          estimatedSavedAmount={uiState.estimatedSavedAmount}
+          primaryGoal={uiState.primaryGoal}
+          onCreateGoal={() => setShowGoalModal(true)}
           onClose={() => setIntervention(null)}
+        />
+      ) : null}
+
+      {/* Personalized Goal Modal */}
+      {showGoalModal ? (
+        <GoalModal
+          onSave={(input) => createGoal(input)}
+          onClose={() => setShowGoalModal(false)}
         />
       ) : null}
 
@@ -406,7 +538,7 @@ export function App() {
           aria-label="Log a Resisted Urge"
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
         >
-          <div className="w-full max-w-[480px] rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
+          <div className="max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5" />
@@ -476,7 +608,7 @@ export function App() {
           aria-label="Confidential Recovery Support"
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
         >
-          <div className="w-full max-w-[480px] rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
+          <div className="max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Heart className="h-5 w-5" />
@@ -524,24 +656,16 @@ export function App() {
           aria-label="Enable GambleAware Guard"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
         >
-          <LiquidGlassCard className="w-full max-w-[420px] bg-[var(--surface)] p-5">
+          <LiquidGlassCard className="max-h-[90dvh] w-full max-w-[420px] overflow-y-auto bg-[var(--surface)] p-5">
             <h2 className="font-display text-lg font-bold text-[var(--ink)]">
               Enable GambleAware Guard
             </h2>
             <div className="mt-2.5 space-y-2 text-xs leading-relaxed text-[var(--ink-muted)]">
-              <p>
-                GambleAware (by Imoogle Technology) operates strictly on your device to:
-              </p>
-              <p>
-                1. Block gambling websites, search queries, Custom Tabs, and in-app WebViews across
-                browsers.
-              </p>
-              <p>2. Detect and close installed betting apps immediately.</p>
-              <p>
-                3. Enforce your Commitment Lock &amp; prevent uninstalling GambleAware until your
-                timer ends.
-              </p>
-              <p>No VPN is used, and zero personal browsing history leaves your device.</p>
+              <p>GambleAware works privately on your phone to:</p>
+              <p>1. Block betting websites, searches, and links across your browsers.</p>
+              <p>2. Close installed betting apps before you can open them.</p>
+              <p>3. Keep your blocker locked until your chosen timer ends.</p>
+              <p>Your personal browsing stays completely private on your device.</p>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button
@@ -580,12 +704,11 @@ export function App() {
               setPrivateDnsHost(privateDnsInput);
               setShowPrivateDnsModal(false);
             }}
-            className="w-full max-w-[420px] rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]"
+            className="max-h-[90dvh] w-full max-w-[420px] overflow-y-auto rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]"
           >
-            <h2 className="font-display text-lg font-bold">System Private DNS (Zero-VPN)</h2>
+            <h2 className="font-display text-lg font-bold">System Private DNS</h2>
             <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-              Configure a DNS-over-TLS provider hostname (e.g. family.adguard-dns.com) for
-              OS-level DNS filtering without running a VPN tunnel.
+              Optional network-level filter (e.g. family.adguard-dns.com) for extra protection.
             </p>
             <input
               type="text"
@@ -631,7 +754,7 @@ export function App() {
           aria-label="Commitment Lock Active"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
         >
-          <div className="w-full max-w-[400px] rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]">
+          <div className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]">
             <h2 className="font-display text-lg font-bold">Commitment Lock Active</h2>
             <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)]">
               This control is protected by your GambleAware Commitment Lock (
@@ -665,15 +788,16 @@ export function App() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (verifyPin(pinAttempt)) {
+              const res = attemptPin(pinAttempt);
+              if (res.ok) {
                 const action = pendingPinAction;
                 setPendingPinAction(null);
                 action(pinAttempt);
               } else {
-                setPinError('Incorrect PIN');
+                setPinError(res.error ?? 'Incorrect PIN');
               }
             }}
-            className="w-full max-w-[380px] rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]"
+            className="max-h-[90dvh] w-full max-w-[380px] overflow-y-auto rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]"
           >
             <h2 className="font-display text-lg font-bold">Enter Accountability PIN</h2>
             <p className="mt-1.5 text-xs text-[var(--ink-muted)]">

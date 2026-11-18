@@ -1,14 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile,
+} from 'firebase/auth';
 import { BlockFilterConfig, BlocklistMatcher, BlockMatchResult } from '../blocker/blocklistMatcher';
 import { GamblingCategory } from '../blocker/gamblingCategory';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import {
+  clearPinAttemptState,
   createDefaultStore,
+  getPinLockoutRemainingSec,
   hashPinSync,
   loadStore,
   PersistedStore,
+  recordFailedPinAttempt,
   saveStore,
+  verifyPinHashSync,
 } from '../data/storage';
 import {
   BlockedAppEntity,
@@ -22,6 +35,8 @@ import {
   InstalledAppInfo,
   ProtectionSettingsState,
   RECOVERY_MILESTONES,
+  RecoveryGoalCategory,
+  RecoveryGoalEntity,
   ThemeMode,
   TriggerBreakdown,
   UrgeLogEntity,
@@ -35,16 +50,22 @@ import {
   createUrgeLogInCloud,
   deleteBlockedAppFromCloud,
   deleteCustomDomainFromCloud,
+  deleteGoalFromCloud,
   syncSettingsToCloud,
+  updatePreferredNameInCloud,
   upsertBlockedAppInCloud,
   upsertCustomDomainInCloud,
+  upsertGoalInCloud,
 } from '../firebaseSync';
 import {
   sanitizeDomainForBlueprint,
   sanitizeEventTarget,
+  sanitizeGoalFields,
   sanitizePackageForBlueprint,
+  sanitizePreferredName,
   sanitizeUrgeFields,
 } from '../firebaseValidation';
+import { detectGamblingLoginOrSite, extractFirstName } from '../utils/personalization';
 
 function formatTwoDigits(n: number): string {
   return String(Math.max(0, Math.floor(n))).padStart(2, '0');
@@ -74,10 +95,9 @@ function buildCategoryBreakdown(events: BlockedEventEntity[]): CategoryBreakdown
   if (events.length === 0) return [];
   const counts = new Map<GamblingCategory, number>();
   for (const ev of events) {
-    const cat =
-      (Object.values(GamblingCategory) as string[]).includes(ev.categoryName)
-        ? (ev.categoryName as GamblingCategory)
-        : GamblingCategory.CUSTOM;
+    const cat = (Object.values(GamblingCategory) as string[]).includes(ev.categoryName)
+      ? (ev.categoryName as GamblingCategory)
+      : GamblingCategory.CUSTOM;
     counts.set(cat, (counts.get(cat) ?? 0) + 1);
   }
   return Array.from(counts.entries())
@@ -94,6 +114,44 @@ function buildTriggerBreakdown(logs: UrgeLogEntity[]): TriggerBreakdown[] {
   return Array.from(counts.entries())
     .map(([triggerTag, count]) => ({ triggerTag, count }))
     .sort((a, b) => b.count - a.count);
+}
+
+function formatAuthErrorMessage(err: unknown): string {
+  const code =
+    typeof err === 'object' && err !== null && 'code' in err
+      ? String((err as { code?: unknown }).code)
+      : '';
+  if (code === 'auth/operation-not-allowed') {
+    return 'Email sign-in is currently unavailable. Please use Continue with Google below.';
+  }
+  if (code === 'auth/email-already-in-use') {
+    return 'An account with this email already exists. Try signing in instead.';
+  }
+  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+    return 'That email or password did not match our records.';
+  }
+  if (code === 'auth/weak-password') {
+    return 'Please choose a password with at least 6 characters.';
+  }
+  if (code === 'auth/invalid-email') {
+    return 'Please enter a valid email address.';
+  }
+  if (code === 'auth/popup-blocked') {
+    return 'Your browser blocked the Google sign-in window. Allow popups for this site or sign in with email below.';
+  }
+  if (code === 'auth/popup-closed-by-user') {
+    return 'Sign-in was closed before finishing.';
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Too many attempts right now. Please wait a minute and try again.';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Network error — please check your internet connection and try again.';
+  }
+  if (code === 'auth/unauthorized-domain') {
+    return 'Sign-in is not enabled on this preview domain yet. Please use the main app URL.';
+  }
+  return 'Unable to complete sign-in right now. Please try again.';
 }
 
 export function useGambleAwareState() {
@@ -126,7 +184,7 @@ export function useGambleAwareState() {
     if (!statusBannerMessage) return;
     const id = window.setTimeout(() => {
       setStatusBannerMessage(null);
-    }, 3000);
+    }, 3200);
     return () => window.clearTimeout(id);
   }, [statusBannerMessage]);
 
@@ -152,13 +210,21 @@ export function useGambleAwareState() {
       setCloudUser({
         uid: user.uid,
         email: user.email ?? '',
-        displayName: user.displayName ?? 'GambleAware Member',
+        displayName: user.displayName ?? storeRef.current.preferredName ?? 'GambleAware Member',
         photoUrl: user.photoURL ?? null,
+        emailVerified: user.emailVerified,
       });
 
+      if (!storeRef.current.preferredName && user.displayName) {
+        setStore((prev) => ({
+          ...prev,
+          preferredName: sanitizePreferredName(user.displayName ?? ''),
+        }));
+      }
+
       if (!user.emailVerified) {
-        setCloudSyncStatus('error');
-        setCloudErrorMsg('Please verify your Google email to sync data to Cloud Firestore.');
+        setCloudSyncStatus('local');
+        setCloudErrorMsg(null);
         return;
       }
 
@@ -169,6 +235,11 @@ export function useGambleAwareState() {
         if (activeUidRef.current !== user.uid) return;
 
         unsubscribeListeners = attachUserCloudListeners(user.uid, {
+          onPrivateInfoUpdate: (preferredName) => {
+            if (preferredName) {
+              setStore((prev) => ({ ...prev, preferredName }));
+            }
+          },
           onSettingsUpdate: (patch) => {
             setStore((prev) => ({
               ...prev,
@@ -181,6 +252,10 @@ export function useGambleAwareState() {
               },
             }));
             setCloudSyncStatus('synced');
+            setLastSyncedAtMs(Date.now());
+          },
+          onGoalsUpdate: (goals) => {
+            setStore((prev) => ({ ...prev, goals }));
             setLastSyncedAtMs(Date.now());
           },
           onDomainsUpdate: (domains) => {
@@ -230,27 +305,169 @@ export function useGambleAwareState() {
       });
   }, []);
 
-  const signInWithGoogleCloud = useCallback(async () => {
+  const signInWithGoogleCloud = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     setCloudSyncStatus('connecting');
     setCloudErrorMsg(null);
     try {
       await signInWithPopup(auth, googleProvider);
-      setStatusBannerMessage('Free Cloud Sync connected');
+      setStatusBannerMessage('Signed in — welcome to GambleAware');
+      return { ok: true };
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Google Sign-In was cancelled or blocked.';
+      const msg = formatAuthErrorMessage(err);
       setCloudSyncStatus(activeUidRef.current ? 'error' : 'local');
-      if (!msg.includes('popup-closed-by-user')) {
+      if (!(err instanceof Error && err.message.includes('popup-closed-by-user'))) {
         setCloudErrorMsg(msg);
       }
+      return { ok: false, error: msg };
     }
   }, []);
+
+  const signUpWithEmailCloud = useCallback(
+    async (params: {
+      name: string;
+      email: string;
+      password: string;
+    }): Promise<{ ok: boolean; error?: string; verificationSent?: boolean }> => {
+      const cleanName = sanitizePreferredName(params.name);
+      if (!cleanName) {
+        return { ok: false, error: 'Please enter your name so we can personalize your dashboard.' };
+      }
+      setCloudSyncStatus('connecting');
+      setCloudErrorMsg(null);
+      setStore((prev) => ({ ...prev, preferredName: cleanName }));
+      try {
+        const cred = await createUserWithEmailAndPassword(
+          auth,
+          params.email.trim(),
+          params.password,
+        );
+        await updateProfile(cred.user, { displayName: cleanName });
+        await sendEmailVerification(cred.user).catch(() => {});
+        setCloudUser({
+          uid: cred.user.uid,
+          email: cred.user.email ?? params.email.trim(),
+          displayName: cleanName,
+          photoUrl: null,
+          emailVerified: cred.user.emailVerified,
+        });
+        setStatusBannerMessage(`Welcome, ${cleanName.split(' ')[0]}! Check your email to verify sync.`);
+        return { ok: true, verificationSent: true };
+      } catch (err) {
+        const msg = formatAuthErrorMessage(err);
+        setCloudSyncStatus(activeUidRef.current ? 'error' : 'local');
+        setCloudErrorMsg(msg);
+        return { ok: false, error: msg };
+      }
+    },
+    [],
+  );
+
+  const signInWithEmailCloud = useCallback(
+    async (params: {
+      email: string;
+      password: string;
+    }): Promise<{ ok: boolean; error?: string }> => {
+      setCloudSyncStatus('connecting');
+      setCloudErrorMsg(null);
+      try {
+        const cred = await signInWithEmailAndPassword(auth, params.email.trim(), params.password);
+        const name = cred.user.displayName || storeRef.current.preferredName;
+        if (name) {
+          setStore((prev) => ({ ...prev, preferredName: sanitizePreferredName(name) }));
+        }
+        setStatusBannerMessage('Welcome back to GambleAware');
+        return { ok: true };
+      } catch (err) {
+        const msg = formatAuthErrorMessage(err);
+        setCloudSyncStatus(activeUidRef.current ? 'error' : 'local');
+        setCloudErrorMsg(msg);
+        return { ok: false, error: msg };
+      }
+    },
+    [],
+  );
+
+  const resendVerificationEmail = useCallback(async () => {
+    if (!auth.currentUser) return;
+    try {
+      await sendEmailVerification(auth.currentUser);
+      setStatusBannerMessage('Verification link sent to your email');
+    } catch (err) {
+      setStatusBannerMessage(formatAuthErrorMessage(err));
+    }
+  }, []);
+
+  const refreshEmailVerification = useCallback(async (): Promise<{ verified: boolean }> => {
+    if (!auth.currentUser) return { verified: false };
+    try {
+      await auth.currentUser.reload();
+      const verified = Boolean(auth.currentUser.emailVerified);
+      setCloudUser({
+        uid: auth.currentUser.uid,
+        email: auth.currentUser.email ?? '',
+        displayName:
+          auth.currentUser.displayName ?? storeRef.current.preferredName ?? 'GambleAware Member',
+        photoUrl: auth.currentUser.photoURL ?? null,
+        emailVerified: verified,
+      });
+      if (verified) {
+        setCloudSyncStatus('connecting');
+        await bootstrapUserCloudAccount(auth.currentUser, storeRef.current);
+        setCloudSyncStatus('synced');
+        setLastSyncedAtMs(Date.now());
+        setStatusBannerMessage('Email verified — cloud backup is now active');
+      } else {
+        setStatusBannerMessage('Email not verified yet — check your inbox or spam folder');
+      }
+      return { verified };
+    } catch {
+      return { verified: false };
+    }
+  }, []);
+
+  const sendPasswordReset = useCallback(
+    async (email: string): Promise<{ ok: boolean; error?: string }> => {
+      const cleanEmail = email.trim();
+      if (!cleanEmail || !cleanEmail.includes('@')) {
+        return { ok: false, error: 'Enter your account email address first.' };
+      }
+      try {
+        await sendPasswordResetEmail(auth, cleanEmail);
+        setStatusBannerMessage('Password reset email sent');
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: formatAuthErrorMessage(err) };
+      }
+    },
+    [],
+  );
 
   const signOutGoogleCloud = useCallback(async () => {
     await signOut(auth);
     setCloudSyncStatus('local');
     setCloudErrorMsg(null);
-    setStatusBannerMessage('Switched to on-device local storage');
+    setStatusBannerMessage('Signed out — on-device protection stays active');
   }, []);
+
+  const setPreferredName = useCallback(
+    (name: string) => {
+      const clean = sanitizePreferredName(name);
+      setStore((prev) => ({ ...prev, preferredName: clean }));
+      const uid = activeUidRef.current;
+      if (uid && auth.currentUser?.emailVerified) {
+        void updatePreferredNameInCloud(
+          uid,
+          auth.currentUser.email ?? '',
+          auth.currentUser.displayName ?? clean,
+          clean,
+        );
+      }
+      if (clean) {
+        setStatusBannerMessage(`Personalized for ${clean.split(' ')[0]}`);
+      }
+    },
+    [],
+  );
 
   const forceSyncNow = useCallback(async () => {
     const uid = activeUidRef.current;
@@ -291,6 +508,16 @@ export function useGambleAwareState() {
     if (!domainLookupQuery.trim()) return null;
     return BlocklistMatcher.matchDomainOrUrl(domainLookupQuery, filterConfig);
   }, [domainLookupQuery, filterConfig]);
+
+  const firstName = useMemo(
+    () => extractFirstName(store.preferredName, cloudUser?.displayName, cloudUser?.email),
+    [store.preferredName, cloudUser?.displayName, cloudUser?.email],
+  );
+
+  const primaryGoal = useMemo(
+    () => store.goals.find((g) => g.isPrimary) ?? store.goals[0] ?? null,
+    [store.goals],
+  );
 
   const uiState: DerivedMainState = useMemo(() => {
     const { settings } = store;
@@ -346,9 +573,13 @@ export function useGambleAwareState() {
 
     return {
       settings,
+      preferredName: store.preferredName,
+      firstName,
       isAccessibilityEnabled: store.isAccessibilityEnabled,
       isDeviceAdminEnabled: store.isDeviceAdminEnabled,
       privateDnsStatus: store.privateDnsStatus,
+      goals: store.goals,
+      primaryGoal,
       customBlockedDomains: store.domains.filter((d) => !d.isAllowlisted),
       allowlistedDomains: store.domains.filter((d) => d.isAllowlisted),
       customBlockedApps: store.blockedApps,
@@ -382,7 +613,15 @@ export function useGambleAwareState() {
       milestoneProgressFraction,
       estimatedSavedAmount,
     };
-  }, [store, nowMs, domainLookupQuery, domainLookupResult, statusBannerMessage]);
+  }, [
+    store,
+    nowMs,
+    firstName,
+    primaryGoal,
+    domainLookupQuery,
+    domainLookupResult,
+    statusBannerMessage,
+  ]);
 
   const mutateStoreAndSyncSettings = useCallback(
     (updater: (prev: PersistedStore) => PersistedStore) => {
@@ -526,7 +765,12 @@ export function useGambleAwareState() {
   const setNotificationsEnabled = useCallback(
     (enabled: boolean) => {
       updateSettings((s) => ({ ...s, notificationsEnabled: enabled }));
-      if (enabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      if (
+        enabled &&
+        typeof window !== 'undefined' &&
+        'Notification' in window &&
+        Notification.permission === 'default'
+      ) {
         void Notification.requestPermission().catch(() => {});
       }
       setStatusBannerMessage(
@@ -535,6 +779,137 @@ export function useGambleAwareState() {
     },
     [updateSettings],
   );
+
+  const setAiAutoBlockEnabled = useCallback(
+    (enabled: boolean) => {
+      updateSettings((s) => ({ ...s, aiAutoBlockEnabled: enabled }));
+      setStatusBannerMessage(
+        enabled ? 'GambleAware AI auto-blocking turned on' : 'GambleAware AI auto-blocking paused',
+      );
+    },
+    [updateSettings],
+  );
+
+  const setGoalReminderEnabled = useCallback(
+    (enabled: boolean) => updateSettings((s) => ({ ...s, goalReminderEnabled: enabled })),
+    [updateSettings],
+  );
+
+  const activateTimeLock = useCallback(
+    (days: number, enableAntiTamper: boolean) => {
+      const durationMs = days * 86_400_000;
+      const now = Date.now();
+      const until = now + durationMs;
+      mutateStoreAndSyncSettings((prev) => ({
+        ...prev,
+        settings: {
+          ...prev.settings,
+          lockUntilEpochMs: Math.max(prev.settings.lockUntilEpochMs, until),
+          isProtectionEnabled: true,
+          antiTamperLockEnabled: enableAntiTamper ? true : prev.settings.antiTamperLockEnabled,
+          protectionStartedAtMs:
+            prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : now,
+        },
+      }));
+      setStatusBannerMessage(`Commitment Lock active for ${days} day${days === 1 ? '' : 's'}`);
+    },
+    [mutateStoreAndSyncSettings],
+  );
+
+  const createGoal = useCallback(
+    (input: {
+      title: string;
+      category: RecoveryGoalCategory;
+      targetDays: number;
+      targetAmountNgn: number;
+      whyNote: string;
+      lockDurationDays: number;
+      isPrimary?: boolean;
+    }): RecoveryGoalEntity => {
+      const clean = sanitizeGoalFields(input);
+      const now = Date.now();
+      const newGoal: RecoveryGoalEntity = {
+        goalId: `goal_${now}`,
+        title: clean.title,
+        category: clean.category,
+        targetDays: clean.targetDays,
+        targetAmountNgn: clean.targetAmountNgn,
+        whyNote: clean.whyNote,
+        isPrimary: input.isPrimary ?? true,
+        isCompleted: false,
+        lockDurationDays: clean.lockDurationDays,
+        createdAtMs: now,
+      };
+
+      setStore((prev) => {
+        const demoted = newGoal.isPrimary
+          ? prev.goals.map((g) => ({ ...g, isPrimary: false }))
+          : prev.goals;
+        const nextGoals = [newGoal, ...demoted];
+        return { ...prev, goals: nextGoals };
+      });
+
+      const uid = activeUidRef.current;
+      if (uid && auth.currentUser?.emailVerified) {
+        void upsertGoalInCloud(uid, newGoal);
+      }
+
+      if (clean.lockDurationDays > 0) {
+        activateTimeLock(clean.lockDurationDays, true);
+      }
+      setStatusBannerMessage(`Goal created: ${newGoal.title}`);
+      return newGoal;
+    },
+    [activateTimeLock],
+  );
+
+  const setPrimaryGoal = useCallback((goalId: string) => {
+    let targetGoal: RecoveryGoalEntity | undefined;
+    setStore((prev) => {
+      const updated = prev.goals.map((g) => {
+        const match = g.goalId === goalId;
+        const next = { ...g, isPrimary: match };
+        if (match) targetGoal = next;
+        return next;
+      });
+      return { ...prev, goals: updated };
+    });
+    const uid = activeUidRef.current;
+    if (uid && auth.currentUser?.emailVerified && targetGoal) {
+      void upsertGoalInCloud(uid, targetGoal);
+    }
+  }, []);
+
+  const toggleGoalCompleted = useCallback((goalId: string) => {
+    let updatedGoal: RecoveryGoalEntity | undefined;
+    setStore((prev) => ({
+      ...prev,
+      goals: prev.goals.map((g) => {
+        if (g.goalId !== goalId) return g;
+        updatedGoal = { ...g, isCompleted: !g.isCompleted };
+        return updatedGoal;
+      }),
+    }));
+    const uid = activeUidRef.current;
+    if (uid && auth.currentUser?.emailVerified && updatedGoal) {
+      void upsertGoalInCloud(uid, updatedGoal);
+    }
+  }, []);
+
+  const deleteGoal = useCallback((goalId: string) => {
+    setStore((prev) => {
+      const remaining = prev.goals.filter((g) => g.goalId !== goalId);
+      if (remaining.length > 0 && !remaining.some((g) => g.isPrimary)) {
+        remaining[0] = { ...remaining[0], isPrimary: true };
+      }
+      return { ...prev, goals: remaining };
+    });
+    const uid = activeUidRef.current;
+    if (uid && auth.currentUser?.emailVerified) {
+      void deleteGoalFromCloud(uid, goalId);
+    }
+    setStatusBannerMessage('Goal removed');
+  }, []);
 
   const addCustomDomain = useCallback((rawDomain: string, isAllowlisted: boolean) => {
     const normalized = sanitizeDomainForBlueprint(BlocklistMatcher.normalizeDomain(rawDomain));
@@ -610,30 +985,10 @@ export function useGambleAwareState() {
     setStatusBannerMessage('Removed app rule');
   }, []);
 
-  const activateTimeLock = useCallback(
-    (days: number, enableAntiTamper: boolean) => {
-      const durationMs = days * 86_400_000;
-      const now = Date.now();
-      const until = now + durationMs;
-      mutateStoreAndSyncSettings((prev) => ({
-        ...prev,
-        settings: {
-          ...prev.settings,
-          lockUntilEpochMs: Math.max(prev.settings.lockUntilEpochMs, until),
-          isProtectionEnabled: true,
-          antiTamperLockEnabled: enableAntiTamper ? true : prev.settings.antiTamperLockEnabled,
-          protectionStartedAtMs:
-            prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : now,
-        },
-      }));
-      setStatusBannerMessage(`Commitment Lock active for ${days} day${days === 1 ? '' : 's'}`);
-    },
-    [mutateStoreAndSyncSettings],
-  );
-
   const setPin = useCallback(
     (pin: string) => {
       if (pin.length === 4 && /^\d{4}$/.test(pin)) {
+        clearPinAttemptState();
         updateSettings((s) => ({ ...s, pinHash: hashPinSync(pin) }));
         setStatusBannerMessage('Accountability PIN enabled');
       }
@@ -641,22 +996,53 @@ export function useGambleAwareState() {
     [updateSettings],
   );
 
-  const verifyPin = useCallback(
-    (pin: string) => {
-      if (!store.settings.pinHash) return true;
-      return store.settings.pinHash === hashPinSync(pin);
+  const attemptPin = useCallback(
+    (pin: string): { ok: boolean; error?: string; lockedForSec?: number } => {
+      if (!store.settings.pinHash) return { ok: true };
+      const lockoutSec = getPinLockoutRemainingSec();
+      if (lockoutSec > 0) {
+        return {
+          ok: false,
+          lockedForSec: lockoutSec,
+          error: `Too many wrong attempts. Try again in ${lockoutSec}s.`,
+        };
+      }
+      if (verifyPinHashSync(pin, store.settings.pinHash)) {
+        clearPinAttemptState();
+        return { ok: true };
+      }
+      const res = recordFailedPinAttempt();
+      if (res.lockedForSec > 0) {
+        return {
+          ok: false,
+          lockedForSec: res.lockedForSec,
+          error: `Too many wrong attempts. Locked for ${res.lockedForSec}s.`,
+        };
+      }
+      return {
+        ok: false,
+        error: `Incorrect PIN (${res.attemptsLeft} attempt${res.attemptsLeft === 1 ? '' : 's'} left)`,
+      };
     },
     [store.settings.pinHash],
   );
 
+  const verifyPin = useCallback(
+    (pin: string) => {
+      return attemptPin(pin).ok;
+    },
+    [attemptPin],
+  );
+
   const clearPin = useCallback(
     (currentPin: string) => {
-      if (!verifyPin(currentPin)) return false;
+      if (!verifyPinHashSync(currentPin, store.settings.pinHash)) return false;
+      clearPinAttemptState();
       updateSettings((s) => ({ ...s, pinHash: null }));
       setStatusBannerMessage('Accountability PIN removed');
       return true;
     },
-    [verifyPin, updateSettings],
+    [store.settings.pinHash, updateSettings],
   );
 
   const resetStreak = useCallback(() => {
@@ -697,7 +1083,7 @@ export function useGambleAwareState() {
   }, []);
 
   const logBlockedEvent = useCallback(
-    (target: string, source: string, category: GamblingCategory) => {
+    (target: string, source: string, category: string) => {
       const now = Date.now();
       const ev: BlockedEventEntity = {
         id: now,
@@ -716,6 +1102,28 @@ export function useGambleAwareState() {
       }
     },
     [],
+  );
+
+  const checkGamblingLoginAttempt = useCallback(
+    (rawInput: string) => {
+      if (!storeRef.current.settings.isProtectionEnabled) {
+        return { intercepted: false as const };
+      }
+      const detection = detectGamblingLoginOrSite(rawInput, filterConfig);
+      if (!detection.isBlocked) {
+        return { intercepted: false as const };
+      }
+      const targetLabel = detection.match.matchedTarget || detection.normalizedHost || rawInput;
+      logBlockedEvent(targetLabel, 'Web Shield', detection.match.category);
+      return {
+        intercepted: true as const,
+        target: targetLabel,
+        category: detection.match.category,
+        isGamblingLogin: detection.isGamblingLogin,
+        reason: detection.match.reason,
+      };
+    },
+    [filterConfig, logBlockedEvent],
   );
 
   const clearEventHistory = useCallback(() => {
@@ -740,9 +1148,16 @@ export function useGambleAwareState() {
     lastSyncedAtMs,
     cloudErrorMsg,
     signInWithGoogleCloud,
+    signUpWithEmailCloud,
+    signInWithEmailCloud,
+    resendVerificationEmail,
+    refreshEmailVerification,
+    sendPasswordReset,
     signOutGoogleCloud,
+    setPreferredName,
     forceSyncNow,
     updateDomainLookupQuery: setDomainLookupQuery,
+    checkGamblingLoginAttempt,
     enableProtection,
     disableProtection,
     activateAccessibilityShield,
@@ -758,12 +1173,19 @@ export function useGambleAwareState() {
     setThemeMode,
     setDailySpendEstimate,
     setNotificationsEnabled,
+    setAiAutoBlockEnabled,
+    setGoalReminderEnabled,
+    createGoal,
+    setPrimaryGoal,
+    toggleGoalCompleted,
+    deleteGoal,
     addCustomDomain,
     removeCustomDomain,
     addBlockedApp,
     removeBlockedApp,
     activateTimeLock,
     setPin,
+    attemptPin,
     verifyPin,
     clearPin,
     resetStreak,

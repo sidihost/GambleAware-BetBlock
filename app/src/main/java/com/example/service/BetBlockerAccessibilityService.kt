@@ -98,6 +98,11 @@ class BetBlockerAccessibilityService : AccessibilityService() {
         if (!settings.browserShieldEnabled || isSkippedUtilityPackage(pkg)) return
 
         val now = System.currentTimeMillis()
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            now - lastTriggerAtMs < 900L
+        ) {
+            return
+        }
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED && now - lastScanAtMs < 130L) {
             return
         }
@@ -105,10 +110,17 @@ class BetBlockerAccessibilityService : AccessibilityService() {
 
         val root = rootInActiveWindow ?: return
 
-        if (pkg in KNOWN_BROWSER_PACKAGES) {
-            val urlText = extractKnownBrowserUrl(root, pkg)
-            if (!urlText.isNullOrBlank()) {
-                val urlMatch = BlocklistMatcher.matchBrowserAddressText(urlText, config)
+        val isKnownBrowser = pkg in KNOWN_BROWSER_PACKAGES
+        var knownBrowserUrl: String? = null
+        if (isKnownBrowser) {
+            knownBrowserUrl = extractKnownBrowserUrl(root, pkg)
+            if (isInternalOrPlaceholderBrowserText(knownBrowserUrl)) {
+                // Chrome New Tab Page, Settings, Bookmarks, Tab Switcher or omnibox placeholder:
+                // Never close Chrome when on internal/NTP screens.
+                return
+            }
+            if (!knownBrowserUrl.isNullOrBlank()) {
+                val urlMatch = BlocklistMatcher.matchBrowserAddressText(knownBrowserUrl, config)
                 if (urlMatch.isBlocked) {
                     triggerIntervention(
                         target = urlMatch.matchedTarget,
@@ -125,11 +137,12 @@ class BetBlockerAccessibilityService : AccessibilityService() {
         val inspection = inspectWindowForWebOrUrl(root)
         if (inspection.addressCandidates.isNotEmpty()) {
             for (candidate in inspection.addressCandidates) {
+                if (isInternalOrPlaceholderBrowserText(candidate)) continue
                 val match = BlocklistMatcher.matchBrowserAddressText(candidate, config)
                 if (match.isBlocked) {
                     triggerIntervention(
                         target = match.matchedTarget,
-                        source = if (pkg in KNOWN_BROWSER_PACKAGES) "Web Shield" else "In-App WebView",
+                        source = if (isKnownBrowser) "Web Shield" else "In-App WebView",
                         category = match.category,
                         isAntiTamper = false,
                         useBackFirst = true,
@@ -139,7 +152,10 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             }
         }
 
-        if (inspection.hasWebView || pkg in KNOWN_BROWSER_PACKAGES) {
+        // Only scan rendered page content when an actual WebView is present OR a known browser
+        // has a settled non-internal external URL loaded (never scan Chrome NTP Discover cards).
+        val hasLoadedBrowserPage = isKnownBrowser && !knownBrowserUrl.isNullOrBlank()
+        if (inspection.hasWebView || hasLoadedBrowserPage) {
             val contentMatch = BlocklistMatcher.matchWebViewContent(
                 visibleTexts = inspection.visibleTexts,
                 hasWebView = inspection.hasWebView,
@@ -148,13 +164,20 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             if (contentMatch.isBlocked) {
                 triggerIntervention(
                     target = contentMatch.matchedTarget,
-                    source = if (pkg in KNOWN_BROWSER_PACKAGES) "Web Shield" else "In-App WebView",
+                    source = if (isKnownBrowser) "Web Shield" else "In-App WebView",
                     category = contentMatch.category,
                     isAntiTamper = false,
                     useBackFirst = true,
                 )
             }
         }
+    }
+
+    private fun isInternalOrPlaceholderBrowserText(raw: String?): Boolean {
+        val text = raw?.trim()?.lowercase() ?: return false
+        if (text.isEmpty()) return false
+        if (INTERNAL_BROWSER_PREFIXES.any { text.startsWith(it) }) return true
+        return text in BROWSER_PLACEHOLDER_HINTS
     }
 
     private fun resolveAppLabel(pkg: String): String? {
@@ -176,7 +199,12 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             if (!nodes.isNullOrEmpty()) {
                 for (node in nodes) {
                     val text = node.text?.toString()?.trim()
-                    if (!text.isNullOrBlank() && text.contains('.')) {
+                    if (text.isNullOrBlank()) continue
+                    if (isInternalOrPlaceholderBrowserText(text)) return text
+                    // Do not interrupt the user mid-keystroke while typing in a focused omnibox
+                    // unless a clear domain/URL has already been formed.
+                    if (node.isFocused && !text.contains('.')) continue
+                    if (text.contains('.') || text.startsWith("http")) {
                         return text
                     }
                 }
@@ -217,11 +245,15 @@ class BetBlockerAccessibilityService : AccessibilityService() {
                 if (visibleTexts.size < 48) {
                     visibleTexts.add(text)
                 }
-                val looksLikeUrlField = className.contains("EditText") ||
-                    viewId.contains("url") ||
-                    viewId.contains("address") ||
-                    viewId.contains("omnibox") ||
-                    viewId.contains("location_bar")
+                val isSearchPlaceholder = viewId.contains("search_box_text") ||
+                    isInternalOrPlaceholderBrowserText(text)
+                val looksLikeUrlField = !isSearchPlaceholder && (
+                    className.contains("EditText") ||
+                        viewId.contains("url") ||
+                        viewId.contains("address") ||
+                        viewId.contains("omnibox") ||
+                        viewId.contains("location_bar")
+                    )
                 if (looksLikeUrlField && text.contains('.') && addressCandidates.size < 8) {
                     addressCandidates.add(text)
                 }
@@ -310,14 +342,19 @@ class BetBlockerAccessibilityService : AccessibilityService() {
         useBackFirst: Boolean,
     ) {
         val now = System.currentTimeMillis()
-        if (target == lastTriggeredTarget && now - lastTriggerAtMs < 1300L) return
+        if (target == lastTriggeredTarget && now - lastTriggerAtMs < 1500L) return
         lastTriggerAtMs = now
         lastTriggeredTarget = target
 
-        if (useBackFirst) {
+        if (useBackFirst && !isAntiTamper) {
+            // Back off the blocked tab cleanly without force-homing/killing Chrome's state
             performGlobalAction(GLOBAL_ACTION_BACK)
+        } else {
+            if (useBackFirst) {
+                performGlobalAction(GLOBAL_ACTION_BACK)
+            }
+            performGlobalAction(GLOBAL_ACTION_HOME)
         }
-        performGlobalAction(GLOBAL_ACTION_HOME)
 
         if (!isAntiTamper) {
             scope.launch {
@@ -382,6 +419,32 @@ class BetBlockerAccessibilityService : AccessibilityService() {
     }
 
     companion object {
+        private val INTERNAL_BROWSER_PREFIXES = listOf(
+            "chrome://",
+            "chrome-native://",
+            "about:",
+            "edge://",
+            "brave://",
+            "opera://",
+            "vivaldi://",
+            "duckduckgo://",
+            "firefox://",
+            "file://",
+            "content://",
+            "data:",
+            "blob:",
+            "javascript:",
+        )
+
+        private val BROWSER_PLACEHOLDER_HINTS = setOf(
+            "search or type web address",
+            "search or type url",
+            "search google or type a url",
+            "type a url",
+            "search the web",
+            "new tab",
+        )
+
         private val TAMPER_SENSITIVE_PACKAGES = setOf(
             "com.android.settings",
             "com.android.packageinstaller",

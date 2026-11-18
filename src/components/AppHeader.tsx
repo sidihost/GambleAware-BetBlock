@@ -7,6 +7,7 @@ import {
   LockKeyhole,
   SlidersHorizontal,
   TrendingUp,
+  User,
 } from 'lucide-react';
 import { AnchorRoute, CloudAccountInfo, CloudSyncStatus } from '../data/types';
 
@@ -14,8 +15,9 @@ interface AppHeaderProps {
   currentRoute: AnchorRoute;
   onSelectRoute: (route: AnchorRoute) => void;
   cloudUser: CloudAccountInfo | null;
+  firstName: string;
   cloudSyncStatus: CloudSyncStatus;
-  onSyncClick: () => void;
+  onAuthClick: () => void;
 }
 
 const DESKTOP_NAV: Array<{
@@ -23,11 +25,11 @@ const DESKTOP_NAV: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
-  { route: 'shield', label: 'Protect', icon: <Anchor className="h-4 w-4" /> },
-  { route: 'blocklist', label: 'Rules', icon: <SlidersHorizontal className="h-4 w-4" /> },
+  { route: 'shield', label: 'Home', icon: <Anchor className="h-4 w-4" /> },
+  { route: 'blocklist', label: 'Blocked', icon: <SlidersHorizontal className="h-4 w-4" /> },
   { route: 'activity', label: 'Progress', icon: <TrendingUp className="h-4 w-4" /> },
   { route: 'lock', label: 'Lock', icon: <LockKeyhole className="h-4 w-4" /> },
-  { route: 'download', label: 'Download', icon: <Download className="h-4 w-4" /> },
+  { route: 'download', label: 'Get App', icon: <Download className="h-4 w-4" /> },
 ];
 
 export const BrandAnchorMark: React.FC<{ className?: string }> = ({
@@ -63,27 +65,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   currentRoute,
   onSelectRoute,
   cloudUser,
+  firstName,
   cloudSyncStatus,
-  onSyncClick,
+  onAuthClick,
 }) => {
   const isOnDownload = currentRoute === 'download';
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-[var(--subtle-border)] bg-[var(--glass-fill)] backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:px-6">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:px-4 md:h-16 md:gap-4 md:px-6">
         {/* Left Zone: Brand Crest + Name */}
         <button
           type="button"
           onClick={() => onSelectRoute('shield')}
-          className="flex min-w-0 shrink-0 cursor-pointer items-center gap-2.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
+          className="flex min-w-0 shrink-0 cursor-pointer items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
         >
           <BrandAnchorMark className="h-8 w-8 shrink-0" />
           <div className="min-w-0 leading-tight">
             <span className="block font-display text-base font-bold tracking-tight whitespace-nowrap text-[var(--ink)] md:text-lg">
               GambleAware
             </span>
-            <span className="hidden font-mono text-[10px] tracking-wider whitespace-nowrap text-[var(--accent-ink)] uppercase sm:block">
-              Zero-VPN Protection
+            <span className="hidden text-[11px] font-medium whitespace-nowrap text-[var(--ink-muted)] sm:block">
+              Recovery &amp; Blocker
             </span>
           </div>
         </button>
@@ -113,33 +116,35 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           })}
         </nav>
 
-        {/* Right Zone: Free Cloud Sync Trigger + Primary Action CTA */}
-        <div className="flex shrink-0 items-center gap-2">
+        {/* Right Zone: Account Sign In / Profile + Primary Action CTA */}
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button
             type="button"
-            onClick={onSyncClick}
+            onClick={onAuthClick}
             aria-label={
               cloudUser
-                ? `Cloud sync active for ${cloudUser.email || cloudUser.displayName}`
-                : 'Sign in for free Cloud Sync'
+                ? `Account & Cloud Sync for ${cloudUser.email || cloudUser.displayName}`
+                : 'Sign In or Create Account'
             }
-            className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 text-xs font-medium whitespace-nowrap text-[var(--ink)] transition-colors hover:opacity-90 sm:px-3"
+            className="inline-flex h-9 max-w-[126px] shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:opacity-90 sm:max-w-[160px] sm:px-3"
           >
-            {cloudSyncStatus === 'error' ? (
-              <CloudOff className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
+            {cloudUser ? (
+              cloudSyncStatus === 'error' ? (
+                <CloudOff className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
+              ) : (
+                <Cloud className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
+              )
             ) : (
-              <Cloud
-                className={`h-3.5 w-3.5 shrink-0 ${
-                  cloudUser ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-muted)]'
-                }`}
-              />
+              <User className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
             )}
-            <span className="hidden sm:inline">
+            <span className="truncate">
               {cloudUser
                 ? cloudSyncStatus === 'connecting'
                   ? 'Syncing…'
-                  : 'Synced'
-                : 'Free Sync'}
+                  : firstName || 'Account'
+                : firstName
+                  ? firstName
+                  : 'Sign In'}
             </span>
           </button>
 
@@ -147,7 +152,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <button
               type="button"
               onClick={() => onSelectRoute('shield')}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:px-4 sm:text-sm"
+              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:px-4 sm:text-sm"
             >
               <Anchor className="h-3.5 w-3.5 shrink-0" />
               <span>Open Guard</span>
@@ -156,7 +161,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <button
               type="button"
               onClick={() => onSelectRoute('download')}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:px-4 sm:text-sm"
+              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:px-4 sm:text-sm"
             >
               <Download className="h-3.5 w-3.5 shrink-0" />
               <span>Get App</span>

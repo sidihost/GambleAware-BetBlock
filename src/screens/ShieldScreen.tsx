@@ -8,28 +8,38 @@ import {
   Circle,
   Compass,
   Download,
-  Globe,
   Heart,
   LockKeyhole,
   NotebookPen,
+  Plus,
   Search,
-  Server,
+  ShieldAlert,
   Smartphone,
   Timer,
+  TrendingUp,
+  UserPlus,
   Wind,
   X,
 } from 'lucide-react';
 import { GAMBLING_CATEGORY_META } from '../blocker/gamblingCategory';
 import { CloudSyncCard } from '../components/CloudSyncCard';
+import { GeminiAgentPanel } from '../components/GeminiAgentPanel';
+import { ActiveGoalsCard, GoalReminderBanner } from '../components/GoalCardModal';
 import {
   LiquidGlassCard,
   LiquidSectionHeader,
   LiquidShieldOrb,
   LiquidStatusButton,
 } from '../components/LiquidGlass';
-import { CloudAccountInfo, CloudSyncStatus, DerivedMainState } from '../data/types';
+import {
+  CloudAccountInfo,
+  CloudSyncStatus,
+  DerivedMainState,
+  RecoveryGoalCategory,
+} from '../data/types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { formatNaira } from '../utils/currency';
+import { getTimeOfDayGreeting } from '../utils/personalization';
 
 interface ShieldScreenProps {
   state: DerivedMainState;
@@ -38,15 +48,38 @@ interface ShieldScreenProps {
   lastSyncedAtMs: number | null;
   cloudErrorMsg: string | null;
   onSignInGoogle: () => void;
+  onOpenAuth: (mode?: 'signin' | 'signup') => void;
   onSignOut: () => void;
   onForceSync: () => void;
   onPrimaryShieldClick: () => void;
   onEnableAccessibility: () => void;
   onRequestDeviceAdmin: () => void;
-  onOpenPrivateDnsSettings: () => void;
   onDomainLookupChanged: (query: string) => void;
   onQuickBlockDomain: (domain: string) => void;
+  onTestOrRedirectUrl: (rawInput: string) => void;
+  showGoalReminder: boolean;
+  onDismissGoalReminder: () => void;
+  onOpenGoalModal: () => void;
+  onSetPrimaryGoal: (goalId: string) => void;
+  onToggleGoalComplete: (goalId: string) => void;
+  onDeleteGoal: (goalId: string) => void;
+  onToggleAiAutoBlock: (enabled: boolean) => void;
+  onAutoBlockFromAgent: (params: {
+    target: string;
+    category: string;
+    isLoginAttempt: boolean;
+    coachNote: string;
+  }) => void;
+  onCreateSuggestedGoal: (input: {
+    title: string;
+    category: RecoveryGoalCategory;
+    targetDays: number;
+    targetAmountNgn: number;
+    whyNote: string;
+    lockDurationDays: number;
+  }) => void;
   onNavigateToRules: () => void;
+  onNavigateToProgress: () => void;
   onNavigateToLock: () => void;
   onLaunchCalmReset: () => void;
   onOpenUrgeJournal: () => void;
@@ -61,15 +94,26 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
   lastSyncedAtMs,
   cloudErrorMsg,
   onSignInGoogle,
+  onOpenAuth,
   onSignOut,
   onForceSync,
   onPrimaryShieldClick,
   onEnableAccessibility,
   onRequestDeviceAdmin,
-  onOpenPrivateDnsSettings,
   onDomainLookupChanged,
   onQuickBlockDomain,
+  onTestOrRedirectUrl,
+  showGoalReminder,
+  onDismissGoalReminder,
+  onOpenGoalModal,
+  onSetPrimaryGoal,
+  onToggleGoalComplete,
+  onDeleteGoal,
+  onToggleAiAutoBlock,
+  onAutoBlockFromAgent,
+  onCreateSuggestedGoal,
   onNavigateToRules,
+  onNavigateToProgress,
   onNavigateToLock,
   onLaunchCalmReset,
   onOpenUrgeJournal,
@@ -79,6 +123,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
   const { isInstalled } = usePWAInstall();
   const [promptDismissed, setPromptDismissed] = useState(false);
 
+  const greeting = getTimeOfDayGreeting(state.firstName);
   const isArmed = state.isFullyArmed;
   const isLocked = state.isTimeLockedNow;
   const showQuickOnboarding =
@@ -86,29 +131,29 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 
   const statusTitle =
     isArmed && state.isDeviceAdminEnabled && isLocked
-      ? 'Maximum Lock & Guard Active'
+      ? 'Full Lock & Blocker Active'
       : isArmed && state.isDeviceAdminEnabled
-        ? 'Full Guard + Uninstall Lock'
+        ? 'Blocker + Delete Lock Active'
         : isArmed
-          ? 'Web & App Guard Active'
+          ? 'Protection Is On'
           : !state.isAccessibilityEnabled
-            ? 'Activate GambleAware Guard'
+            ? 'Turn On GambleAware'
             : 'Protection Paused';
 
   const statusSubtitle = isArmed
-    ? 'Blocking SportyBet, Bet9ja, Bet365, 1xBet, Stake, search queries, WebViews & betting apps in real time.'
+    ? 'Automatically blocks SportyBet, Bet9ja, Bet365, 1xBet, betting logins, and gambling apps.'
     : !state.isAccessibilityEnabled
-      ? 'Enable GambleAware Guard to block browsers, WebViews, betting apps, and impulsive uninstalls.'
-      : 'Tap below to resume real-time gambling site and app interception.';
+      ? 'Turn on GambleAware to block betting sites, sign-in pages, and gambling apps automatically.'
+      : 'Tap below whenever you are ready to turn blocking back on.';
 
   const primaryBtnLabel =
     isArmed && isLocked
-      ? 'Protected (Locked Until Timer Ends)'
+      ? 'Locked Until Timer Ends'
       : isArmed
-        ? 'Pause Guard'
+        ? 'Pause Protection'
         : !state.isAccessibilityEnabled
-          ? 'Enable Web & App Guard'
-          : 'Resume Guard';
+          ? 'Turn On Blocker'
+          : 'Turn Blocking Back On';
 
   const cleanMetricValue =
     state.cleanDays > 0
@@ -119,6 +164,56 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
+      {/* Personalized Greeting Hero Bar */}
+      <div className="flex flex-col justify-between gap-3 rounded-[24px] border border-[var(--subtle-border)] bg-[var(--glass-fill)] px-5 py-4 backdrop-blur-xl sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
+            {isArmed ? 'Protection Active' : 'Protection Paused'}
+          </p>
+          <h1 className="mt-0.5 font-display text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-[26px]">
+            {greeting.headline}
+          </h1>
+          <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
+            {greeting.subline}
+          </p>
+        </div>
+
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={onOpenGoalModal}
+            className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>{state.goals.length === 0 ? 'Create Goal' : 'Add Goal'}</span>
+          </button>
+
+          {!cloudUser ? (
+            <button
+              type="button"
+              onClick={() => onOpenAuth('signup')}
+              className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:w-auto"
+            >
+              <UserPlus className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
+              <span>Sign Up / Sign In</span>
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Automatic Goal Creation Reminder Banner when user has no goals */}
+      {showGoalReminder ? (
+        <GoalReminderBanner
+          firstName={state.firstName}
+          onCreateGoal={onOpenGoalModal}
+          onAskCoachGoal={() => {
+            const el = document.getElementById('gambleaware-ai-section');
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          onDismiss={onDismissGoalReminder}
+        />
+      ) : null}
+
       {/* Compact Non-Intrusive Download Prompt Banner */}
       {!promptDismissed && !isInstalled ? (
         <div className="flex flex-col gap-3 rounded-[22px] border border-[var(--glass-border)] bg-[var(--muted-fill)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
@@ -129,7 +224,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <p className="font-display text-sm font-semibold text-[var(--ink)]">
-                  Get GambleAware for Android &amp; Desktop
+                  Get GambleAware on Your Phone
                 </p>
                 <button
                   type="button"
@@ -141,7 +236,8 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 </button>
               </div>
               <p className="mt-0.5 text-xs leading-snug text-[var(--ink-muted)]">
-                Download the Zero-VPN Android app (.apk) or install this dashboard to your home screen.
+                Install the Android app for full phone-wide blocking or save this page to your home
+                screen.
               </p>
             </div>
           </div>
@@ -151,7 +247,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               onClick={onOpenDownloadPage}
               className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:w-auto"
             >
-              <span>Download App</span>
+              <span>Get the App</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
             <button
@@ -168,13 +264,13 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 
       {/* Top Two-Column Workspace on Desktop, Single Column on Mobile */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* Left Column: Hero Anchor Chronograph Orb & Metrics */}
+        {/* Left Column: Hero Anchor Chronograph Orb, Metrics & Personalized Goals */}
         <div className="flex flex-col gap-4 lg:col-span-5">
           <LiquidGlassCard className="p-5 sm:p-6">
             <div className="flex flex-col items-center">
               <div className="flex w-full items-center justify-between gap-2">
-                <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
-                  Zero-VPN Protection
+                <span className="text-[11px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
+                  Blocker Status
                 </span>
                 {isLocked ? (
                   <LiquidStatusButton
@@ -185,7 +281,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   />
                 ) : (
                   <LiquidStatusButton
-                    label={isArmed ? 'Armed' : 'Setup'}
+                    label={isArmed ? 'On' : 'Setup'}
                     isActive={isArmed}
                     icon={
                       isArmed ? (
@@ -207,9 +303,9 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 />
               </div>
 
-              <h1 className="mt-3.5 text-center font-display text-xl font-bold text-[var(--ink)]">
+              <h2 className="mt-3.5 text-center font-display text-xl font-bold text-[var(--ink)]">
                 {statusTitle}
-              </h1>
+              </h2>
               <p className="mt-1 max-w-md text-center text-xs leading-relaxed text-[var(--ink-muted)]">
                 {statusSubtitle}
               </p>
@@ -249,15 +345,15 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             </div>
           </LiquidGlassCard>
 
-          {/* Metrics Trio */}
-          <div className="grid grid-cols-3 gap-2.5">
+          {/* Responsive Metrics Trio: 2+1 full-width Est. Saved on xs phones, 3 balanced columns on sm+ */}
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             <LiquidGlassCard className="rounded-[22px] p-3.5">
               <p className="truncate text-xs font-medium text-[var(--ink-muted)]">Clean Streak</p>
               <p className="mt-1.5 truncate font-mono text-lg font-bold tabular-nums text-[var(--ink)]">
                 {cleanMetricValue}
               </p>
               <p className="mt-0.5 truncate text-[11px] text-[var(--ink-muted)]">
-                Goal: {state.nextMilestone.label}
+                Next: {state.nextMilestone.label}
               </p>
             </LiquidGlassCard>
             <LiquidGlassCard className="rounded-[22px] p-3.5">
@@ -269,90 +365,75 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 {state.totalBlockedCount} total
               </p>
             </LiquidGlassCard>
-            <LiquidGlassCard className="rounded-[22px] p-3.5">
+            <LiquidGlassCard className="col-span-2 rounded-[22px] p-3.5 sm:col-span-1">
               <p className="truncate text-xs font-medium text-[var(--ink-muted)]">Est. Saved</p>
               <p className="mt-1.5 truncate font-mono text-lg font-bold tabular-nums text-[var(--accent-ink)]">
                 {savedFormatted}
               </p>
               <p className="mt-0.5 truncate text-[11px] text-[var(--ink-muted)]">
-                {state.totalUrgeResistedCount} resisted
+                {state.totalUrgeResistedCount} urges resisted
               </p>
             </LiquidGlassCard>
           </div>
+
+          {/* Personalized Goals List on Left Column */}
+          <ActiveGoalsCard
+            goals={state.goals}
+            cleanExactDays={state.cleanExactDays}
+            estimatedSavedAmount={state.estimatedSavedAmount}
+            onAddGoal={onOpenGoalModal}
+            onSetPrimary={onSetPrimaryGoal}
+            onToggleComplete={onToggleGoalComplete}
+            onDeleteGoal={onDeleteGoal}
+          />
         </div>
 
-        {/* Right Column: Live Tester, SOS Toolkit, Protection Stack & Free Cloud Sync */}
+        {/* Right Column: Gambling Login Redirect Check, GambleAware AI, Setup, SOS & Sync */}
         <div className="flex flex-col gap-4 lg:col-span-7">
-          {showQuickOnboarding ? (
-            <LiquidGlassCard className="p-4 sm:p-5">
-              <LiquidSectionHeader
-                title="Complete Lock & Guard Setup"
-                subtitle="Enable all 3 layers to prevent uninstalling until your timer ends"
-              />
-              <div className="mt-3 flex flex-col gap-2">
-                <SetupStepRow
-                  step="1"
-                  title="Enable Web & App Guard"
-                  subtitle={
-                    state.isAccessibilityEnabled
-                      ? 'Active'
-                      : 'Required to block sites, WebViews & apps'
-                  }
-                  done={state.isAccessibilityEnabled}
-                  onClick={onEnableAccessibility}
-                />
-                <SetupStepRow
-                  step="2"
-                  title="Enable Uninstall Lock (Device Admin)"
-                  subtitle={
-                    state.isDeviceAdminEnabled
-                      ? 'Active'
-                      : 'Prevents direct uninstall of GambleAware'
-                  }
-                  done={state.isDeviceAdminEnabled}
-                  onClick={onRequestDeviceAdmin}
-                />
-                <SetupStepRow
-                  step="3"
-                  title="Set Commitment Lock Duration"
-                  subtitle={
-                    isLocked
-                      ? `Active (${state.lockCountdownFormatted})`
-                      : 'Locks uninstall & tamper controls until timer reaches 0'
-                  }
-                  done={isLocked}
-                  onClick={onNavigateToLock}
-                />
-              </div>
-            </LiquidGlassCard>
-          ) : null}
-
-          {/* Instant Domain Rule Lookup & Quick Block */}
+          {/* Check or Block a Website */}
           <LiquidGlassCard className="p-4 sm:p-5" tourKey="domain_lookup">
             <LiquidSectionHeader
-              title="Domain Rule Lookup"
-              subtitle="Check if a site is covered or add a custom domain straight to your blocklist"
+              title="Check or Block a Website"
+              subtitle="Type any betting site or sign-in link (e.g. sportybet.com/login) to check or test your block screen"
             />
-            <div className="relative mt-3">
-              <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--ink-muted)]" />
-              <input
-                type="text"
-                value={state.domainLookupQuery}
-                onChange={(e) => onDomainLookupChanged(e.target.value)}
-                placeholder="Enter domain or URL (e.g. mybookie.ag)"
-                className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
-              />
-              {state.domainLookupQuery ? (
-                <button
-                  type="button"
-                  onClick={() => onDomainLookupChanged('')}
-                  aria-label="Clear domain query"
-                  className="absolute top-1/2 right-2.5 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:text-[var(--ink)]"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              ) : null}
-            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (state.domainLookupQuery.trim()) {
+                  onTestOrRedirectUrl(state.domainLookupQuery);
+                }
+              }}
+              className="mt-3 flex flex-col gap-2 sm:flex-row"
+            >
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--ink-muted)]" />
+                <input
+                  type="text"
+                  value={state.domainLookupQuery}
+                  onChange={(e) => onDomainLookupChanged(e.target.value)}
+                  placeholder="e.g. sportybet.com/login"
+                  className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+                />
+                {state.domainLookupQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => onDomainLookupChanged('')}
+                    aria-label="Clear site search"
+                    className="absolute top-1/2 right-2.5 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+              <button
+                type="submit"
+                disabled={!state.domainLookupQuery.trim()}
+                className="inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[18px] bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 disabled:opacity-50"
+              >
+                <ShieldAlert className="h-4 w-4" />
+                <span>Check Site</span>
+              </button>
+            </form>
 
             {state.domainLookupResult ? (
               <div
@@ -372,22 +453,22 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                     <p className="text-sm font-semibold">
                       {state.domainLookupResult.isBlocked
                         ? `Blocked (${GAMBLING_CATEGORY_META[state.domainLookupResult.category].displayName})`
-                        : 'Allowed — Not on Blocklist'}
+                        : 'Not Blocked Yet'}
                     </p>
                     <p className="truncate text-xs opacity-85">
                       {state.domainLookupResult.isBlocked
-                        ? `${state.domainLookupResult.matchedTarget} • ${state.domainLookupResult.reason}`
-                        : 'Add this domain to block it across browsers and search results.'}
+                        ? `${state.domainLookupResult.matchedTarget} • Redirects safely when opened`
+                        : 'Tap Block Site to stop this website from opening.'}
                     </p>
                   </div>
                 </div>
                 {state.domainLookupResult.isBlocked ? (
                   <button
                     type="button"
-                    onClick={onNavigateToRules}
-                    className="shrink-0 cursor-pointer rounded-full border border-current/25 px-3 py-1.5 text-xs font-semibold hover:opacity-85"
+                    onClick={() => onTestOrRedirectUrl(state.domainLookupQuery)}
+                    className="shrink-0 cursor-pointer rounded-full border border-current/25 px-3.5 py-1.5 text-xs font-semibold hover:opacity-85"
                   >
-                    Manage Rules
+                    Preview Block Screen
                   </button>
                 ) : state.domainLookupQuery.includes('.') ? (
                   <button
@@ -398,19 +479,73 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                     }}
                     className="shrink-0 cursor-pointer rounded-full bg-[var(--active-fill)] px-3.5 py-1.5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
                   >
-                    Block Domain
+                    Block Site
                   </button>
                 ) : null}
               </div>
             ) : null}
           </LiquidGlassCard>
 
+          {/* GambleAware AI Protection & Goal Companion */}
+          <div id="gambleaware-ai-section">
+            <GeminiAgentPanel
+              state={state}
+              onToggleAiAutoBlock={onToggleAiAutoBlock}
+              onAutoBlockAndRedirect={onAutoBlockFromAgent}
+              onCreateSuggestedGoal={onCreateSuggestedGoal}
+            />
+          </div>
+
+          {showQuickOnboarding ? (
+            <LiquidGlassCard className="p-4 sm:p-5">
+              <LiquidSectionHeader
+                title="3 Simple Steps to Stay Protected"
+                subtitle="Set these up once so it stays hard to gamble during an urge"
+              />
+              <div className="mt-3 flex flex-col gap-2">
+                <SetupStepRow
+                  step="1"
+                  title="Turn On Site & App Blocker"
+                  subtitle={
+                    state.isAccessibilityEnabled
+                      ? 'Active'
+                      : 'Blocks betting websites, sign-ins, and betting apps'
+                  }
+                  done={state.isAccessibilityEnabled}
+                  onClick={onEnableAccessibility}
+                />
+                <SetupStepRow
+                  step="2"
+                  title="Protect App From Deletion"
+                  subtitle={
+                    state.isDeviceAdminEnabled
+                      ? 'Active'
+                      : 'Makes it harder to delete GambleAware when tempted'
+                  }
+                  done={state.isDeviceAdminEnabled}
+                  onClick={onRequestDeviceAdmin}
+                />
+                <SetupStepRow
+                  step="3"
+                  title="Set a Lock Timer"
+                  subtitle={
+                    isLocked
+                      ? `Locked for ${state.lockCountdownFormatted}`
+                      : 'Locks your blocker until your countdown finishes'
+                  }
+                  done={isLocked}
+                  onClick={onNavigateToLock}
+                />
+              </div>
+            </LiquidGlassCard>
+          ) : null}
+
           {/* SOS Recovery Toolkit + Free Cloud Sync Row */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <LiquidGlassCard className="p-4 sm:p-5" tourKey="sos_calm_bar">
               <LiquidSectionHeader
-                title="Urge & Recovery Toolkit"
-                subtitle="Immediate tools when an urge hits"
+                title="Calm &amp; Support Tools"
+                subtitle="Quick help whenever an urge hits"
               />
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
@@ -436,7 +571,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 className="mt-2.5 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] px-4 text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
               >
                 <Heart className="h-4 w-4 shrink-0" />
-                <span>Confidential Recovery Support</span>
+                <span>Talk to Confidential Support</span>
               </button>
             </LiquidGlassCard>
 
@@ -453,73 +588,45 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
         </div>
       </div>
 
-      {/* 3-Layer Non-VPN Protection Stack */}
+      {/* Clear Everyday Navigation Shortcuts */}
       <LiquidGlassCard className="p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <LiquidSectionHeader
-            title="Protection Stack"
-            subtitle="No VPN required • Zero battery drain • Works on Wi-Fi & mobile data"
+            title="Where to Go Next"
+            subtitle="Everything you need is one tap away"
           />
         </div>
-        <div className="mt-3.5 grid grid-cols-1 gap-2.5 md:grid-cols-3">
+        <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
           <EngineStatusRow
             icon={<Compass className="h-5 w-5" />}
-            title="Web, Search & App Guard"
-            subtitle={
-              state.isAccessibilityEnabled
-                ? 'Active • Browsers, WebViews & 130+ apps'
-                : 'Tap to enable GambleAware Guard'
-            }
-            isReady={state.isAccessibilityEnabled}
-            onClick={onEnableAccessibility}
+            title="Blocked Sites & Apps"
+            subtitle={`${state.builtInDomainCount}+ sites ready · customize anytime`}
+            isReady={isArmed}
+            onClick={onNavigateToRules}
           />
           <EngineStatusRow
-            icon={<LockKeyhole className="h-5 w-5" />}
-            title="Uninstall Lock (Device Admin)"
-            subtitle={
-              state.isDeviceAdminEnabled
-                ? 'Active • Blocks impulsive removal'
-                : 'Tap to lock app removal during urges'
-            }
-            isReady={state.isDeviceAdminEnabled}
-            onClick={onRequestDeviceAdmin}
+            icon={<TrendingUp className="h-5 w-5" />}
+            title="Progress & Money Saved"
+            subtitle="Check your streak, goals & Naira saved"
+            isReady={state.goals.length > 0}
+            onClick={onNavigateToProgress}
           />
           <EngineStatusRow
-            icon={<Server className="h-5 w-5" />}
-            title="System Private DNS (DoT)"
+            icon={<Timer className="h-5 w-5" />}
+            title="Lock Timer & PIN"
             subtitle={
-              state.privateDnsStatus.isActive
-                ? `Active • ${state.privateDnsStatus.serverHost ?? 'System Auto'}`
-                : 'Optional • Native DNS-over-TLS'
+              isLocked
+                ? `Locked · ${state.lockCountdownFormatted} left`
+                : 'Lock settings for 1 to 90 days'
             }
-            isReady={state.privateDnsStatus.isActive}
-            onClick={onOpenPrivateDnsSettings}
-          />
-        </div>
-
-        <div className="mt-3.5 flex flex-wrap gap-2">
-          <LiquidStatusButton
-            label={`${state.builtInDomainCount}+ Domains`}
-            isActive={isArmed}
-            icon={<Globe className="h-3.5 w-3.5" />}
-          />
-          <LiquidStatusButton
-            label="Search Guard"
-            isActive={isArmed && state.settings.searchGuardEnabled}
-            icon={<Search className="h-3.5 w-3.5" />}
-          />
-          <LiquidStatusButton
-            label={isLocked ? 'Tamper Locked' : 'Timer Lock'}
-            isActive={isLocked && state.settings.antiTamperLockEnabled && state.isAccessibilityEnabled}
-            icon={
-              isLocked ? <LockKeyhole className="h-3.5 w-3.5" /> : <Timer className="h-3.5 w-3.5" />
-            }
+            isReady={isLocked}
             onClick={onNavigateToLock}
           />
-          <LiquidStatusButton
-            label="Android APK"
-            isActive={false}
-            icon={<Smartphone className="h-3.5 w-3.5" />}
+          <EngineStatusRow
+            icon={<Smartphone className="h-5 w-5" />}
+            title="Get Phone App"
+            subtitle="Install GambleAware on Android or iPhone"
+            isReady={false}
             onClick={onOpenDownloadPage}
           />
         </div>

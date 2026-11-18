@@ -10,19 +10,19 @@ val GamblePink = Color(0xFFFF3D9A)       // Signature GambleAware Pink (Dark mod
 val GamblePinkSoft = Color(0xFFFF72B8)   // High-legibility pink ink on obsidian
 val GamblePinkDeep = Color(0xFFD81B78)   // High-contrast pink for Light mode (white text AA)
 
-// Light (Blush & Black) Mode
-val LightCanvas = Color(0xFFFFF7FA)
+// Light (Crisp White & Pink) Mode — Default
+val LightCanvas = Color(0xFFFFFFFF)
 val LightSurface = Color(0xFFFFFFFF)
-val LightGlassFill = Color(0xE6FFFFFF)
-val LightGlassSecondary = Color(0xCCFFE5F1)
+val LightGlassFill = Color(0xF2FFFFFF)
+val LightGlassSecondary = Color(0xCCFFF2F8)
 val LightGlassBorder = Color(0xFFFFD1E6)
-val LightSubtleBorder = Color(0xFFF3C3D9)
-val LightPrimaryContainer = Color(0xFFFFEBF4)
-val LightSecondaryInk = Color(0xFF6B4F5D)
+val LightSubtleBorder = Color(0xFFEDD6E2)
+val LightPrimaryContainer = Color(0xFFFFF0F7)
+val LightSecondaryInk = Color(0xFF5D4652)
 
-val LightBlobPrimary = Color(0xFFFFDEED)
-val LightBlobSecondary = Color(0xFFFFCCE4)
-val LightBlobTertiary = Color(0xFFFFE9F3)
+val LightBlobPrimary = Color(0xFFFFEAF3)
+val LightBlobSecondary = Color(0xFFFFE0EE)
+val LightBlobTertiary = Color(0xFFFFF5F9)
 
 // Dark (Obsidian Black & Pink — Signature Default) Mode
 val DarkCanvas = Color(0xFF060608)

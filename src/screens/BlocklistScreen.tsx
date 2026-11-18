@@ -52,6 +52,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
   const [isAddingAllowlist, setIsAddingAllowlist] = useState(false);
   const [registrySearch, setRegistrySearch] = useState('');
   const [showAppPicker, setShowAppPicker] = useState(false);
+  const [showAdvancedAppInput, setShowAdvancedAppInput] = useState(false);
   const [customAppLabel, setCustomAppLabel] = useState('');
   const [customAppPkg, setCustomAppPkg] = useState('');
 
@@ -84,10 +85,10 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
       <div className="px-1">
         <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
-          Blocklist &amp; Rules
+          Blocked Sites &amp; Apps
         </h1>
         <p className="text-xs text-[var(--ink-muted)]">
-          Customize categories, mirror detection, domains, and apps
+          Choose which betting categories, websites, and apps stay blocked for you
         </p>
       </div>
 
@@ -135,36 +136,36 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             onChange={(v) => onToggleCategory(GamblingCategory.FANTASY_LOTTERY, v)}
           />
           <CategorySwitchRow
-            title="Smart Mirror & Keyword Filter"
-            subtitle="Catches unindexed mirrors & gambling WebView interfaces"
+            title="Block New Copycat Sites"
+            subtitle="Automatically catches new betting lookalike sites and links"
             checked={state.settings.strictKeywordFilter}
             onChange={onToggleStrictKeywords}
           />
         </div>
       </LiquidGlassCard>
 
-      {/* Real-Time Guards */}
+      {/* Where Protection Works */}
       <LiquidGlassCard className="p-4 sm:p-5" tourKey="blocklist_guards">
         <LiquidSectionHeader
-          title="Real-Time Guards"
-          subtitle="Active across browsers, in-app WebViews, and installed apps"
+          title="Protection Coverage"
+          subtitle="Blocks gambling across browsers, searches, and phone apps"
         />
         <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/45">
           <CategorySwitchRow
-            title="Universal Web & WebView Guard"
-            subtitle="Stops Chrome, Firefox, Edge, Brave, Custom Tabs & social WebViews"
+            title="Websites &amp; Social App Links"
+            subtitle="Stops betting websites inside Chrome, Safari, Instagram, TikTok, and Telegram"
             checked={state.settings.browserShieldEnabled}
             onChange={onToggleBrowserShield}
           />
           <CategorySwitchRow
-            title="Betting App & Install Guard"
-            subtitle="Blocks 120+ betting apps + newly downloaded gambling APKs"
+            title="Installed Betting Apps"
+            subtitle="Blocks 120+ betting apps from opening or being newly installed"
             checked={state.settings.appShieldEnabled}
             onChange={onToggleAppShield}
           />
           <CategorySwitchRow
-            title="Search Engine Gambling Guard"
-            subtitle="Intercepts direct betting searches while keeping recovery & help safe"
+            title="Betting Searches"
+            subtitle="Blocks betting searches while keeping recovery &amp; support websites open"
             checked={state.settings.searchGuardEnabled}
             onChange={onToggleSearchGuard}
           />
@@ -173,11 +174,11 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      {/* Custom Domain Rules */}
+      {/* Custom Website Rules */}
       <LiquidGlassCard className="p-4 sm:p-5">
         <LiquidSectionHeader
-          title="Custom Domain Rules"
-          subtitle="Add specific websites to block or allowlist"
+          title="Custom Website Rules"
+          subtitle="Add specific websites to always block or keep allowed"
         />
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button
@@ -189,7 +190,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
                 : 'border-[var(--subtle-border)] bg-[var(--surface)]/60 text-[var(--ink-muted)]'
             }`}
           >
-            Block Domain
+            Block Website
           </button>
           <button
             type="button"
@@ -200,7 +201,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
                 : 'border-[var(--subtle-border)] bg-[var(--surface)]/60 text-[var(--ink-muted)]'
             }`}
           >
-            Allowlist Exception
+            Always Allow
           </button>
         </div>
 
@@ -281,7 +282,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
 
         {state.customBlockedApps.length === 0 ? (
           <p className="mt-3 text-xs text-[var(--ink-muted)]">
-            No extra apps added yet. Tap Add App to guard a custom Android package or browser app.
+            No extra apps added yet. Tap Add App to pick extra browsers or social apps to guard.
           </p>
         ) : (
           <div className="mt-3 flex flex-col gap-2">
@@ -312,11 +313,11 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       </LiquidGlassCard>
       </div>
 
-      {/* Protected Registry Search */}
+      {/* Built-in Protected Websites Search */}
       <LiquidGlassCard className="p-4 sm:p-5">
         <LiquidSectionHeader
-          title={`Protected Registry (${state.builtInDomainCount} Domains)`}
-          subtitle="Search built-in sportsbooks, casinos, poker, and crypto sites"
+          title={`Built-in Protected Websites (${state.builtInDomainCount}+)`}
+          subtitle="Search sportsbooks, casinos, poker, and crypto sites already blocked for you"
         />
         <div className="relative mt-3">
           <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--ink-muted)]" />
@@ -324,7 +325,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             type="text"
             value={registrySearch}
             onChange={(e) => setRegistrySearch(e.target.value)}
-            placeholder="Search registry (e.g. draftkings, poker)"
+            placeholder="Search blocked sites (e.g. sportybet, bet9ja)"
             className="h-11 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-3.5 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
           />
         </div>
@@ -343,17 +344,17 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
         </div>
       </LiquidGlassCard>
 
-      {/* Add Custom App Modal */}
+      {/* Add Extra App Modal */}
       {showAppPicker ? (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Add App to Blocklist"
+          aria-label="Choose an App to Block"
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
         >
-          <div className="w-full max-w-[480px] rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
+          <div className="max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold">Add App to Blocklist</h2>
+              <h2 className="font-display text-lg font-bold">Choose an App to Block</h2>
               <button
                 type="button"
                 onClick={() => setShowAppPicker(false)}
@@ -363,34 +364,10 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={handleAddCustomApp} className="mt-3 space-y-2.5">
-              <input
-                type="text"
-                value={customAppLabel}
-                onChange={(e) => setCustomAppLabel(e.target.value)}
-                placeholder="App Name (e.g. Custom Betting App)"
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
-              />
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={customAppPkg}
-                  onChange={(e) => setCustomAppPkg(e.target.value)}
-                  placeholder="Android Package ID (e.g. com.example.app)"
-                  className="h-11 min-w-0 flex-1 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-xs text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 cursor-pointer rounded-[14px] bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
-                >
-                  Add
-                </button>
-              </div>
-            </form>
-            <p className="mt-4 text-[11px] font-medium text-[var(--ink-muted)]">
-              Common Browsers &amp; Social Feeds (In-App WebViews)
+            <p className="mt-2 text-xs font-medium text-[var(--ink-muted)]">
+              Tap an app below to block links inside it
             </p>
-            <div className="mt-2 max-h-[220px] space-y-2 overflow-y-auto pr-1">
+            <div className="mt-2 max-h-[240px] space-y-2 overflow-y-auto pr-1">
               {COMMON_WEBVIEW_APPS.map((app) => {
                 const alreadyBlocked = state.customBlockedApps.some(
                   (a) => a.packageName === app.packageName.toLowerCase(),
@@ -408,9 +385,6 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
                   >
                     <div className="min-w-0 flex-1 pr-3">
                       <p className="text-sm font-semibold text-[var(--ink)]">{app.label}</p>
-                      <p className="truncate font-mono text-xs text-[var(--ink-muted)]">
-                        {app.packageName}
-                      </p>
                     </div>
                     {alreadyBlocked ? (
                       <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--ink)]" />
@@ -420,6 +394,41 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
                   </button>
                 );
               })}
+            </div>
+            <div className="mt-4 border-t border-[var(--subtle-border)] pt-3">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedAppInput((v) => !v)}
+                className="cursor-pointer text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)]"
+              >
+                {showAdvancedAppInput ? 'Hide advanced option' : 'Advanced: Enter custom app ID'}
+              </button>
+              {showAdvancedAppInput ? (
+                <form onSubmit={handleAddCustomApp} className="mt-2.5 space-y-2.5">
+                  <input
+                    type="text"
+                    value={customAppLabel}
+                    onChange={(e) => setCustomAppLabel(e.target.value)}
+                    placeholder="App Name (e.g. Custom Betting App)"
+                    className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customAppPkg}
+                      onChange={(e) => setCustomAppPkg(e.target.value)}
+                      placeholder="Package ID (e.g. com.example.app)"
+                      className="h-11 min-w-0 flex-1 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-xs text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="shrink-0 cursor-pointer rounded-[14px] bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </form>
+              ) : null}
             </div>
           </div>
         </div>

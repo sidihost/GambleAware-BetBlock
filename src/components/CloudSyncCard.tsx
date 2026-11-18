@@ -42,16 +42,16 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-display text-base font-semibold text-[var(--ink)]">
-                Free Cloud Backup
+                Save Progress Online
               </h3>
               <span className="font-mono text-[11px] font-semibold text-[var(--accent-ink)]">
-                ₦0 Forever
+                Free Forever
               </span>
             </div>
             <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
               {cloudUser
-                ? `Synced to Firestore as ${cloudUser.email || cloudUser.displayName}`
-                : 'Everything runs 100% free on your device. Sign in with Google to back up your streak, Naira savings & custom rules across devices.'}
+                ? `Backed up safely to ${cloudUser.email || cloudUser.displayName}`
+                : 'Sign in with Google to save your clean days, Naira saved, goals, and blocked sites across phones.'}
             </p>
           </div>
         </div>
@@ -68,20 +68,24 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
           <div className="flex items-center gap-2 text-xs text-[var(--ink)]">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
             <span>
-              {cloudSyncStatus === 'connecting'
-                ? 'Syncing changes…'
-                : `Live Cloud Sync • ${lastSyncLabel}`}
+              {!cloudUser.emailVerified
+                ? 'Verify email link in inbox to enable sync'
+                : cloudSyncStatus === 'connecting'
+                  ? 'Saving changes…'
+                  : `Backed up · ${lastSyncLabel}`}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onForceSync}
-              className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-medium text-[var(--ink)] hover:opacity-90"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              <span>Sync</span>
-            </button>
+            {cloudUser.emailVerified ? (
+              <button
+                type="button"
+                onClick={onForceSync}
+                className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-medium text-[var(--ink)] hover:opacity-90"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Sync</span>
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onSignOut}
