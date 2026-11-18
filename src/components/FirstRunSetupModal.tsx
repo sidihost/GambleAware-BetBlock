@@ -7,11 +7,12 @@ import {
 } from 'lucide-react';
 import { DAILY_SPEND_OPTIONS_NGN, formatNaira } from '../utils/currency';
 import { formatLockDurationAdjective, LOCK_DURATION_PRESETS } from '../utils/lockDurations';
-import { BrandAnchorMark } from './AppHeader';
+import { BrandGMark } from './AppHeader';
 
 interface FirstRunSetupModalProps {
   initialName: string;
   initialDailySpend: number;
+  isIOS?: boolean;
   isShieldEnabled: boolean;
   isDeviceAdminEnabled: boolean;
   onEnableShield: () => void;
@@ -26,6 +27,7 @@ interface FirstRunSetupModalProps {
 export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
   initialName,
   initialDailySpend,
+  isIOS = false,
   isShieldEnabled,
   isDeviceAdminEnabled,
   onEnableShield,
@@ -64,7 +66,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
       <div className="max-h-[92dvh] w-full max-w-[520px] overflow-y-auto rounded-[28px] border border-[var(--glass-border)] bg-[var(--surface)] p-5 text-[var(--ink)] shadow-2xl sm:p-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <BrandAnchorMark className="h-10 w-10 shrink-0" />
+          <BrandGMark className="h-10 w-10 shrink-0" />
           <div className="min-w-0 flex-1">
             <span className="inline-flex items-center rounded-full bg-[var(--active-fill)] px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-[var(--active-content)] uppercase">
               Mandatory First-Launch Setup
@@ -125,11 +127,15 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
               1
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-[var(--ink)]">Enable Web &amp; App Shield</p>
+              <p className="text-sm font-bold text-[var(--ink)]">
+                {isIOS ? 'Enable GambleAware Safari & Site Shield' : 'Enable DNS & Site Shield'}
+              </p>
               <p className="text-xs text-[var(--ink-muted)]">
                 {isShieldEnabled
-                  ? 'Active • Instant typing & website shield ready'
-                  : 'Required — tap to activate real-time site & typing guard'}
+                  ? 'Active • Instant typing, login & betting website shield ready'
+                  : isIOS
+                    ? 'Required — tap to arm instant betting-site check & Screen Time domain blocklist'
+                    : 'Required — tap to arm real-time site & betting link guard'}
               </p>
             </div>
             {isShieldEnabled ? (
@@ -139,7 +145,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             )}
           </button>
 
-          {/* Step 2: Enable Uninstall Lock (Device Admin) */}
+          {/* Step 2: Enable Lock & Tamper Protection */}
           <button
             type="button"
             onClick={() => {
@@ -164,12 +170,12 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-[var(--ink)]">
-                Enable Uninstall Lock (Device Admin)
+                {isIOS ? 'Enable Anti-Tamper Lock & Alerts' : 'Enable Anti-Tamper Commitment Lock'}
               </p>
               <p className="text-xs text-[var(--ink-muted)]">
                 {isDeviceAdminEnabled
-                  ? 'Active • Prevents impulsive deletion of GambleAware'
-                  : 'Required — tap to arm Anti-Uninstall & Admin protection'}
+                  ? 'Active • Prevents impulsive changes until your timer ends'
+                  : 'Required — tap to lock protection rules until your timer completes'}
               </p>
             </div>
             {isDeviceAdminEnabled ? (

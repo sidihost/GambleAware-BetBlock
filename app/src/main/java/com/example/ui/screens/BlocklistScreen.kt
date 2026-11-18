@@ -211,19 +211,19 @@ fun BlocklistScreen(
                 ) {
                     LiquidSectionHeader(
                         title = "Real-Time Guards",
-                        subtitle = "Active across browsers, in-app WebViews, and installed apps",
+                        subtitle = "Active across browsers, in-app WebViews, and betting app traffic",
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     CategorySwitchRow(
-                        title = "Universal Web & WebView Guard",
-                        subtitle = "Stops Chrome, Firefox, Edge, Brave, Custom Tabs & social WebViews",
+                        title = "System-Wide Domain & WebView DNS Guard",
+                        subtitle = "Blocks gambling domains inside Chrome, Firefox, Brave, Custom Tabs & social WebViews",
                         checked = state.settings.browserShieldEnabled,
                         onCheckedChange = onToggleBrowserShield,
                         testTag = "switch_browser_shield",
                     )
                     CategorySwitchRow(
                         title = "Betting App & Install Guard",
-                        subtitle = "Blocks 120+ betting apps + newly downloaded gambling APKs",
+                        subtitle = "Flags 120+ betting APKs upon install & blocks their servers on DNS",
                         checked = state.settings.appShieldEnabled,
                         onCheckedChange = onToggleAppShield,
                         testTag = "switch_app_shield",

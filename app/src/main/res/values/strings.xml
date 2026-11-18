@@ -1,8 +1,7 @@
 <resources>
     <string name="app_name">GambleAware</string>
-    <string name="accessibility_service_description">GambleAware by Imoogle Technology monitors browsers, in-app WebViews, and app launches on-device to block gambling sites and betting apps, and protects your Commitment Lock against impulsive removal.</string>
-    <string name="device_admin_label">GambleAware Uninstall Lock</string>
-    <string name="device_admin_description">Prevents uninstalling GambleAware until your Commitment Lock timer expires.</string>
+    <string name="vpn_shield_label">GambleAware On-Device DNS Shield</string>
+    <string name="vpn_shield_description">Filters gambling domains locally on-device using Android VpnService without reading messages, contacts, or screen text.</string>
     <string name="nav_shield">Shield</string>
     <string name="nav_blocklist">Blocklist</string>
     <string name="nav_activity">Progress</string>

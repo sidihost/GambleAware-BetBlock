@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Anchor,
   ArrowRight,
   Ban,
   Check,
@@ -23,6 +22,7 @@ import {
   X,
 } from 'lucide-react';
 import { GAMBLING_CATEGORY_META } from '../blocker/gamblingCategory';
+import { BrandGIcon } from '../components/AppHeader';
 import { ActiveGoalsCard, GoalReminderBanner } from '../components/GoalCardModal';
 import { HighRiskGuardCard } from '../components/HighRiskGuardCard';
 import {
@@ -103,7 +103,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
   onOpenSafeSupport,
   onOpenDownloadPage,
 }) => {
-  const { isInstalled } = usePWAInstall();
+  const { isInstalled, isIOS } = usePWAInstall();
   const [promptDismissed, setPromptDismissed] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(state.preferredName);
@@ -266,8 +266,9 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 </button>
               </div>
               <p className="mt-0.5 text-xs leading-snug text-[var(--ink-muted)]">
-                Install the Android app for full phone-wide blocking or save this page to your home
-                screen.
+                {isIOS
+                  ? 'Tap Safari Share → Add to Home Screen, then paste the 22 betting sites into Settings → Screen Time.'
+                  : 'Download the Android APK for device-wide On-Device DNS Shield or view the setup guide.'}
               </p>
             </div>
           </div>
@@ -277,7 +278,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               onClick={onOpenDownloadPage}
               className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:w-auto"
             >
-              <span>Get the App</span>
+              <span>{isIOS ? 'iPhone Setup Guide' : 'Get Android APK'}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
             <button
@@ -317,7 +318,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                       isArmed ? (
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       ) : (
-                        <Anchor className="h-3.5 w-3.5" />
+                        <BrandGIcon className="h-3.5 w-3.5" />
                       )
                     }
                   />
@@ -345,7 +346,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   <div className="flex items-center gap-2">
                     <LockKeyhole className="h-4 w-4 text-[var(--accent-ink)]" />
                     <span className="text-xs font-medium text-[var(--ink)]">
-                      Uninstall Lock Timer
+                      {isIOS ? 'Commitment Lock Timer' : 'Uninstall Lock Timer'}
                     </span>
                   </div>
                   <span className="font-mono text-sm font-semibold tabular-nums text-[var(--ink)]">
@@ -368,7 +369,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 ) : isArmed ? (
                   <CheckCircle2 className="h-4 w-4 text-[var(--accent-ink)]" />
                 ) : (
-                  <Anchor className="h-4 w-4" />
+                  <BrandGIcon className="h-4 w-4" />
                 )}
                 <span>{primaryBtnLabel}</span>
               </button>
@@ -630,22 +631,22 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               <div className="mt-3 flex flex-col gap-2">
                 <SetupStepRow
                   step="1"
-                  title="Turn On Site & App Blocker"
+                  title={isIOS ? 'Turn On Safari & Site Shield' : 'Turn On DNS & Site Shield'}
                   subtitle={
                     state.isAccessibilityEnabled
                       ? 'Active'
-                      : 'Blocks betting websites, sign-ins, and betting apps'
+                      : 'Blocks betting websites, sign-ins, and gambling portals'
                   }
                   done={state.isAccessibilityEnabled}
                   onClick={onEnableAccessibility}
                 />
                 <SetupStepRow
                   step="2"
-                  title="Protect App From Deletion"
+                  title={isIOS ? 'Enable Anti-Tamper Lock' : 'Protect Shield Controls'}
                   subtitle={
                     state.isDeviceAdminEnabled
                       ? 'Active'
-                      : 'Makes it harder to delete GambleAware when tempted'
+                      : 'Keeps rules locked against impulsive edits when tempted'
                   }
                   done={state.isDeviceAdminEnabled}
                   onClick={onRequestDeviceAdmin}

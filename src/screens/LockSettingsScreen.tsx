@@ -14,6 +14,7 @@ import { LiquidGlassCard, LiquidSectionHeader, LiquidSwitch } from '../component
 import { RecoveryVaultCard } from '../components/RecoveryVaultCard';
 import { PersistedStore } from '../data/storage';
 import { DerivedMainState, THEME_MODE_LABELS, ThemeMode } from '../data/types';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 import { DAILY_SPEND_OPTIONS_NGN, formatNaira } from '../utils/currency';
 import {
   formatLockDurationAdjective,
@@ -60,6 +61,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   onToggleNotifications,
   onOpenDownloadPage,
 }) => {
+  const { isIOS } = usePWAInstall();
   const isTimeLocked = state.isTimeLockedNow;
   const [pendingLockDays, setPendingLockDays] = useState(7);
   const [includeAntiTamper, setIncludeAntiTamper] = useState(true);
@@ -217,12 +219,12 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                 <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
                 <div className="min-w-0">
                   <p className="font-display text-base font-semibold text-[var(--ink)]">
-                    Delete Protection
+                    {isIOS ? 'Anti-Tamper & Rule Lock' : 'Shield Tamper Protection'}
                   </p>
                   <p className="text-xs text-[var(--ink-muted)]">
                     {state.isDeviceAdminEnabled
-                      ? 'Active • Prevents impulsive removal of GambleAware'
-                      : 'Prevents deleting the app quickly during an urge'}
+                      ? 'Active • Keeps your rules locked until the timer completes'
+                      : 'Prevents impulsive rule changes during a betting urge'}
                   </p>
                 </div>
               </div>
@@ -330,10 +332,12 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[var(--ink)]">
-                  Get GambleAware on Your Phone
+                  {isIOS ? 'iPhone Screen Time & Home-Screen Guide' : 'Get GambleAware on Android'}
                 </p>
                 <p className="text-xs text-[var(--ink-muted)]">
-                  Install the Android app for full phone-wide blocking or save to your home screen
+                  {isIOS
+                    ? 'Copy the 22 betting sites for Safari Screen Time or save to Home Screen'
+                    : 'Download the Play-Protect-safe Android APK with On-Device DNS Shield'}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />

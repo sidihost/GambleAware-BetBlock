@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Anchor,
   Ban,
   CheckCircle2,
   Download,
@@ -13,6 +12,7 @@ import {
   Wind,
 } from 'lucide-react';
 import { GAMBLING_CATEGORY_META } from '../blocker/gamblingCategory';
+import { BrandGMark } from '../components/AppHeader';
 import { ActiveGoalsCard } from '../components/GoalCardModal';
 import { LiquidGlassCard, LiquidSectionHeader } from '../components/LiquidGlass';
 import {
@@ -348,8 +348,8 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       {/* Event List or Empty State */}
       {filteredEvents.length === 0 ? (
         <LiquidGlassCard className="p-7 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[var(--muted-fill)] text-[var(--accent-ink)]">
-            <Anchor className="h-7 w-7" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[var(--muted-fill)]">
+            <BrandGMark className="h-11 w-11" />
           </div>
           <h3 className="mt-3.5 font-display text-base font-semibold text-[var(--ink)]">
             All Quiet Here

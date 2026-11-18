@@ -43,7 +43,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -184,9 +186,76 @@ fun LiquidGlassCard(
 }
 
 /**
- * Monochrome Apple-inspired liquid glass Shield & Anchor orb with a 60-tick
- * precision chronograph bezel ring.
- * Strictly black & white, zero shadows, zero gradients, zero sparkles/zaps.
+ * Crisp GambleAware geometric G + North-Star emblem matching ic_launcher_foreground.xml.
+ */
+@Composable
+fun BrandGEmblem(
+    modifier: Modifier = Modifier,
+    containerColor: Color = Color(0xFF0A070B),
+    letterColor: Color = Color.White,
+    accentColor: Color = Color(0xFFFF3D9A),
+) {
+    Canvas(modifier = modifier) {
+        val side = size.minDimension
+        val scale = side / 108f
+        drawRoundRect(
+            color = containerColor,
+            topLeft = Offset.Zero,
+            size = Size(size.width, size.height),
+            cornerRadius = CornerRadius(24f * scale, 24f * scale),
+        )
+        // Outer G arc
+        val gPath = Path().apply {
+            moveTo(68f * scale, 36f * scale)
+            lineTo(63.5f * scale, 41f * scale)
+            lineTo(45f * scale, 41f * scale)
+            lineTo(41f * scale, 45f * scale)
+            lineTo(41f * scale, 63f * scale)
+            lineTo(45f * scale, 67f * scale)
+            lineTo(63f * scale, 67f * scale)
+            lineTo(67.5f * scale, 71.8f * scale)
+            lineTo(63.8f * scale, 74.5f * scale)
+            lineTo(42f * scale, 74.5f * scale)
+            lineTo(33.5f * scale, 66f * scale)
+            lineTo(33.5f * scale, 42f * scale)
+            lineTo(42f * scale, 33.5f * scale)
+            lineTo(64.2f * scale, 33.5f * scale)
+            close()
+        }
+        drawPath(path = gPath, color = letterColor)
+
+        // Vault Keystone Bolt
+        val boltPath = Path().apply {
+            moveTo(52f * scale, 50.5f * scale)
+            lineTo(74.5f * scale, 50.5f * scale)
+            lineTo(74.5f * scale, 65.5f * scale)
+            lineTo(67.2f * scale, 72.5f * scale)
+            lineTo(67.2f * scale, 57.5f * scale)
+            lineTo(48.5f * scale, 57.5f * scale)
+            close()
+        }
+        drawPath(path = boltPath, color = accentColor)
+
+        // North-Star Beacon
+        val starPath = Path().apply {
+            moveTo(70.5f * scale, 34.5f * scale)
+            quadraticTo(70.5f * scale, 39.8f * scale, 75.8f * scale, 39.8f * scale)
+            quadraticTo(70.5f * scale, 39.8f * scale, 70.5f * scale, 45.1f * scale)
+            quadraticTo(70.5f * scale, 39.8f * scale, 65.2f * scale, 39.8f * scale)
+            quadraticTo(70.5f * scale, 39.8f * scale, 70.5f * scale, 34.5f * scale)
+            close()
+        }
+        drawPath(path = starPath, color = accentColor.copy(alpha = 0.92f))
+        drawCircle(
+            color = letterColor,
+            radius = 1.45f * scale,
+            center = Offset(70.5f * scale, 39.8f * scale),
+        )
+    }
+}
+
+/**
+ * Monochrome Apple-inspired liquid glass GambleAware G chronograph orb with a 60-tick bezel ring.
  */
 @Composable
 fun LiquidShieldOrb(
@@ -298,56 +367,60 @@ fun LiquidShieldOrb(
                 style = Stroke(width = 1.25.dp.toPx()),
             )
 
-            // Precision geometric shield & keyhole lock silhouette
-            val s = maxR * 0.25f
-            val shieldPath = Path().apply {
-                moveTo(center.x, center.y - s * 1.04f)
-                lineTo(center.x + s * 0.86f, center.y - s * 0.72f)
-                lineTo(center.x + s * 0.86f, center.y - s * 0.04f)
-                cubicTo(
-                    center.x + s * 0.86f,
-                    center.y + s * 0.56f,
-                    center.x + s * 0.44f,
-                    center.y + s * 0.94f,
-                    center.x,
-                    center.y + s * 1.12f,
-                )
-                cubicTo(
-                    center.x - s * 0.44f,
-                    center.y + s * 0.94f,
-                    center.x - s * 0.86f,
-                    center.y + s * 0.56f,
-                    center.x - s * 0.86f,
-                    center.y - s * 0.04f,
-                )
-                lineTo(center.x - s * 0.86f, center.y - s * 0.72f)
+            // Precision Geometric GambleAware G + North-Star emblem
+            val gScale = (maxR * 0.52f) / 21f
+            fun gx(coord: Float): Float = center.x + (coord - 54f) * gScale
+            fun gy(coord: Float): Float = center.y + (coord - 54f) * gScale
+
+            val gPath = Path().apply {
+                moveTo(gx(68f), gy(36f))
+                lineTo(gx(63.5f), gy(41f))
+                lineTo(gx(45f), gy(41f))
+                lineTo(gx(41f), gy(45f))
+                lineTo(gx(41f), gy(63f))
+                lineTo(gx(45f), gy(67f))
+                lineTo(gx(63f), gy(67f))
+                lineTo(gx(67.5f), gy(71.8f))
+                lineTo(gx(63.8f), gy(74.5f))
+                lineTo(gx(42f), gy(74.5f))
+                lineTo(gx(33.5f), gy(66f))
+                lineTo(gx(33.5f), gy(42f))
+                lineTo(gx(42f), gy(33.5f))
+                lineTo(gx(64.2f), gy(33.5f))
+                close()
+            }
+            drawPath(path = gPath, color = emblemColor)
+
+            val keystonePath = Path().apply {
+                moveTo(gx(52f), gy(50.5f))
+                lineTo(gx(74.5f), gy(50.5f))
+                lineTo(gx(74.5f), gy(65.5f))
+                lineTo(gx(67.2f), gy(72.5f))
+                lineTo(gx(67.2f), gy(57.5f))
+                lineTo(gx(48.5f), gy(57.5f))
                 close()
             }
             drawPath(
-                path = shieldPath,
-                color = emblemColor,
-                style = Stroke(
-                    width = 2.75.dp.toPx(),
-                    cap = StrokeCap.Round,
-                    join = StrokeJoin.Round,
-                ),
+                path = keystonePath,
+                color = if (isProtected) emblemColor.copy(alpha = 0.88f) else liquid.activeFill,
             )
 
-            drawCircle(
-                color = emblemColor,
-                radius = s * 0.16f,
-                center = Offset(center.x, center.y - s * 0.14f),
-            )
-            val keyholeTail = Path().apply {
-                moveTo(center.x - s * 0.09f, center.y - s * 0.02f)
-                lineTo(center.x + s * 0.09f, center.y - s * 0.02f)
-                lineTo(center.x + s * 0.13f, center.y + s * 0.36f)
-                lineTo(center.x - s * 0.13f, center.y + s * 0.36f)
+            val starPath = Path().apply {
+                moveTo(gx(70.5f), gy(34.5f))
+                quadraticTo(gx(70.5f), gy(39.8f), gx(75.8f), gy(39.8f))
+                quadraticTo(gx(70.5f), gy(39.8f), gx(70.5f), gy(45.1f))
+                quadraticTo(gx(70.5f), gy(39.8f), gx(65.2f), gy(39.8f))
+                quadraticTo(gx(70.5f), gy(39.8f), gx(70.5f), gy(34.5f))
                 close()
             }
             drawPath(
-                path = keyholeTail,
+                path = starPath,
+                color = if (isProtected) emblemColor else liquid.activeFill,
+            )
+            drawCircle(
                 color = emblemColor,
+                radius = 1.45f * gScale,
+                center = Offset(gx(70.5f), gy(39.8f)),
             )
         }
     }

@@ -81,7 +81,7 @@ fun LockSettingsScreen(
     onToggleAntiTamper: (Boolean) -> Unit,
     onSetPin: (String) -> Unit,
     onRemovePin: () -> Unit,
-    onToggleDeviceAdmin: () -> Unit,
+    onOpenVpnSettings: () -> Unit,
     onOpenPrivateDnsSettings: () -> Unit,
     onSetDailySpend: (Int) -> Unit,
     onSelectTheme: (ThemeMode) -> Unit,
@@ -268,11 +268,11 @@ fun LockSettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                             Text(
-                                text = "Anti-Uninstall & Tamper Guard",
+                                text = "Tamper & Rule Guard",
                                 style = MaterialTheme.typography.titleSmall,
                             )
                             Text(
-                                text = "Blocks Settings App Info, Package Installer, Play Store uninstall, Accessibility & Device Admin removal while locked",
+                                text = "Locks protection toggle, gambling categories, and custom rule removal until the timer completes",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -332,7 +332,7 @@ fun LockSettingsScreen(
                 }
             }
 
-            // Device Admin Uninstall Lock
+            // Always-On DNS Shield Lock Guide (Android VPN Settings)
             item {
                 LiquidGlassCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -355,14 +355,14 @@ fun LockSettingsScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = "Uninstall Lock",
+                                    text = "Always-On DNS Shield",
                                     style = MaterialTheme.typography.titleMedium,
                                 )
                                 Text(
-                                    text = if (state.isDeviceAdminEnabled) {
-                                        "Active • Android prevents uninstalling GambleAware"
+                                    text = if (state.isVpnPrepared) {
+                                        "Prepared • Open Android VPN Settings to lock Always-on VPN"
                                     } else {
-                                        "Enable Device Admin to block impulsive app removal"
+                                        "Enable Always-on VPN & Block connections without VPN in Android Settings"
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -371,7 +371,7 @@ fun LockSettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         OutlinedButton(
-                            onClick = onToggleDeviceAdmin,
+                            onClick = onOpenVpnSettings,
                             shape = RoundedCornerShape(50),
                             border = BorderStroke(1.dp, liquid.subtleBorder),
                             colors = ButtonDefaults.outlinedButtonColors(
@@ -379,13 +379,7 @@ fun LockSettingsScreen(
                             ),
                             modifier = Modifier.testTag("toggle_device_admin_button"),
                         ) {
-                            Text(
-                                when {
-                                    state.isDeviceAdminEnabled && (isTimeLocked || state.settings.antiTamperLockEnabled) -> "Locked"
-                                    state.isDeviceAdminEnabled -> "Disable"
-                                    else -> "Enable"
-                                },
-                            )
+                            Text("VPN Settings")
                         }
                     }
                 }

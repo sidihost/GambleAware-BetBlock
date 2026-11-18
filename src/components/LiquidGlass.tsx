@@ -282,19 +282,20 @@ export const LiquidShieldOrb: React.FC<{
           strokeWidth="0.9"
         />
 
-        {/* Precision Geometric Shield & Keyhole Lock Crest */}
-        <g
-          stroke={emblemStroke}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+        {/* GambleAware Geometric G + North-Star Emblem */}
+        <g transform="translate(90 90) scale(1.18) translate(-54 -54)">
           <path
-            d="M 90 64.5 L 110.5 71.8 L 110.5 87.8 C 110.5 101.8 100.8 111.2 90 116 C 79.2 111.2 69.5 101.8 69.5 87.8 L 69.5 71.8 Z"
-            strokeWidth="2.75"
+            d="M68,36 L63.5,41 L45,41 L41,45 L41,63 L45,67 L63,67 L67.5,71.8 L63.8,74.5 L42,74.5 L33.5,66 L33.5,42 L42,33.5 L64.2,33.5 Z"
+            fill={emblemStroke}
           />
-          <circle cx="90" cy="85.8" r="3.6" fill={emblemStroke} stroke="none" />
-          <path d="M 88 89.2 L 92 89.2 L 93 97.6 L 87 97.6 Z" fill={emblemStroke} stroke="none" />
+          <path
+            d="M52,50.5 L74.5,50.5 L74.5,65.5 L67.2,72.5 L67.2,57.5 L48.5,57.5 Z"
+            fill={isProtected ? '#FF8CC8' : '#FF3D9A'}
+          />
+          <path
+            d="M70.5,34.5 Q70.5,39.8 75.8,39.8 Q70.5,39.8 70.5,45.1 Q70.5,39.8 65.2,39.8 Q70.5,39.8 70.5,34.5 Z"
+            fill={isProtected ? '#FFFFFF' : '#FF3D9A'}
+          />
         </g>
       </svg>
     </button>

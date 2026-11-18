@@ -32,8 +32,8 @@ class AnchorRepository private constructor(context: Context) {
     val prefs = ProtectionPreferences.getInstance(appContext)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val _accessibilityRunning = MutableStateFlow(false)
-    val accessibilityRunning: StateFlow<Boolean> = _accessibilityRunning.asStateFlow()
+    private val _shieldRunning = MutableStateFlow(false)
+    val shieldRunning: StateFlow<Boolean> = _shieldRunning.asStateFlow()
 
     val settings: StateFlow<ProtectionSettingsState> = prefs.state
 
@@ -87,8 +87,8 @@ class AnchorRepository private constructor(context: Context) {
 
     fun getCurrentFilterConfig(): BlockFilterConfig = cachedConfig.get()
 
-    fun setAccessibilityRunning(running: Boolean) {
-        _accessibilityRunning.value = running
+    fun setShieldRunning(running: Boolean) {
+        _shieldRunning.value = running
     }
 
     suspend fun addCustomDomain(rawDomain: String, isAllowlisted: Boolean) {

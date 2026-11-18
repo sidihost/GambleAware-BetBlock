@@ -1,6 +1,5 @@
 import React, { useId, useState } from 'react';
 import {
-  Anchor,
   Download,
   LockKeyhole,
   Menu,
@@ -16,7 +15,7 @@ import { AnchorRoute } from '../data/types';
 /**
  * Original GambleAware Geometric G Logo matching ic_launcher_foreground.xml and public/icon.svg
  */
-export const BrandAnchorMark: React.FC<{ className?: string }> = ({
+export const BrandGMark: React.FC<{ className?: string }> = ({
   className = 'h-9 w-9',
 }) => {
   const uid = useId().replace(/:/g, '');
@@ -86,9 +85,28 @@ export const BrandAnchorMark: React.FC<{ className?: string }> = ({
   );
 };
 
+export const BrandAnchorMark = BrandGMark;
+
+/**
+ * Compact geometric GambleAware G glyph for nav tabs, buttons, and status chips
+ */
+export const BrandGIcon: React.FC<{ className?: string }> = ({ className = 'h-4 w-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+    <path
+      d="M17.2 6.8L15.1 9H8.8L7.2 10.6V13.4L8.8 15H14.8L16.8 17.1L15.2 18.5H7.6L4.2 15.1V8.9L7.6 5.5H15.6L17.2 6.8Z"
+      fill="currentColor"
+    />
+    <path
+      d="M11.6 10.9H19.4V16.6L16.5 19.2V13.5H9.8L11.6 10.9Z"
+      fill="currentColor"
+    />
+    <circle cx="18.1" cy="7.1" r="1.4" fill="currentColor" />
+  </svg>
+);
+
 const LANDING_NAV_LINKS = [
   { href: '#features', label: 'Features' },
-  { href: '#platforms', label: 'iPhone & All' },
+  { href: '#platforms', label: 'Android & iPhone' },
   { href: '#install-guide', label: 'How to Install' },
   { href: '#comparison', label: 'vs. Gamban' },
 ];
@@ -98,7 +116,7 @@ const APP_NAV_ITEMS: Array<{
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { route: 'shield', label: 'Shield', icon: Anchor },
+  { route: 'shield', label: 'Shield', icon: BrandGIcon },
   { route: 'blocklist', label: 'Blocklist', icon: SlidersHorizontal },
   { route: 'activity', label: 'Progress', icon: TrendingUp },
   { route: 'lock', label: 'Lock', icon: LockKeyhole },
@@ -107,6 +125,7 @@ const APP_NAV_ITEMS: Array<{
 interface AppHeaderProps {
   mode?: 'landing' | 'app';
   activeRoute?: AnchorRoute;
+  isIOS?: boolean;
   onSelectRoute?: (route: AnchorRoute) => void;
   onOpenWebApp?: () => void;
   onOpenDownloadPage?: () => void;
@@ -117,6 +136,7 @@ interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = ({
   mode = 'landing',
   activeRoute = 'shield',
+  isIOS = false,
   onSelectRoute,
   onOpenWebApp,
   onOpenDownloadPage,
@@ -124,6 +144,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onToggleTheme,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const showIosLaunchButton = mode === 'landing' && isIOS && Boolean(onOpenWebApp);
 
   const handleBrandClick = () => {
     setMobileMenuOpen(false);
@@ -143,7 +164,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           onClick={handleBrandClick}
           className="flex shrink-0 cursor-pointer items-center gap-2 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] sm:gap-2.5"
         >
-          <BrandAnchorMark className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
+          <BrandGMark className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
           <span className="font-display text-base font-bold tracking-tight text-[var(--ink)] sm:text-lg">
             GambleAware
           </span>
@@ -207,18 +228,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </button>
           ) : null}
 
-          {mode === 'landing' && onOpenWebApp ? (
+          {showIosLaunchButton ? (
             <button
               type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
-                onOpenWebApp();
+                onOpenWebApp?.();
               }}
-              className="hidden h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] md:inline-flex lg:px-3.5"
+              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-10 sm:px-4 sm:text-sm"
             >
-              <Smartphone className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
-              <span className="lg:hidden">Web App</span>
-              <span className="hidden lg:inline">Open Web App</span>
+              <Smartphone className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+              <span>Open iPhone App</span>
             </button>
           ) : null}
 
@@ -232,10 +252,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-10 sm:px-4"
             >
               <Download className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
-              <span className="hidden sm:inline">Android APK &amp; Setup</span>
-              <span className="sm:hidden">APK Guide</span>
+              <span className="hidden sm:inline">{isIOS ? 'iPhone Guide & Info' : 'Android APK & Setup'}</span>
+              <span className="sm:hidden">{isIOS ? 'Setup Guide' : 'APK Guide'}</span>
             </button>
-          ) : (
+          ) : mode === 'landing' && !isIOS ? (
             <a
               href="/downloads/GambleAware-Nigeria.apk"
               download="GambleAware.apk"
@@ -245,7 +265,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               <span className="hidden min-[380px]:inline">Download APK</span>
               <span className="min-[380px]:hidden">APK</span>
             </a>
-          )}
+          ) : null}
 
           {mode === 'landing' ? (
             <button
@@ -280,18 +300,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             ))}
           </div>
 
-          {onOpenWebApp ? (
+          {showIosLaunchButton ? (
             <div className="mt-2 border-t border-[var(--subtle-border)] pt-3">
               <button
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onOpenWebApp();
+                  onOpenWebApp?.();
                 }}
                 className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 <Smartphone className="h-4 w-4 shrink-0" />
-                <span>Open Web App (iPhone &amp; Desktop)</span>
+                <span>Open iPhone App</span>
               </button>
             </div>
           ) : null}

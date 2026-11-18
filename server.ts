@@ -19,9 +19,12 @@ async function startServer() {
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    const connectSrc = IS_PRODUCTION
+      ? "connect-src 'self'"
+      : "connect-src 'self' ws://localhost:* ws://127.0.0.1:*";
     res.setHeader(
       'Content-Security-Policy',
-      "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';",
+      `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; ${connectSrc}; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';`,
     );
     next();
   });
@@ -31,6 +34,46 @@ async function startServer() {
   app.get('/api/health', (_req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-store');
     res.json({ ok: true });
+  });
+
+  app.all('/api/{*splat}', (_req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(404).json({ error: 'API route not found' });
+  });
+
+  // Never let the SPA catch-all return index.html for a missing APK binary.
+  app.get('/downloads/:file', (req: Request, res: Response) => {
+    const requested = req.params.file;
+    if (!requested || !/^[A-Za-z0-9._-]+$/.test(requested)) {
+      res.status(400).json({ error: 'Invalid download filename' });
+      return;
+    }
+
+    const candidateRoots = [
+      path.resolve(__dirname, 'public', 'downloads'),
+      path.resolve(__dirname, 'dist', 'downloads'),
+    ];
+
+    for (const rootDir of candidateRoots) {
+      const resolvedPath = path.resolve(rootDir, requested);
+      if (!resolvedPath.startsWith(`${rootDir}${path.sep}`)) continue;
+      if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+        if (requested.toLowerCase().endsWith('.apk')) {
+          res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+          res.setHeader('Content-Disposition', 'attachment; filename="GambleAware.apk"');
+        }
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'public, max-age=300');
+        res.sendFile(resolvedPath);
+        return;
+      }
+    }
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(404).json({
+      error: 'APK package not yet published on this server',
+      file: requested,
+    });
   });
 
   if (!IS_PRODUCTION) {
@@ -43,7 +86,7 @@ async function startServer() {
   } else {
     const distDir = path.join(__dirname, 'dist');
     app.use(express.static(distDir));
-    app.get('*', (_req: Request, res: Response) => {
+    app.get('/{*splat}', (_req: Request, res: Response) => {
       const indexFile = path.join(distDir, 'index.html');
       if (fs.existsSync(indexFile)) {
         res.sendFile(indexFile);

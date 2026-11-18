@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { type ClientPlatform, detectClientPlatform } from '../utils/platformCompatibility';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -7,8 +8,20 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const [isInstalled, setIsInstalled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true
+    );
+  });
+  const [clientPlatform, setClientPlatform] = useState<ClientPlatform>(() => {
+    if (typeof window === 'undefined') return 'desktop';
+    return detectClientPlatform(
+      window.navigator.userAgent,
+      window.navigator.maxTouchPoints ?? 0,
+    );
+  });
 
   useEffect(() => {
     const isStandalone =
@@ -16,8 +29,11 @@ export function usePWAInstall() {
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
     setIsInstalled(isStandalone);
 
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    setIsIOS(/iphone|ipad|ipod/.test(userAgent));
+    const detected = detectClientPlatform(
+      window.navigator.userAgent,
+      window.navigator.maxTouchPoints ?? 0,
+    );
+    setClientPlatform(detected);
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -53,7 +69,8 @@ export function usePWAInstall() {
   return {
     isInstallable: !!deferredPrompt,
     isInstalled,
-    isIOS,
+    isIOS: clientPlatform === 'ios',
+    clientPlatform,
     install,
   };
 }

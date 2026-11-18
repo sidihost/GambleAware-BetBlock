@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.MainActivity
 import com.example.data.ProtectionPreferences
+import com.example.ui.components.BrandGEmblem
 import com.example.ui.components.LiquidGlassBackdrop
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.theme.AnchorTheme
@@ -197,19 +198,23 @@ private fun InterventionScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(liquid.activeFill),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = if (isAntiTamper) Icons.Rounded.Lock else Icons.Rounded.Shield,
-                            contentDescription = "Blocked by GambleAware",
-                            tint = liquid.activeContent,
-                            modifier = Modifier.size(34.dp),
-                        )
+                    if (isAntiTamper) {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(liquid.activeFill),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Lock,
+                                contentDescription = "Locked by GambleAware",
+                                tint = liquid.activeContent,
+                                modifier = Modifier.size(34.dp),
+                            )
+                        }
+                    } else {
+                        BrandGEmblem(modifier = Modifier.size(72.dp))
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

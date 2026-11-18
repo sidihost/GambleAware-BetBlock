@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Anchor, LockKeyhole, ShieldAlert, Target, Wind } from 'lucide-react';
+import { LockKeyhole, ShieldAlert, Target, Wind } from 'lucide-react';
 import { InterventionPayload, RecoveryGoalEntity } from '../data/types';
 import { calculateGoalProgress } from '../utils/personalization';
+import { BrandGMark } from './AppHeader';
 import { LiquidGlassBackdrop, LiquidGlassCard } from './LiquidGlass';
 
 export const BlockedInterventionModal: React.FC<{
@@ -84,15 +85,17 @@ export const BlockedInterventionModal: React.FC<{
                 GambleAware • Redirected Safely
               </span>
 
-              <div className="mt-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[var(--active-fill)] text-[var(--active-content)]">
-                {payload.isAntiTamper ? (
+              {payload.isAntiTamper ? (
+                <div className="mt-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[var(--active-fill)] text-[var(--active-content)]">
                   <LockKeyhole className="h-8 w-8" />
-                ) : payload.isLoginRedirect ? (
+                </div>
+              ) : payload.isLoginRedirect ? (
+                <div className="mt-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[var(--active-fill)] text-[var(--active-content)]">
                   <ShieldAlert className="h-8 w-8" />
-                ) : (
-                  <Anchor className="h-8 w-8" />
-                )}
-              </div>
+                </div>
+              ) : (
+                <BrandGMark className="mt-4 h-[72px] w-[72px]" />
+              )}
 
               <h2 className="mt-4 font-display text-2xl font-bold text-[var(--ink)]">
                 {payload.isAntiTamper

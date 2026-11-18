@@ -3,6 +3,7 @@ package com.example
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
+import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -98,11 +99,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.service.AnchorDeviceAdminReceiver
 import com.example.service.GambleAwareNotifications
+import com.example.service.GambleAwareVpnService
 import com.example.ui.BlockedInterventionActivity
 import com.example.ui.MainUiState
 import com.example.ui.MainViewModel
+import com.example.ui.components.BrandGEmblem
 import com.example.ui.components.LiquidFloatingNavBar
 import com.example.ui.components.LiquidGlassBackdrop
 import com.example.ui.components.LiquidGlassCard
@@ -152,7 +154,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
     var tourSessionId by remember { mutableIntStateOf(0) }
     var activeTourStep by remember { mutableStateOf<SpotlightTourStep?>(SPOTLIGHT_TOUR_STEPS.first()) }
 
-    var showAccessibilityDisclosure by remember { mutableStateOf(false) }
+    var showShieldDisclosure by remember { mutableStateOf(false) }
     var showTimeLockedNotice by remember { mutableStateOf(false) }
     var pendingPinAction by remember { mutableStateOf<((String) -> Unit)?>(null) }
     var showUrgeJournalSheet by remember { mutableStateOf(false) }
@@ -210,10 +212,25 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
         }
     }
 
-    val deviceAdminLauncher = rememberLauncherForActivityResult(
+    val vpnPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) {
+        if (GambleAwareVpnService.isPrepared(context)) {
+            GambleAwareVpnService.start(context)
+            viewModel.enableProtection()
+        }
         viewModel.refreshSystemServiceStatus()
+    }
+
+    fun requestDnsShieldActivation() {
+        val prepareIntent = VpnService.prepare(context)
+        if (prepareIntent != null) {
+            vpnPermissionLauncher.launch(prepareIntent)
+        } else {
+            GambleAwareVpnService.start(context)
+            viewModel.enableProtection()
+            viewModel.refreshSystemServiceStatus()
+        }
     }
 
     fun guardRestrictedAction(action: () -> Unit) {
@@ -224,15 +241,12 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
         }
     }
 
-    fun requestDeviceAdminToggle() {
-        if (state.isDeviceAdminEnabled) {
-            if (state.isTimeLockedNow || state.settings.antiTamperLockEnabled) {
-                showTimeLockedNotice = true
-                return
-            }
-            guardRestrictedAction { viewModel.deactivateDeviceAdmin() }
+    fun openVpnSettings() {
+        val intent = Intent(Settings.ACTION_VPN_SETTINGS)
+        if (intent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intent)
         } else {
-            deviceAdminLauncher.launch(AnchorDeviceAdminReceiver.buildEnableAdminIntent(context))
+            context.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
         }
     }
 
@@ -311,12 +325,9 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                 if (!state.settings.hasCompletedInitialSetup) {
                     MandatoryThreeStepSetupScreen(
                         state = state,
-                        onOpenAccessibilitySettings = { showAccessibilityDisclosure = true },
-                        onRequestDeviceAdmin = {
-                            deviceAdminLauncher.launch(
-                                AnchorDeviceAdminReceiver.buildEnableAdminIntent(context),
-                            )
-                        },
+                        hasNotificationPermission = hasNotificationPermission,
+                        onEnableDnsShield = { showShieldDisclosure = true },
+                        onRequestNotifications = { handleToggleNotifications(true) },
                         onCompleteSetup = { name, days ->
                             viewModel.completeInitialSetup(name, days)
                         },
@@ -340,15 +351,18 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                         state = state,
                                         onPrimaryShieldClick = {
                                             when {
-                                                !state.isAccessibilityEnabled -> showAccessibilityDisclosure = true
+                                                !state.isVpnPrepared -> showShieldDisclosure = true
                                                 state.settings.isProtectionEnabled -> guardRestrictedAction {
                                                     viewModel.disableProtection()
                                                 }
-                                                else -> viewModel.enableProtection()
+                                                else -> {
+                                                    GambleAwareVpnService.start(context)
+                                                    viewModel.enableProtection()
+                                                }
                                             }
                                         },
-                                        onEnableAccessibility = { showAccessibilityDisclosure = true },
-                                        onRequestDeviceAdmin = { requestDeviceAdminToggle() },
+                                        onEnableDnsShield = { showShieldDisclosure = true },
+                                        onOpenVpnSettings = { openVpnSettings() },
                                         onOpenPrivateDnsSettings = { openNetworkDnsSettings() },
                                         onTestQueryChanged = { viewModel.updateTestQuery(it) },
                                         onNavigateToBlocklist = {
@@ -478,7 +492,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                             }
                                         }
                                     },
-                                    onToggleDeviceAdmin = { requestDeviceAdminToggle() },
+                                    onOpenVpnSettings = { openVpnSettings() },
                                     onOpenPrivateDnsSettings = { openNetworkDnsSettings() },
                                     onSetDailySpend = { spend -> viewModel.setDailySpendEstimate(spend) },
                                     onSelectTheme = { mode -> viewModel.setThemeMode(mode) },
@@ -557,8 +571,8 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                 onDismissTour = { viewModel.completeTour() },
                                 onFinishAndEnableShield = {
                                     viewModel.completeTour()
-                                    if (!state.isAccessibilityEnabled) {
-                                        showAccessibilityDisclosure = true
+                                    if (!state.isVpnPrepared || !state.isShieldServiceRunning) {
+                                        showShieldDisclosure = true
                                     }
                                 },
                             )
@@ -768,36 +782,42 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                 }
             }
 
-            if (showAccessibilityDisclosure) {
+            if (showShieldDisclosure) {
                 AlertDialog(
-                    onDismissRequest = { showAccessibilityDisclosure = false },
+                    onDismissRequest = { showShieldDisclosure = false },
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                     textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     shape = RoundedCornerShape(26.dp),
                     title = {
-                        Text(
-                            text = "Enable GambleAware Shield",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            BrandGEmblem(modifier = Modifier.size(32.dp))
+                            Text(
+                                text = "Activate On-Device DNS Shield",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     },
                     text = {
                         Text(
-                            text = "GambleAware (by Imoogle Technology) uses Android Accessibility Service strictly on your device to:\n\n" +
-                                "1. Block gambling websites, search queries, Custom Tabs, and in-app WebViews immediately as you type.\n" +
-                                "2. Detect and close installed betting apps immediately.\n" +
-                                "3. Enforce your Commitment Lock & prevent uninstalling GambleAware until your timer ends.\n\n" +
-                                "No VPN is used, and zero personal data or browsing history leaves your phone.",
+                            text = "GambleAware creates an on-device local DNS filter using Android VpnService to:\n\n" +
+                                "1. Block SportyBet, Bet9ja, Bet365, 1xBet, Stake & 600+ gambling domains across every browser and app.\n" +
+                                "2. Intercept betting API connections inside gambling apps while keeping other apps normal.\n" +
+                                "3. Keep your clean streak & Commitment Lock backed up offline on your phone.\n\n" +
+                                "No Accessibility permission, no Device Admin lock, and zero remote server tracking.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     },
                     confirmButton = {
                         Button(
                             onClick = {
-                                showAccessibilityDisclosure = false
-                                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                                showShieldDisclosure = false
+                                requestDnsShieldActivation()
                             },
                             shape = RoundedCornerShape(50),
                             colors = ButtonDefaults.buttonColors(
@@ -805,14 +825,14 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                 contentColor = liquid.activeContent,
                             ),
                             elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
-                            modifier = Modifier.testTag("confirm_open_accessibility_settings"),
+                            modifier = Modifier.testTag("confirm_enable_dns_shield"),
                         ) {
-                            Text("Open Settings")
+                            Text("Enable DNS Shield")
                         }
                     },
                     dismissButton = {
                         TextButton(
-                            onClick = { showAccessibilityDisclosure = false },
+                            onClick = { showShieldDisclosure = false },
                             colors = ButtonDefaults.textButtonColors(contentColor = liquid.accentInk),
                         ) {
                             Text("Later")
@@ -961,8 +981,9 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
 @Composable
 private fun MandatoryThreeStepSetupScreen(
     state: MainUiState,
-    onOpenAccessibilitySettings: () -> Unit,
-    onRequestDeviceAdmin: () -> Unit,
+    hasNotificationPermission: Boolean,
+    onEnableDnsShield: () -> Unit,
+    onRequestNotifications: () -> Unit,
     onCompleteSetup: (name: String, lockDays: Int) -> Unit,
 ) {
     val liquid = LocalLiquidColors.current
@@ -970,9 +991,9 @@ private fun MandatoryThreeStepSetupScreen(
     var setupLockDays by remember { mutableIntStateOf(7) }
     val scrollState = rememberScrollState()
 
-    val step1Done = state.isAccessibilityEnabled
-    val step2Done = state.isDeviceAdminEnabled
-    val step3Ready = step1Done && step2Done
+    val step1Done = state.isVpnPrepared || state.isShieldServiceRunning
+    val step2Done = hasNotificationPermission
+    val step3Ready = step1Done
 
     val durationAdjective = when (setupLockDays) {
         1 -> "24-Hour"
@@ -1010,30 +1031,17 @@ private fun MandatoryThreeStepSetupScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(liquid.activeFill),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.VerifiedUser,
-                        contentDescription = null,
-                        tint = liquid.activeContent,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
+                BrandGEmblem(modifier = Modifier.size(40.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "MANDATORY SETUP • 3 STEPS",
+                        text = "FIRST-RUN SETUP • 3 STEPS",
                         style = MaterialTheme.typography.labelSmall,
                         letterSpacing = 1.sp,
                         color = liquid.accentInk,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Complete Lock & Shield Setup",
+                        text = "Arm Your DNS Shield & Lock",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -1044,7 +1052,7 @@ private fun MandatoryThreeStepSetupScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Enable all 3 layers immediately so betting sites are blocked while typing and GambleAware cannot be uninstalled until your timer ends.",
+                text = "Turn on the local DNS Shield so betting sites and gambling app servers are blocked immediately across every browser, then set your Commitment Lock timer.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1074,39 +1082,39 @@ private fun MandatoryThreeStepSetupScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Mandatory Step 1
+            // Step 1 (Required)
             MandatorySetupStepCard(
                 step = "1",
-                title = "Enable Web & App Shield",
+                title = "Enable On-Device DNS Shield",
                 subtitle = if (step1Done) {
-                    "Active • Blocks betting sites while typing, WebViews & apps"
+                    "Active • Blocks betting domains & app traffic locally"
                 } else {
-                    "Required first: tap to enable GambleAware in Accessibility Settings"
+                    "Required first: tap to grant local DNS filter permission"
                 },
                 done = step1Done,
-                onClick = onOpenAccessibilitySettings,
+                onClick = onEnableDnsShield,
                 testTag = "onboarding_step_shield",
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Mandatory Step 2
+            // Step 2 (Recommended Alerts & Install Guard)
             MandatorySetupStepCard(
                 step = "2",
-                title = "Enable Uninstall Lock (Device Admin)",
+                title = "Recovery Alerts & Install Guard",
                 subtitle = if (step2Done) {
-                    "Active • Prevents direct uninstall of GambleAware"
+                    "Enabled • Alerts on new betting APK installs & milestones"
                 } else {
-                    "Required: tap to enable Android Device Admin protection"
+                    "Recommended: tap to allow alert & install-guard notifications"
                 },
                 done = step2Done,
-                onClick = onRequestDeviceAdmin,
-                testTag = "onboarding_step_admin",
+                onClick = onRequestNotifications,
+                testTag = "onboarding_step_alerts",
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Mandatory Step 3
+            // Step 3 (Commitment Lock Duration)
             LiquidGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1144,7 +1152,7 @@ private fun MandatoryThreeStepSetupScreen(
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                         Text(
-                            text = "Selected: $durationLabel • Locks uninstall & tamper controls until timer reaches 0",
+                            text = "Selected: $durationLabel • Locks shield & rule weakening until timer hits 0",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1196,10 +1204,10 @@ private fun MandatoryThreeStepSetupScreen(
 
             Button(
                 onClick = {
-                    when {
-                        !step1Done -> onOpenAccessibilitySettings()
-                        !step2Done -> onRequestDeviceAdmin()
-                        else -> onCompleteSetup(setupName, setupLockDays)
+                    if (!step1Done) {
+                        onEnableDnsShield()
+                    } else {
+                        onCompleteSetup(setupName, setupLockDays)
                     }
                 },
                 modifier = Modifier
@@ -1214,20 +1222,16 @@ private fun MandatoryThreeStepSetupScreen(
                 elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
             ) {
                 Icon(
-                    imageVector = when {
-                        !step1Done -> Icons.Rounded.Shield
-                        !step2Done -> Icons.Rounded.AdminPanelSettings
-                        else -> Icons.Rounded.Lock
-                    },
+                    imageVector = if (!step1Done) Icons.Rounded.Shield else Icons.Rounded.Lock,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = when {
-                        !step1Done -> "Step 1 of 3: Enable Web & App Shield"
-                        !step2Done -> "Step 2 of 3: Enable Uninstall Lock"
-                        else -> "Lock In $durationAdjective Protection & Enter"
+                    text = if (!step1Done) {
+                        "Step 1: Enable On-Device DNS Shield"
+                    } else {
+                        "Lock In $durationAdjective Protection & Enter"
                     },
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,

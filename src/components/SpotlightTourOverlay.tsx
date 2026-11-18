@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Anchor, Globe, LockKeyhole, Search, TrendingUp, Wind } from 'lucide-react';
+import { Globe, LockKeyhole, Search, TrendingUp, Wind } from 'lucide-react';
 import { AnchorRoute } from '../data/types';
+import { BrandGIcon } from './AppHeader';
 
 export interface SpotlightTourStep {
   id: string;
@@ -20,8 +21,8 @@ export const SPOTLIGHT_TOUR_STEPS: SpotlightTourStep[] = [
     targetKey: 'shield_orb',
     badge: '1 OF 6 • MAIN SHIELD',
     title: 'Turn Protection On or Off',
-    body: 'Tap the big pink button anytime to turn your gambling blocker on or check your status.',
-    icon: <Anchor className="h-5 w-5" />,
+    body: 'Tap the GambleAware button anytime to turn your gambling blocker on or check your status.',
+    icon: <BrandGIcon className="h-5 w-5" />,
     highlights: ['One-Tap Control', 'Instant Blocking'],
   },
   {

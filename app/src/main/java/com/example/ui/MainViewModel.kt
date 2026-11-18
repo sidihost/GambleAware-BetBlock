@@ -15,9 +15,8 @@ import com.example.data.InstalledAppInfo
 import com.example.data.ProtectionSettingsState
 import com.example.data.ThemeMode
 import com.example.data.UrgeLogEntity
-import com.example.service.AnchorDeviceAdminReceiver
-import com.example.service.BetBlockerAccessibilityService
 import com.example.service.GambleAwareNotifications
+import com.example.service.GambleAwareVpnService
 import com.example.service.PrivateDnsInspector
 import com.example.service.PrivateDnsStatus
 import kotlinx.coroutines.delay
@@ -66,8 +65,8 @@ val RECOVERY_MILESTONES = listOf(
 
 data class MainUiState(
     val settings: ProtectionSettingsState = ProtectionSettingsState(),
-    val isAccessibilityEnabled: Boolean = false,
-    val isDeviceAdminEnabled: Boolean = false,
+    val isShieldServiceRunning: Boolean = false,
+    val isVpnPrepared: Boolean = false,
     val privateDnsStatus: PrivateDnsStatus = PrivateDnsStatus(false, null),
     val customBlockedDomains: List<BlockedDomainEntity> = emptyList(),
     val allowlistedDomains: List<BlockedDomainEntity> = emptyList(),
@@ -89,7 +88,7 @@ data class MainUiState(
     val currentTimeMs: Long = System.currentTimeMillis(),
 ) {
     val isFullyArmed: Boolean
-        get() = settings.isProtectionEnabled && isAccessibilityEnabled
+        get() = settings.isProtectionEnabled && (isShieldServiceRunning || isVpnPrepared)
 
     val isTimeLockedNow: Boolean
         get() = settings.isTimeLocked(currentTimeMs)
@@ -165,11 +164,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AnchorRepository.getInstance(application)
     private val installedAppsFlow = MutableStateFlow<List<InstalledAppInfo>>(emptyList())
     private val loadingAppsFlow = MutableStateFlow(false)
-    private val systemAccessibilityFlow = MutableStateFlow(
-        BetBlockerAccessibilityService.isEnabledInSystem(application),
-    )
-    private val deviceAdminFlow = MutableStateFlow(
-        AnchorDeviceAdminReceiver.isAdminActive(application),
+    private val vpnPreparedFlow = MutableStateFlow(
+        GambleAwareVpnService.isPrepared(application),
     )
     private val privateDnsFlow = MutableStateFlow(
         PrivateDnsInspector.inspect(application),
@@ -187,12 +183,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val systemHealthFlow = combine(
         repository.settings,
-        systemAccessibilityFlow,
-        repository.accessibilityRunning,
-        deviceAdminFlow,
+        repository.shieldRunning,
+        vpnPreparedFlow,
         privateDnsFlow,
-    ) { settings, sysAcc, svcAcc, adminActive, dnsStatus ->
-        Tuple5(settings, sysAcc || svcAcc, adminActive, dnsStatus, Unit)
+    ) { settings, shieldRunning, vpnPrepared, dnsStatus ->
+        Tuple5(settings, shieldRunning, vpnPrepared, dnsStatus, Unit)
     }
 
     private val dataFlow = combine(
@@ -246,8 +241,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val state = MainUiState(
             settings = settings,
-            isAccessibilityEnabled = health.second,
-            isDeviceAdminEnabled = health.third,
+            isShieldServiceRunning = health.second,
+            isVpnPrepared = health.third,
             privateDnsStatus = health.fourth,
             customBlockedDomains = domains.filter { !it.isAllowlisted },
             allowlistedDomains = domains.filter { it.isAllowlisted },
@@ -287,39 +282,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshSystemServiceStatus() {
         val ctx = getApplication<Application>()
-        val enabled = BetBlockerAccessibilityService.isEnabledInSystem(ctx)
-        systemAccessibilityFlow.value = enabled
-        if (!enabled) {
-            repository.setAccessibilityRunning(false)
+        val vpnPrepared = GambleAwareVpnService.isPrepared(ctx)
+        vpnPreparedFlow.value = vpnPrepared
+        if (!vpnPrepared) {
+            repository.setShieldRunning(false)
+        } else if (repository.prefs.currentSnapshot().isProtectionEnabled && !repository.shieldRunning.value) {
+            GambleAwareVpnService.start(ctx)
         }
-        deviceAdminFlow.value = AnchorDeviceAdminReceiver.isAdminActive(ctx)
         privateDnsFlow.value = PrivateDnsInspector.inspect(ctx)
     }
 
     fun enableProtection() {
+        val ctx = getApplication<Application>()
         repository.prefs.setProtectionEnabled(true)
-        bannerFlow.value = if (uiState.value.isAccessibilityEnabled) {
-            "GambleAware Shield active"
+        val vpnPrepared = GambleAwareVpnService.isPrepared(ctx)
+        vpnPreparedFlow.value = vpnPrepared
+        if (vpnPrepared) {
+            GambleAwareVpnService.start(ctx)
+            bannerFlow.value = "GambleAware DNS Shield active"
         } else {
-            "Enable Accessibility Shield to intercept sites & apps"
+            bannerFlow.value = "Tap Enable DNS Shield to activate device-wide blocking"
         }
     }
 
     fun disableProtection() {
-        repository.prefs.setProtectionEnabled(false)
-        bannerFlow.value = "Protection paused"
-    }
-
-    fun deactivateDeviceAdmin() {
-        val snapshot = repository.prefs.currentSnapshot()
-        if (snapshot.isTimeLocked() || snapshot.antiTamperLockEnabled) {
-            bannerFlow.value = "Uninstall Lock stays active until your Commitment Lock ends"
-            return
-        }
         val ctx = getApplication<Application>()
-        AnchorDeviceAdminReceiver.deactivateAdmin(ctx)
-        deviceAdminFlow.value = AnchorDeviceAdminReceiver.isAdminActive(ctx)
-        bannerFlow.value = "Uninstall lock deactivated"
+        repository.prefs.setProtectionEnabled(false)
+        GambleAwareVpnService.stop(ctx)
+        bannerFlow.value = "Protection paused"
     }
 
     fun setPreferredName(name: String) {
@@ -335,7 +325,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         bannerFlow.value = if (first.isNotEmpty()) {
             "Locked for $span — welcome, $first"
         } else {
-            "Admin Lock & Shield armed for $span"
+            "DNS Shield & Lock armed for $span"
         }
     }
 

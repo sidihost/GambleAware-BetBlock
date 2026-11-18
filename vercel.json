@@ -5,6 +5,31 @@
   "outputDirectory": "dist",
   "headers": [
     {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        }
+      ]
+    },
+    {
       "source": "/downloads/(.*\\.apk)",
       "headers": [
         {
@@ -46,7 +71,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!downloads/|assets/|sw\\.js|workbox-|manifest\\.webmanifest|apple-touch-icon\\.png|icon\\.svg|pwa-).*)",
+      "source": "/((?!downloads/|assets/|fonts/|api/|sw\\.js|workbox-|manifest\\.webmanifest|apple-touch-icon\\.png|icon\\.svg|icon-maskable\\.svg|pwa-).*)",
       "destination": "/index.html"
     }
   ]

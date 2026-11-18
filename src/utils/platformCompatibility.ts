@@ -35,6 +35,23 @@ export function resolveInitialViewMode(params: {
   return 'landing';
 }
 
+export function shouldPromoteWebApp(
+  platform: ClientPlatform,
+  isStandalone: boolean,
+): boolean {
+  return platform === 'ios' || isStandalone;
+}
+
+export function getDefaultInstallGuideTarget(platform: ClientPlatform): 'android' | 'ios' {
+  return platform === 'ios' ? 'ios' : 'android';
+}
+
+export function getOrderedPlatformCards(
+  platform: ClientPlatform,
+): readonly ['android' | 'ios', 'android' | 'ios'] {
+  return platform === 'ios' ? ['ios', 'android'] : ['android', 'ios'];
+}
+
 export const TOP_BETTING_DOMAINS_FOR_IOS: readonly string[] = [
   'sportybet.com',
   'sportybet.ng',

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Anchor,
   CheckCircle2,
   Heart,
   LockKeyhole,
@@ -16,7 +15,7 @@ import {
   Wind,
   X,
 } from 'lucide-react';
-import { AppHeader } from './components/AppHeader';
+import { AppHeader, BrandGIcon } from './components/AppHeader';
 import { BlockedInterventionModal } from './components/BlockedInterventionModal';
 import { FirstRunSetupModal } from './components/FirstRunSetupModal';
 import { GoalModal } from './components/GoalCardModal';
@@ -33,15 +32,20 @@ import {
   ThemeMode,
 } from './data/types';
 import { useGambleAwareState } from './hooks/useGambleAwareState';
+import { usePWAInstall } from './hooks/usePWAInstall';
 import { ActivityScreen } from './screens/ActivityScreen';
 import { BlocklistScreen } from './screens/BlocklistScreen';
 import { DownloadScreen } from './screens/DownloadScreen';
 import { LockSettingsScreen } from './screens/LockSettingsScreen';
 import { ShieldScreen } from './screens/ShieldScreen';
-import { AppViewMode, resolveInitialViewMode } from './utils/platformCompatibility';
+import {
+  AppViewMode,
+  resolveInitialViewMode,
+  shouldPromoteWebApp,
+} from './utils/platformCompatibility';
 
 const NAV_ITEMS: NavItemConfig[] = [
-  { route: 'shield', label: 'Shield', icon: <Anchor className="h-4 w-4" /> },
+  { route: 'shield', label: 'Shield', icon: <BrandGIcon className="h-4 w-4" /> },
   { route: 'blocklist', label: 'Blocklist', icon: <SlidersHorizontal className="h-4 w-4" /> },
   { route: 'activity', label: 'Progress', icon: <TrendingUp className="h-4 w-4" /> },
   { route: 'lock', label: 'Lock', icon: <LockKeyhole className="h-4 w-4" /> },
@@ -102,6 +106,9 @@ export function App() {
     forceBackupSync,
     clearBanner,
   } = useGambleAwareState();
+
+  const { isIOS, isInstalled, clientPlatform } = usePWAInstall();
+  const canOpenIosApp = shouldPromoteWebApp(clientPlatform, isInstalled);
 
   const [viewMode, setViewMode] = useState<AppViewMode>(() => {
     if (typeof window === 'undefined') return 'landing';
@@ -248,8 +255,9 @@ export function App() {
       <AppHeader
         mode={viewMode}
         activeRoute={route}
+        isIOS={isIOS}
         onSelectRoute={handleSelectRoute}
-        onOpenWebApp={switchToApp}
+        onOpenWebApp={canOpenIosApp ? switchToApp : undefined}
         onOpenDownloadPage={switchToLanding}
         isDarkTheme={isDarkTheme}
         onToggleTheme={toggleQuickTheme}
@@ -280,7 +288,7 @@ export function App() {
 
       <main className={viewMode === 'app' ? 'min-h-[calc(100vh-8rem)] pb-24 md:pb-12' : 'min-h-[calc(100vh-8rem)]'}>
         {viewMode === 'landing' ? (
-          <DownloadScreen onOpenWebApp={switchToApp} />
+          <DownloadScreen onOpenWebApp={canOpenIosApp ? switchToApp : undefined} />
         ) : (
           <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">
             {route === 'shield' ? (
@@ -480,30 +488,30 @@ export function App() {
           <div className="text-center sm:text-left">
             <p className="font-display text-sm font-bold text-[var(--ink)]">GambleAware</p>
             <p className="mt-0.5 text-xs text-[var(--ink-muted)]">
-              By Imoogle Technology · Android APK, iPhone &amp; Desktop Web App
+              By Imoogle Technology · Android &amp; iPhone
             </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5">
-            {viewMode === 'landing' ? (
+            {viewMode === 'landing' && canOpenIosApp ? (
               <button
                 type="button"
                 onClick={switchToApp}
                 className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 <Smartphone className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-                <span>Open Web App</span>
+                <span>Open iPhone App</span>
               </button>
-            ) : (
+            ) : viewMode === 'app' ? (
               <button
                 type="button"
                 onClick={switchToLanding}
                 className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
-                <Anchor className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-                <span>All Platforms &amp; APK</span>
+                <BrandGIcon className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
+                <span>{isIOS ? 'iPhone Setup & Info' : 'Android APK & Info'}</span>
               </button>
-            )}
+            ) : null}
 
             <div
               role="group"
@@ -539,11 +547,12 @@ export function App() {
         </div>
       </footer>
 
-      {/* First-Run Setup Modal inside interactive Web App */}
+      {/* First-Run Setup Modal inside interactive App */}
       {viewMode === 'app' && !uiState.settings.hasCompletedInitialSetup ? (
         <FirstRunSetupModal
           initialName={uiState.preferredName}
           initialDailySpend={uiState.settings.dailyBetSpendEstimate}
+          isIOS={isIOS}
           isShieldEnabled={uiState.isAccessibilityEnabled}
           isDeviceAdminEnabled={uiState.isDeviceAdminEnabled}
           onEnableShield={activateAccessibilityShield}

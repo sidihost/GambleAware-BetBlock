@@ -4,7 +4,10 @@ import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import {
   detectClientPlatform,
   formatIosBlocklistText,
+  getDefaultInstallGuideTarget,
+  getOrderedPlatformCards,
   resolveInitialViewMode,
+  shouldPromoteWebApp,
   TOP_BETTING_DOMAINS_FOR_IOS,
 } from './platformCompatibility';
 
@@ -44,6 +47,23 @@ test('resolveInitialViewMode opens interactive app in standalone PWA or ?app=1',
     resolveInitialViewMode({ isStandalone: false, search: '', hash: '' }),
     'landing',
   );
+});
+
+test('shouldPromoteWebApp only promotes the Web App on iOS or standalone launches', () => {
+  assert.equal(shouldPromoteWebApp('ios', false), true);
+  assert.equal(shouldPromoteWebApp('android', false), false);
+  assert.equal(shouldPromoteWebApp('desktop', false), false);
+  assert.equal(shouldPromoteWebApp('desktop', true), true);
+  assert.equal(shouldPromoteWebApp('android', true), true);
+});
+
+test('getDefaultInstallGuideTarget and getOrderedPlatformCards adapt automatically per device', () => {
+  assert.equal(getDefaultInstallGuideTarget('ios'), 'ios');
+  assert.equal(getDefaultInstallGuideTarget('android'), 'android');
+  assert.equal(getDefaultInstallGuideTarget('desktop'), 'android');
+  assert.deepEqual(getOrderedPlatformCards('ios'), ['ios', 'android']);
+  assert.deepEqual(getOrderedPlatformCards('android'), ['android', 'ios']);
+  assert.deepEqual(getOrderedPlatformCards('desktop'), ['android', 'ios']);
 });
 
 test('TOP_BETTING_DOMAINS_FOR_IOS are all valid built-in gambling domains', () => {

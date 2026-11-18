@@ -3,10 +3,14 @@ package com.example
 import com.example.blocker.BlockFilterConfig
 import com.example.blocker.BlocklistMatcher
 import com.example.blocker.GamblingCategory
+import com.example.service.DnsPacketCodec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.nio.ByteBuffer
 
 class BetBlockerEngineTest {
 
@@ -224,5 +228,61 @@ class BetBlockerEngineTest {
                 BlocklistMatcher.matchTypedBrowserInput(safe, defaultConfig).isBlocked,
             )
         }
+    }
+
+    @Test
+    fun parsesIpv4UdpDnsQueryAndBuildsNxdomainReply() {
+        val dnsQuery = byteArrayOf(
+            0x12, 0x34, // Transaction ID
+            0x01, 0x00, // Standard query with RD=1
+            0x00, 0x01, // QDCOUNT=1
+            0x00, 0x00, // ANCOUNT=0
+            0x00, 0x00, // NSCOUNT=0
+            0x00, 0x00, // ARCOUNT=0
+            // QNAME: sportybet.com
+            0x09, 's'.code.toByte(), 'p'.code.toByte(), 'o'.code.toByte(), 'r'.code.toByte(),
+            't'.code.toByte(), 'y'.code.toByte(), 'b'.code.toByte(), 'e'.code.toByte(), 't'.code.toByte(),
+            0x03, 'c'.code.toByte(), 'o'.code.toByte(), 'm'.code.toByte(),
+            0x00,
+            0x00, 0x01, // QTYPE A
+            0x00, 0x01, // QCLASS IN
+        )
+        val totalLen = 20 + 8 + dnsQuery.size
+        val pkt = ByteBuffer.allocate(totalLen).apply {
+            put(0x45.toByte())
+            put(0x00.toByte())
+            putShort(totalLen.toShort())
+            putShort(1)
+            putShort(0)
+            put(64.toByte())
+            put(17.toByte()) // UDP
+            putShort(0)
+            put(byteArrayOf(10, 111.toByte(), 222.toByte(), 1))
+            put(byteArrayOf(10, 111.toByte(), 222.toByte(), 2))
+            putShort(51234.toShort())
+            putShort(53.toShort())
+            putShort((8 + dnsQuery.size).toShort())
+            putShort(0)
+            put(dnsQuery)
+        }.array()
+
+        val parsed = DnsPacketCodec.parseIpv4UdpDns(pkt)
+        assertNotNull(parsed)
+        assertEquals("sportybet.com", parsed!!.domainName)
+        assertEquals(51234, parsed.sourcePort)
+        assertEquals(53, parsed.destPort)
+
+        val nx = DnsPacketCodec.buildNxdomainResponse(parsed)
+        assertTrue(nx.size >= 28 + 12)
+        // Destination port swapped back to source port (51234)
+        val replyDstPort = ((nx[22].toInt() and 0xFF) shl 8) or (nx[23].toInt() and 0xFF)
+        assertEquals(51234, replyDstPort)
+        // DNS QR=1 (0x80) and RCODE=3 (NXDOMAIN -> low nibble 0x03)
+        assertEquals(0x81, nx[28 + 2].toInt() and 0xFF)
+        assertEquals(3, nx[28 + 3].toInt() and 0x0F)
+
+        // Malformed or non-DNS port returns null cleanly
+        pkt[23] = 80
+        assertNull(DnsPacketCodec.parseIpv4UdpDns(pkt))
     }
 }

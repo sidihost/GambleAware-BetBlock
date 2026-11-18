@@ -14,13 +14,21 @@ class PackageInstallReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
         val action = intent?.action ?: return
+        val repository = AnchorRepository.getInstance(context.applicationContext)
+        val settings = repository.prefs.currentSnapshot()
+
+        if (action == Intent.ACTION_BOOT_COMPLETED || action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            if (settings.isProtectionEnabled && GambleAwareVpnService.isPrepared(context)) {
+                GambleAwareVpnService.start(context)
+            }
+            return
+        }
+
         if (action != Intent.ACTION_PACKAGE_ADDED) return
 
         val installedPkg = intent.data?.schemeSpecificPart?.lowercase() ?: return
         if (installedPkg == context.packageName.lowercase()) return
 
-        val repository = AnchorRepository.getInstance(context.applicationContext)
-        val settings = repository.prefs.currentSnapshot()
         if (!settings.isProtectionEnabled || !settings.appShieldEnabled) return
 
         val appLabel = try {
