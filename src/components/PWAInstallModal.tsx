@@ -238,19 +238,27 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
                 <div className="mt-3 space-y-1.5 border-t border-[var(--subtle-border)] pt-2.5 text-[11px]">
                   <p className="flex items-start gap-1.5 font-semibold text-[var(--ink)]">
                     <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
-                    <span>If Android refuses to install the APK:</span>
+                    <span>If Android shows &ldquo;App not installed.&rdquo;:</span>
                   </p>
                   <p>
-                    1. Allow <span className="font-semibold text-[var(--ink)]">Install unknown apps</span>{' '}
-                    for Chrome or Files when prompted.
+                    1. Uninstall any older GambleAware build first so signing keys match (if
+                    Uninstall Lock was on, open{' '}
+                    <span className="font-semibold text-[var(--ink)]">
+                      Settings → Security → Device admin apps
+                    </span>{' '}
+                    and deactivate GambleAware first).
                   </p>
                   <p>
-                    2. If you already had an older GambleAware APK installed, uninstall the old build
-                    first so signatures match.
+                    2. Allow{' '}
+                    <span className="font-semibold text-[var(--ink)]">Install unknown apps</span>{' '}
+                    for Chrome or Files and keep 50 MB+ free storage.
                   </p>
                   <p>
                     3. If Play Protect asks, tap{' '}
-                    <span className="font-semibold text-[var(--ink)]">More details → Install anyway</span>.
+                    <span className="font-semibold text-[var(--ink)]">
+                      More details → Install anyway
+                    </span>
+                    .
                   </p>
                 </div>
               </div>

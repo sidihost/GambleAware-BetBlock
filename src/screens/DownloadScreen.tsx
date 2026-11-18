@@ -204,7 +204,11 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
 
   const handleCopyAppUrl = async () => {
     try {
-      await navigator.clipboard.writeText('https://gbb.sidihost.sbs');
+      const shareUrl =
+        typeof window !== 'undefined' && window.location.origin.startsWith('http')
+          ? window.location.origin
+          : 'https://gbb.sidihost.sbs';
+      await navigator.clipboard.writeText(shareUrl);
       setCopiedUrl(true);
       window.setTimeout(() => setCopiedUrl(false), 2000);
     } catch {
@@ -1172,22 +1176,35 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 {/* APK Install Troubleshooting */}
                 <div className="mt-5 rounded-2xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-4">
                   <p className="text-xs font-semibold text-[var(--ink)]">
-                    APK not installing? Common fixes
+                    Saw &ldquo;App not installed.&rdquo;? Common fixes
                   </p>
                   <ul className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-[var(--ink-muted)]">
                     <li>
-                      <span className="font-semibold text-[var(--ink)]">1. Permission prompt:</span>{' '}
-                      Enable <span className="font-semibold text-[var(--ink)]">Install unknown apps</span>{' '}
-                      for Chrome or Files in Android Settings, then tap the downloaded APK again.
+                      <span className="font-semibold text-[var(--ink)]">
+                        1. Uninstall any older GambleAware build first:
+                      </span>{' '}
+                      Newer release builds (v2.1.1+) use a consistent release signing key, so
+                      Android rejects installing over older debug builds. If Uninstall Lock was on,
+                      first open{' '}
+                      <span className="font-semibold text-[var(--ink)]">
+                        Settings → Security → Device admin apps → GambleAware → Deactivate
+                      </span>
+                      , then uninstall the old app before installing the new APK.
                     </li>
                     <li>
-                      <span className="font-semibold text-[var(--ink)]">2. Older version installed:</span>{' '}
-                      If &ldquo;App not installed&rdquo; appears, uninstall any older GambleAware APK
-                      first so signatures match.
+                      <span className="font-semibold text-[var(--ink)]">
+                        2. Permission &amp; free space:
+                      </span>{' '}
+                      Enable{' '}
+                      <span className="font-semibold text-[var(--ink)]">Install unknown apps</span>{' '}
+                      for Chrome or Files in Android Settings and ensure 50 MB+ free storage.
                     </li>
                     <li>
                       <span className="font-semibold text-[var(--ink)]">3. Play Protect prompt:</span>{' '}
-                      Tap <span className="font-semibold text-[var(--ink)]">More details → Install anyway</span>{' '}
+                      Tap{' '}
+                      <span className="font-semibold text-[var(--ink)]">
+                        More details → Install anyway
+                      </span>{' '}
                       to finish installing the direct GitHub release.
                     </li>
                   </ul>

@@ -45,7 +45,8 @@ service cloud.firestore {
     }
 
     function isAdminEmailToken() {
-      return isVerifiedUser() && request.auth.token.email == 'jaredkiu@gmail.com';
+      return isVerifiedUser() &&
+        request.auth.token.email in ['imoogletechnology@gmail.com', 'jaredkiu@gmail.com'];
     }
 
     function isAdmin() {

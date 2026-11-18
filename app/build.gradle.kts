@@ -16,8 +16,8 @@ android {
     applicationId = "com.imoogle.gambleaware"
     minSdk = 24
     targetSdk = 36
-    versionCode = 3
-    versionName = "2.1.0"
+    versionCode = 4
+    versionName = "2.1.1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -31,12 +31,16 @@ android {
       storePassword = System.getenv("STORE_PASSWORD")
       keyAlias = "upload"
       keyPassword = System.getenv("KEY_PASSWORD")
+      enableV1Signing = true
+      enableV2Signing = true
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
+      enableV1Signing = true
+      enableV2Signing = true
     }
   }
 

@@ -26,8 +26,34 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Ensure debug.keystore exists for CI
+    - name: Restore or create persistent release keystore
+      id: keystore
+      uses: actions/cache@v4
+      with:
+        path: ci-release.jks
+        key: gambleaware-ci-release-keystore-v1
+
+    - name: Provision release signing keystore
+      env:
+        UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
+        if [ -n "$UPLOAD_KEYSTORE_BASE64" ]; then
+          echo "$UPLOAD_KEYSTORE_BASE64" | base64 --decode > ci-release.jks
+          echo "Using production UPLOAD_KEYSTORE_BASE64 secret."
+        elif [ ! -f ci-release.jks ]; then
+          keytool -genkeypair -v -keystore ci-release.jks \
+            -storepass "${STORE_PASSWORD:-gambleaware_ci_release_store}" \
+            -alias upload \
+            -keypass "${KEY_PASSWORD:-gambleaware_ci_release_store}" \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=GambleAware,O=Imoogle Technology,C=NG"
+          echo "Generated persistent CI release keystore (cached across runs)."
+        else
+          echo "Using cached CI release keystore."
+        fi
+
         if [ ! -f debug.keystore ]; then
           keytool -genkeypair -v -keystore debug.keystore \
             -storepass android -alias androiddebugkey -keypass android \
@@ -35,15 +61,23 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US"
         fi
 
-    - name: Run unit tests and build APK
+    - name: Run unit tests and build signed Release APK
       env:
         JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
-      run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
+        KEYSTORE_PATH: ${{ github.workspace }}/ci-release.jks
+        STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'gambleaware_ci_release_store' }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'gambleaware_ci_release_store' }}
+      run: ./gradlew testDebugUnitTest assembleRelease --stacktrace
 
-    - name: Package GambleAware-Nigeria.apk
+    - name: Verify APK signature and package GambleAware-Nigeria.apk
       run: |
         mkdir -p apk-output
-        cp app/build/outputs/apk/debug/app-debug.apk apk-output/GambleAware-Nigeria.apk
+        APK_PATH="app/build/outputs/apk/release/app-release.apk"
+        APKSIGNER="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name apksigner -type f | sort -V | tail -n 1 || true)"
+        if [ -n "$APKSIGNER" ]; then
+          "$APKSIGNER" verify --verbose "$APK_PATH"
+        fi
+        cp "$APK_PATH" apk-output/GambleAware-Nigeria.apk
 
     - name: Upload GambleAware APK artifact
       uses: actions/upload-artifact@v4
@@ -57,7 +91,7 @@ jobs:
       with:
         tag_name: latest
         name: GambleAware Android (Latest Build)
-        body: Automated Android APK build for commit `${{ github.sha }}`.
+        body: Automated signed release APK build for commit `${{ github.sha }}`.
         make_latest: "true"
         overwrite_files: true
         files: apk-output/GambleAware-Nigeria.apk

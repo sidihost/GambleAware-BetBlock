@@ -689,7 +689,11 @@ export function App() {
                 onSubmitSurvey={(answers) => {
                   const evaluated = submitSurveyAssessment(answers);
                   if (authUser?.emailVerified) {
-                    void syncRecoverySurveyToCloud(authUser, evaluated);
+                    void syncRecoverySurveyToCloud(authUser, evaluated).catch((err) => {
+                      setCloudError(
+                        err instanceof Error ? err.message : 'Failed to sync recovery survey',
+                      );
+                    });
                   }
                   return evaluated;
                 }}

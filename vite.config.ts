@@ -54,7 +54,12 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,ttf,woff,woff2}'],
         globIgnores: ['**/*.apk', '**/downloads/**'],
-        navigateFallbackDenylist: [/^\/downloads\//, /manifest\.webmanifest$/],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/__\//,
+          /^\/downloads\//,
+          /manifest\.webmanifest$/,
+        ],
       },
       devOptions: {
         enabled: true,

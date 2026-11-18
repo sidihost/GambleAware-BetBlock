@@ -20,13 +20,13 @@ async function startServer() {
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     const firebaseConnect =
-      'https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://firebaseinstallations.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com';
+      'https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://firebaseinstallations.googleapis.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com';
     const connectSrc = IS_PRODUCTION
       ? `connect-src 'self' ${firebaseConnect}`
       : `connect-src 'self' ws://localhost:* ws://127.0.0.1:* ${firebaseConnect}`;
     res.setHeader(
       'Content-Security-Policy',
-      `default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.google.com; font-src 'self' data:; ${connectSrc}; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';`,
+      `default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.google.com; font-src 'self' data:; ${connectSrc}; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';`,
     );
     next();
   });
@@ -62,7 +62,7 @@ async function startServer() {
       if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
         if (requested.toLowerCase().endsWith('.apk')) {
           res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-          res.setHeader('Content-Disposition', 'attachment; filename="GambleAware-v2.1.apk"');
+          res.setHeader('Content-Disposition', 'attachment; filename="GambleAware-v2.1.1.apk"');
           res.setHeader('Cache-Control', 'no-cache, must-revalidate');
         } else {
           res.setHeader('Cache-Control', 'public, max-age=300');
@@ -71,6 +71,15 @@ async function startServer() {
         res.sendFile(resolvedPath);
         return;
       }
+    }
+
+    if (requested === 'GambleAware-Nigeria.apk') {
+      res.setHeader('Cache-Control', 'no-store');
+      res.redirect(
+        302,
+        'https://github.com/sidihost/GambleAware-BetBlock/releases/latest/download/GambleAware-Nigeria.apk',
+      );
+      return;
     }
 
     res.setHeader('Cache-Control', 'no-store');
@@ -89,10 +98,20 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distDir = path.join(__dirname, 'dist');
-    app.use(express.static(distDir));
+    app.use(
+      express.static(distDir, {
+        setHeaders: (res, filePath) => {
+          const base = path.basename(filePath);
+          if (base === 'sw.js' || base === 'manifest.webmanifest' || base === 'index.html') {
+            res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+          }
+        },
+      }),
+    );
     app.get('/{*splat}', (_req: Request, res: Response) => {
       const indexFile = path.join(distDir, 'index.html');
       if (fs.existsSync(indexFile)) {
+        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
         res.sendFile(indexFile);
       } else {
         res.status(404).send('Build output not found. Run npm run build first.');

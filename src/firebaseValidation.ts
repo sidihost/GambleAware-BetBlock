@@ -47,10 +47,16 @@ export const BLUEPRINT_LIMITS = {
   validTicketStatuses: ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const,
 } as const;
 
-export const BOOTSTRAPPED_ADMIN_EMAIL = 'jaredkiu@gmail.com';
+export const BOOTSTRAPPED_ADMIN_EMAIL = 'imoogletechnology@gmail.com';
+export const BOOTSTRAPPED_ADMIN_EMAILS = [
+  'imoogletechnology@gmail.com',
+  'jaredkiu@gmail.com',
+] as const;
 
 export function isAdminEmail(email: string | null | undefined): boolean {
-  return Boolean(email && email.trim().toLowerCase() === BOOTSTRAPPED_ADMIN_EMAIL);
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return (BOOTSTRAPPED_ADMIN_EMAILS as readonly string[]).includes(normalized);
 }
 
 export function toSafeFirestoreDocId(raw: string): string {

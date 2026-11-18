@@ -52,6 +52,7 @@ test('firestore.rules enforces verified delete, commitment lock immutability, ad
   assert.match(rulesSource, /match \/recoveryProfiles\/\{userId\}/);
   assert.match(rulesSource, /match \/supportTickets\/\{ticketId\}/);
   assert.match(rulesSource, /match \/surveys\/\{surveyId\}/);
+  assert.match(rulesSource, /imoogletechnology@gmail\.com/);
   assert.match(rulesSource, /jaredkiu@gmail\.com/);
 });
 
@@ -69,6 +70,7 @@ test('blueprint constants match firestore.rules regex and size limits', () => {
 
 test('Dirty Dozen payload guards & admin checks reject unsafe IDs, domains, and truncate overlong strings', () => {
   assert.equal(isAdminEmail(BOOTSTRAPPED_ADMIN_EMAIL), true);
+  assert.equal(isAdminEmail('IMOOGLETECHNOLOGY@GMAIL.COM'), true);
   assert.equal(isAdminEmail('JAREDKIU@GMAIL.COM'), true);
   assert.equal(isAdminEmail('random@example.com'), false);
 
