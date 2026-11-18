@@ -8,6 +8,7 @@ import {
   Circle,
   Compass,
   Download,
+  Globe,
   Heart,
   LockKeyhole,
   NotebookPen,
@@ -39,6 +40,7 @@ import {
   RecoveryGoalCategory,
 } from '../data/types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { formatAttemptCountLabel, formatBlockedTimestamp } from '../utils/blockedLogGrouping';
 import { formatNaira } from '../utils/currency';
 import { getTimeOfDayGreeting } from '../utils/personalization';
 
@@ -443,7 +445,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   value={state.domainLookupQuery}
                   onChange={(e) => onDomainLookupChanged(e.target.value)}
                   placeholder="Type sportybet, bet9ja, stake.c, or full URL"
-                  className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+                  className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
                 />
                 {state.domainLookupQuery ? (
                   <button
@@ -472,7 +474,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   key={sample}
                   type="button"
                   onClick={() => onDomainLookupChanged(sample)}
-                  className="cursor-pointer rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-1 text-[11px] font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                  className="cursor-pointer rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-1 text-[11px] font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
                 >
                   {sample}
                 </button>
@@ -530,44 +532,52 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             ) : null}
           </LiquidGlassCard>
 
-          {/* Blocked Betting Sites & Apps Summary Card */}
+          {/* Blocked Betting Sites & Apps Summary Card (DuckDuckGo-Style List) */}
           <LiquidGlassCard className="p-4 sm:p-5">
             <LiquidSectionHeader
               title="Blocked Betting Sites & Apps"
               subtitle={
-                state.recentEvents.length > 0
-                  ? `${state.totalBlockedCount} blocked attempts • Latest intercepted sites shown below`
+                state.groupedBlockedSites.length > 0
+                  ? `${state.groupedBlockedSites.length} unique ${state.groupedBlockedSites.length === 1 ? 'site or app' : 'sites & apps'} · ${state.totalBlockedCount} total blocks`
                   : `${state.builtInDomainCount}+ betting websites & 130+ betting apps blocked automatically`
               }
             />
 
-            {state.recentEvents.length > 0 ? (
-              <div className="mt-3 space-y-2">
-                {state.recentEvents.slice(0, 5).map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-center justify-between gap-2.5 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-2.5"
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--active-fill)] text-[var(--active-content)]">
-                        <Ban className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-bold text-[var(--ink)]">{event.target}</p>
-                        <p className="truncate text-[11px] text-[var(--ink-muted)]">
-                          {event.source} • {event.categoryName} •{' '}
-                          {new Date(event.timestamp).toLocaleTimeString([], {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}
-                        </p>
+            {state.groupedBlockedSites.length > 0 ? (
+              <div className="mt-3 space-y-2" data-testid="shield-blocked-sites-list">
+                {state.groupedBlockedSites.slice(0, 6).map((site) => {
+                  const initials = site.target.replace(/^[^a-zA-Z0-9]+/, '').charAt(0).toUpperCase() || 'G';
+                  const timeAgo = formatBlockedTimestamp(site.latestTimestamp, state.currentTimeMs);
+                  return (
+                    <div
+                      key={site.key}
+                      className="flex items-center justify-between gap-2.5 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2.5"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] font-mono text-xs font-bold text-[var(--accent-ink)]">
+                          {site.isApp ? (
+                            <Smartphone className="h-4 w-4" />
+                          ) : site.target.includes('.') ? (
+                            initials
+                          ) : (
+                            <Globe className="h-4 w-4" />
+                          )}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-mono text-xs font-bold text-[var(--ink)]">
+                            {site.target}
+                          </p>
+                          <p className="truncate text-[11px] text-[var(--ink-muted)]">
+                            {site.latestSource} • {site.categoryName} • {timeAgo}
+                          </p>
+                        </div>
                       </div>
+                      <span className="shrink-0 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-2.5 py-0.5 font-mono text-[10px] font-bold text-[var(--accent-ink)]">
+                        {formatAttemptCountLabel(site.attemptCount)}
+                      </span>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[var(--active-fill)]/15 px-2.5 py-0.5 text-[10px] font-bold text-[var(--accent-ink)]">
-                      Blocked
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : null}
 
@@ -586,7 +596,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 ].map((domain) => (
                   <span
                     key={domain}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink)]"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink)]"
                   >
                     <Ban className="h-3 w-3 text-[var(--accent-ink)]" />
                     <span>{domain}</span>
@@ -600,15 +610,15 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 <button
                   type="button"
                   onClick={onNavigateToProgress}
-                  className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                  className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
                 >
-                  View Full Log ({state.totalBlockedCount})
+                  View Full Log ({state.groupedBlockedSites.length})
                 </button>
               ) : null}
               <button
                 type="button"
                 onClick={onNavigateToRules}
-                className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 Browse Blocklist
               </button>
@@ -777,14 +787,14 @@ const SetupStepRow: React.FC<{
     type="button"
     onClick={onClick}
     className={`flex w-full cursor-pointer items-center gap-3 rounded-[16px] border border-[var(--subtle-border)] p-3 text-left transition-colors ${
-      done ? 'bg-[var(--muted-fill)]' : 'bg-[var(--surface)]/60 hover:bg-[var(--muted-fill)]'
+      done ? 'bg-[var(--muted-fill)]' : 'bg-[var(--control-bg)] hover:bg-[var(--muted-fill)]'
     }`}
   >
     <span
       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--subtle-border)] text-xs font-bold ${
         done
           ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
-          : 'bg-[var(--surface)] text-[var(--ink)]'
+          : 'bg-[var(--control-bg)] text-[var(--ink)]'
       }`}
     >
       {step}
@@ -812,14 +822,14 @@ const EngineStatusRow: React.FC<{
     type="button"
     onClick={onClick}
     className={`flex w-full cursor-pointer items-center gap-3 rounded-[18px] border border-[var(--subtle-border)] p-3.5 text-left transition-colors ${
-      isReady ? 'bg-[var(--muted-fill)]' : 'bg-[var(--surface)]/55 hover:bg-[var(--muted-fill)]'
+      isReady ? 'bg-[var(--muted-fill)]' : 'bg-[var(--control-bg)] hover:bg-[var(--muted-fill)]'
     }`}
   >
     <div
       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] ${
         isReady
           ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
-          : 'bg-[var(--surface)] text-[var(--ink)]'
+          : 'bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]'
       }`}
     >
       {icon}

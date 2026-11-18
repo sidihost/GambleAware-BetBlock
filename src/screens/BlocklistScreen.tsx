@@ -187,7 +187,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             className={`cursor-pointer rounded-full border px-3 py-2.5 text-xs font-medium transition-colors ${
               !isAddingAllowlist
                 ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                : 'border-[var(--subtle-border)] bg-[var(--surface)]/60 text-[var(--ink-muted)]'
+                : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
             }`}
           >
             Block Website
@@ -198,7 +198,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             className={`cursor-pointer rounded-full border px-3 py-2.5 text-xs font-medium transition-colors ${
               isAddingAllowlist
                 ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                : 'border-[var(--subtle-border)] bg-[var(--surface)]/60 text-[var(--ink-muted)]'
+                : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
             }`}
           >
             Always Allow
@@ -211,7 +211,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             value={newDomainText}
             onChange={(e) => setNewDomainText(e.target.value)}
             placeholder="Enter a website domain"
-            className="h-12 min-w-0 flex-1 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+            className="h-12 min-w-0 flex-1 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
           />
           <button
             type="submit"
@@ -289,7 +289,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             {state.customBlockedApps.map((app) => (
               <div
                 key={app.packageName}
-                className="flex items-center gap-3 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--surface)]/65 px-3 py-2.5"
+                className="flex items-center gap-3 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2.5"
               >
                 <Ban className="h-4 w-4 shrink-0 text-[var(--ink)]" />
                 <div className="min-w-0 flex-1">
@@ -326,7 +326,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             value={registrySearch}
             onChange={(e) => setRegistrySearch(e.target.value)}
             placeholder="Search built-in blocked websites"
-            className="h-11 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-3.5 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+            className="h-11 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-3.5 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
           />
         </div>
         <div className="mt-3 divide-y divide-[var(--subtle-border)]/45">
@@ -457,7 +457,7 @@ const DomainRuleRow: React.FC<{
   isAllowlist: boolean;
   onDelete: () => void;
 }> = ({ domain, isAllowlist, onDelete }) => (
-  <div className="flex items-center gap-2.5 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--surface)]/65 py-1.5 pr-1.5 pl-3">
+  <div className="flex items-center gap-2.5 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--control-bg)] py-1.5 pr-1.5 pl-3">
     {isAllowlist ? (
       <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
     ) : (

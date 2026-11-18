@@ -113,15 +113,15 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             data-testid="mandatory-step-1"
             className={`flex w-full cursor-pointer items-center gap-3 rounded-[16px] border p-3.5 text-left transition-colors ${
               isShieldEnabled
-                ? 'border-[var(--active-fill)]/40 bg-[var(--muted-fill)]'
-                : 'border-[var(--subtle-border)] bg-[var(--canvas)] hover:bg-[var(--muted-fill)]'
+                ? 'border-[var(--glass-border)] bg-[var(--muted-fill)]'
+                : 'border-[var(--subtle-border)] bg-[var(--control-bg)] hover:bg-[var(--muted-fill)]'
             }`}
           >
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
                 isShieldEnabled
                   ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                  : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)]'
+                  : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)]'
               }`}
             >
               1
@@ -155,15 +155,15 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             data-testid="mandatory-step-2"
             className={`flex w-full cursor-pointer items-center gap-3 rounded-[16px] border p-3.5 text-left transition-colors ${
               isDeviceAdminEnabled
-                ? 'border-[var(--active-fill)]/40 bg-[var(--muted-fill)]'
-                : 'border-[var(--subtle-border)] bg-[var(--canvas)] hover:bg-[var(--muted-fill)]'
+                ? 'border-[var(--glass-border)] bg-[var(--muted-fill)]'
+                : 'border-[var(--subtle-border)] bg-[var(--control-bg)] hover:bg-[var(--muted-fill)]'
             }`}
           >
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
                 isDeviceAdminEnabled
                   ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                  : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)]'
+                  : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)]'
               }`}
             >
               2
@@ -186,7 +186,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
           </button>
 
           {/* Step 3: Set Commitment Lock Duration */}
-          <div className="rounded-[16px] border border-[var(--active-fill)]/40 bg-[var(--muted-fill)] p-3.5">
+          <div className="rounded-[16px] border border-[var(--glass-border)] bg-[var(--muted-fill)] p-3.5">
             <div className="flex items-center gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--active-fill)] text-xs font-bold text-[var(--active-content)]">
                 3
@@ -213,7 +213,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
                     className={`h-9 cursor-pointer rounded-[12px] border px-2.5 text-xs font-semibold transition-colors ${
                       selected
                         ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                        : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
+                        : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
                     }`}
                   >
                     {opt.days === 7 ? '7 Days (Default)' : opt.label}
@@ -237,7 +237,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
                       className={`h-8 cursor-pointer rounded-[10px] border font-mono text-[11px] font-semibold transition-colors ${
                         selected
                           ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                          : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
+                          : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
                       }`}
                     >
                       {formatNaira(amt)}

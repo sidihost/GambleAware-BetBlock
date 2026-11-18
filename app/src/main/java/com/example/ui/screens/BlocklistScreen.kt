@@ -63,6 +63,7 @@ import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
 import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
+import com.example.ui.theme.LiquidDialogContent
 import com.example.ui.theme.LocalLiquidColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -294,8 +295,8 @@ fun BlocklistScreen(
                                 unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                 focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
+                                focusedContainerColor = liquid.controlFill,
+                                unfocusedContainerColor = liquid.controlFill,
                             ),
                         )
                         Button(
@@ -420,7 +421,7 @@ fun BlocklistScreen(
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
+                                    .background(liquid.controlFill)
                                     .border(1.dp, liquid.subtleBorder, RoundedCornerShape(14.dp))
                                     .padding(horizontal = 12.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -496,8 +497,8 @@ fun BlocklistScreen(
                             unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                             focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
+                            focusedContainerColor = liquid.controlFill,
+                            unfocusedContainerColor = liquid.controlFill,
                         ),
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -558,6 +559,7 @@ fun BlocklistScreen(
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
         ) {
+            LiquidDialogContent(themeMode = state.settings.themeMode) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -657,6 +659,7 @@ fun BlocklistScreen(
                     }
                 }
             }
+            }
         }
     }
 }
@@ -716,7 +719,7 @@ private fun ModeChip(
     LiquidGlassCard(
         modifier = modifier.testTag(testTag),
         cornerRadius = 50.dp,
-        fillColor = if (selected) liquid.activeFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.55f),
+        fillColor = if (selected) liquid.activeFill else liquid.controlFill,
         borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
         contentPadding = 10.dp,
         onClick = onClick,
@@ -724,7 +727,7 @@ private fun ModeChip(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
     }
@@ -742,7 +745,7 @@ private fun DomainRuleRow(
             .fillMaxWidth()
             .padding(vertical = 3.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
+            .background(liquid.controlFill)
             .border(1.dp, liquid.subtleBorder, RoundedCornerShape(14.dp))
             .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

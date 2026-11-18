@@ -1,5 +1,6 @@
 import { BlockMatchResult } from '../blocker/blocklistMatcher';
 import { GamblingCategory } from '../blocker/gamblingCategory';
+import type { GroupedBlockedSite } from '../utils/blockedLogGrouping';
 
 export enum ThemeMode {
   SYSTEM = 'SYSTEM',
@@ -168,6 +169,7 @@ export interface DerivedMainState {
   allowlistedDomains: BlockedDomainEntity[];
   customBlockedApps: BlockedAppEntity[];
   recentEvents: BlockedEventEntity[];
+  groupedBlockedSites: GroupedBlockedSite[];
   recentUrgeLogs: UrgeLogEntity[];
   totalBlockedCount: number;
   todayBlockedCount: number;

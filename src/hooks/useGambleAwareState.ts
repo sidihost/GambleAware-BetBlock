@@ -44,6 +44,10 @@ import {
   sanitizePreferredName,
   sanitizeUrgeFields,
 } from '../firebaseValidation';
+import {
+  groupBlockedEvents,
+  normalizeBlockedTarget,
+} from '../utils/blockedLogGrouping';
 import { evaluateHighRiskGuard } from '../utils/highRiskGuard';
 import { detectGamblingLoginOrSite, extractFirstName } from '../utils/personalization';
 
@@ -287,6 +291,7 @@ export function useGambleAwareState() {
       allowlistedDomains: store.domains.filter((d) => d.isAllowlisted),
       customBlockedApps: store.blockedApps,
       recentEvents: store.events,
+      groupedBlockedSites: groupBlockedEvents(store.events),
       recentUrgeLogs: store.urgeLogs,
       totalBlockedCount: store.events.length,
       todayBlockedCount,
@@ -860,7 +865,8 @@ export function useGambleAwareState() {
       if (!detection.isBlocked) {
         return { intercepted: false as const };
       }
-      const targetLabel = detection.match.matchedTarget || detection.normalizedHost || rawInput;
+      const rawTarget = detection.normalizedHost || detection.match.matchedTarget || rawInput;
+      const targetLabel = normalizeBlockedTarget(rawTarget);
       logBlockedEvent(targetLabel, 'Web Shield', detection.match.category);
       return {
         intercepted: true as const,

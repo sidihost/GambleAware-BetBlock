@@ -120,6 +120,7 @@ import com.example.ui.screens.BlocklistScreen
 import com.example.ui.screens.LockSettingsScreen
 import com.example.ui.screens.ShieldScreen
 import com.example.ui.theme.AnchorTheme
+import com.example.ui.theme.LiquidDialogContent
 import com.example.ui.theme.LocalLiquidColors
 import kotlinx.coroutines.delay
 
@@ -594,6 +595,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     tonalElevation = 0.dp,
                 ) {
+                    LiquidDialogContent(themeMode = state.settings.themeMode) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -691,6 +693,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                             Text("Save Resisted Victory")
                         }
                     }
+                    }
                 }
             }
 
@@ -711,6 +714,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     tonalElevation = 0.dp,
                 ) {
+                    LiquidDialogContent(themeMode = state.settings.themeMode) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -779,6 +783,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                             }
                         }
                     }
+                    }
                 }
             }
 
@@ -790,28 +795,32 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                     textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     shape = RoundedCornerShape(26.dp),
                     title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            BrandGEmblem(modifier = Modifier.size(32.dp))
-                            Text(
-                                text = "Activate On-Device DNS Shield",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
+                        LiquidDialogContent(themeMode = state.settings.themeMode) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                BrandGEmblem(modifier = Modifier.size(32.dp))
+                                Text(
+                                    text = "Activate On-Device DNS Shield",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
                         }
                     },
                     text = {
-                        Text(
-                            text = "GambleAware creates an on-device local DNS filter using Android VpnService to:\n\n" +
-                                "1. Block SportyBet, Bet9ja, Bet365, 1xBet, Stake & 600+ gambling domains across every browser and app.\n" +
-                                "2. Intercept betting API connections inside gambling apps while keeping other apps normal.\n" +
-                                "3. Keep your clean streak & Commitment Lock backed up offline on your phone.\n\n" +
-                                "No Accessibility permission, no Device Admin lock, and zero remote server tracking.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        LiquidDialogContent(themeMode = state.settings.themeMode) {
+                            Text(
+                                text = "GambleAware creates an on-device local DNS filter using Android VpnService to:\n\n" +
+                                    "1. Block SportyBet, Bet9ja, Bet365, 1xBet, Stake & 600+ gambling domains across every browser and app.\n" +
+                                    "2. Intercept betting API connections inside gambling apps while keeping other apps normal.\n" +
+                                    "3. Keep your clean streak & Commitment Lock backed up offline on your phone.\n\n" +
+                                    "No Accessibility permission, no Device Admin lock, and zero remote server tracking.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     },
                     confirmButton = {
                         Button(
@@ -849,18 +858,22 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                     textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     shape = RoundedCornerShape(26.dp),
                     title = {
-                        Text(
-                            text = "Commitment Lock Active",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                        LiquidDialogContent(themeMode = state.settings.themeMode) {
+                            Text(
+                                text = "Commitment Lock Active",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     },
                     text = {
-                        Text(
-                            text = "This control is protected by your GambleAware Commitment Lock (${state.lockCountdownFormatted} remaining). Uninstalling, pausing protection, or weakening blocklists stays locked until the timer completes.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        LiquidDialogContent(themeMode = state.settings.themeMode) {
+                            Text(
+                                text = "This control is protected by your GambleAware Commitment Lock (${state.lockCountdownFormatted} remaining). Uninstalling, pausing protection, or weakening blocklists stays locked until the timer completes.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     },
                     confirmButton = {
                         Button(
@@ -889,55 +902,59 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                     textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     shape = RoundedCornerShape(26.dp),
                     title = {
-                        Text(
-                            text = "Enter Accountability PIN",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                        LiquidDialogContent(themeMode = state.settings.themeMode) {
+                            Text(
+                                text = "Enter Accountability PIN",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     },
                     text = {
-                        Column {
-                            Text(
-                                text = "Enter your 4-digit Accountability PIN to authorize this change.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            OutlinedTextField(
-                                value = pinAttempt,
-                                onValueChange = {
-                                    if (it.length <= 4 && it.all(Char::isDigit)) {
-                                        pinAttempt = it
-                                        pinError = null
-                                    }
-                                },
-                                label = { Text("4-Digit PIN") },
-                                singleLine = true,
-                                visualTransformation = PasswordVisualTransformation(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = liquid.activeFill,
-                                    unfocusedBorderColor = liquid.subtleBorder,
-                                    focusedLabelColor = liquid.accentInk,
-                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    cursorColor = liquid.activeFill,
-                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 12.dp)
-                                    .testTag("verify_pin_input"),
-                            )
-                            if (pinError != null) {
+                        LiquidDialogContent(themeMode = state.settings.themeMode) {
+                            Column {
                                 Text(
-                                    text = pinError!!,
-                                    color = liquid.accentInk,
+                                    text = "Enter your 4-digit Accountability PIN to authorize this change.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(top = 6.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                OutlinedTextField(
+                                    value = pinAttempt,
+                                    onValueChange = {
+                                        if (it.length <= 4 && it.all(Char::isDigit)) {
+                                            pinAttempt = it
+                                            pinError = null
+                                        }
+                                    },
+                                    label = { Text("4-Digit PIN") },
+                                    singleLine = true,
+                                    visualTransformation = PasswordVisualTransformation(),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = liquid.activeFill,
+                                        unfocusedBorderColor = liquid.subtleBorder,
+                                        focusedLabelColor = liquid.accentInk,
+                                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        cursorColor = liquid.activeFill,
+                                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 12.dp)
+                                        .testTag("verify_pin_input"),
+                                )
+                                if (pinError != null) {
+                                    Text(
+                                        text = pinError!!,
+                                        color = liquid.accentInk,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(top = 6.dp),
+                                    )
+                                }
                             }
                         }
                     },
@@ -1120,7 +1137,7 @@ private fun MandatoryThreeStepSetupScreen(
                     .fillMaxWidth()
                     .testTag("onboarding_step_timer"),
                 cornerRadius = 18.dp,
-                fillColor = if (step3Ready) liquid.mutedFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                fillColor = if (step3Ready) liquid.mutedFill else liquid.controlFill,
                 borderColor = if (step3Ready) liquid.activeFill else liquid.subtleBorder,
                 contentPadding = 14.dp,
             ) {
@@ -1132,7 +1149,7 @@ private fun MandatoryThreeStepSetupScreen(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(if (step3Ready) liquid.activeFill else MaterialTheme.colorScheme.surface)
+                            .background(if (step3Ready) liquid.activeFill else liquid.controlFill)
                             .border(1.dp, if (step3Ready) liquid.activeFill else liquid.subtleBorder, CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -1183,7 +1200,7 @@ private fun MandatoryThreeStepSetupScreen(
                         val selected = setupLockDays == days
                         LiquidGlassCard(
                             cornerRadius = 50.dp,
-                            fillColor = if (selected) liquid.activeFill else MaterialTheme.colorScheme.surface,
+                            fillColor = if (selected) liquid.activeFill else liquid.controlFill,
                             borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
                             contentPadding = 0.dp,
                             onClick = { setupLockDays = days },
@@ -1257,7 +1274,7 @@ private fun MandatorySetupStepCard(
             .fillMaxWidth()
             .testTag(testTag),
         cornerRadius = 18.dp,
-        fillColor = if (done) liquid.mutedFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+        fillColor = if (done) liquid.mutedFill else liquid.controlFill,
         borderColor = if (done) liquid.activeFill else liquid.subtleBorder,
         contentPadding = 14.dp,
         onClick = onClick,
@@ -1270,7 +1287,7 @@ private fun MandatorySetupStepCard(
                 modifier = Modifier
                     .size(28.dp)
                     .clip(CircleShape)
-                    .background(if (done) liquid.activeFill else MaterialTheme.colorScheme.surface)
+                    .background(if (done) liquid.activeFill else liquid.controlFill)
                     .border(1.dp, if (done) liquid.activeFill else liquid.subtleBorder, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {

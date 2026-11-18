@@ -164,11 +164,11 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                     key={d.days}
                     type="button"
                     onClick={() => setPendingLockDays(d.days)}
-                    className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
-                      selected
-                        ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                        : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink-muted)] hover:text-[var(--ink)]'
-                    }`}
+                      className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
+                        selected
+                          ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                          : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                      }`}
                   >
                     {d.label}
                   </button>
@@ -435,7 +435,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                       className={`cursor-pointer rounded-full border px-3 py-1.5 font-mono text-xs font-medium transition-colors ${
                         selected
                           ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                          : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                          : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
                       }`}
                     >
                       {formatNaira(amount)}/day
@@ -461,7 +461,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                       className={`cursor-pointer rounded-[16px] border py-3 text-center text-sm font-medium transition-colors ${
                         selected
                           ? 'border-[var(--active-fill)] bg-[var(--active-fill)] font-semibold text-[var(--active-content)]'
-                          : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink)] hover:bg-[var(--muted-fill)]'
+                          : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
                       }`}
                     >
                       {THEME_MODE_LABELS[mode]}

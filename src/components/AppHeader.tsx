@@ -257,8 +257,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </button>
           ) : mode === 'landing' && !isIOS ? (
             <a
-              href="/downloads/GambleAware-Nigeria.apk"
-              download="GambleAware.apk"
+              href="/downloads/GambleAware-Nigeria.apk?v=2.1.0"
+              download="GambleAware-v2.1.apk"
               className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
             >
               <Download className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.rounded.PhonelinkLock
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.Button
@@ -72,11 +73,11 @@ import com.example.ui.components.LiquidShieldOrb
 import com.example.ui.components.LiquidStatusPill
 import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
+import com.example.ui.formatAttemptCountLabel
+import com.example.ui.formatBlockedRelativeTime
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -383,70 +384,84 @@ fun ShieldScreen(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = 18.dp,
                 ) {
+                    val groupedSites = state.groupedBlockedTargets
+                    val siteCount = groupedSites.size
                     LiquidSectionHeader(
                         title = "Blocked Betting Sites & Apps",
-                        subtitle = if (state.recentEvents.isNotEmpty()) {
-                            "${state.totalBlockedCount} blocked attempts • Latest intercepted betting sites shown below"
+                        subtitle = if (groupedSites.isNotEmpty()) {
+                            "${state.totalBlockedCount} blocked attempts across $siteCount site${if (siteCount == 1) "" else "s"} & app${if (siteCount == 1) "" else "s"}"
                         } else {
                             "${state.builtInDomainCount}+ betting websites & 130+ betting apps blocked automatically"
                         },
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    if (state.recentEvents.isNotEmpty()) {
+                    if (groupedSites.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            state.recentEvents.take(5).forEach { event ->
-                                val timeText = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
-                                    .format(Date(event.timestamp))
+                            groupedSites.take(6).forEach { site ->
+                                val timeText = formatBlockedRelativeTime(site.latestTimestamp, state.currentTimeMs)
+                                val monogram = site.target.firstOrNull()?.uppercaseChar()?.toString() ?: "G"
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(liquid.mutedFill)
+                                        .background(liquid.controlFill)
                                         .border(1.dp, liquid.subtleBorder, RoundedCornerShape(16.dp))
                                         .padding(horizontal = 12.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(34.dp)
+                                            .size(36.dp)
                                             .clip(RoundedCornerShape(10.dp))
-                                            .background(liquid.activeFill),
+                                            .background(liquid.softAccentFill)
+                                            .border(1.dp, liquid.glassBorder, RoundedCornerShape(10.dp)),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Block,
-                                            contentDescription = null,
-                                            tint = liquid.activeContent,
-                                            modifier = Modifier.size(18.dp),
-                                        )
+                                        if (site.isApp) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Smartphone,
+                                                contentDescription = null,
+                                                tint = liquid.accentInk,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                        } else {
+                                            Text(
+                                                text = monogram,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = liquid.accentInk,
+                                            )
+                                        }
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = event.target,
+                                            text = site.target,
                                             style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
                                         Text(
-                                            text = "${event.source} • ${event.categoryName} • $timeText",
+                                            text = "${site.latestSource} • ${site.categoryName} • $timeText",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
                                     }
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(50))
-                                            .background(liquid.activeFill.copy(alpha = 0.14f))
-                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                            .background(liquid.softAccentFill)
+                                            .border(1.dp, liquid.glassBorder, RoundedCornerShape(50))
+                                            .padding(horizontal = 9.dp, vertical = 4.dp),
                                     ) {
                                         Text(
-                                            text = "Blocked",
+                                            text = formatAttemptCountLabel(site.attemptCount),
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.SemiBold,
                                             color = liquid.accentInk,
@@ -481,7 +496,7 @@ fun ShieldScreen(
                             Row(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(50))
-                                    .background(liquid.mutedFill)
+                                    .background(liquid.controlFill)
                                     .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50))
                                     .padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -762,8 +777,8 @@ fun ShieldScreen(
                             unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                             focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
+                            focusedContainerColor = liquid.controlFill,
+                            unfocusedContainerColor = liquid.controlFill,
                         ),
                     )
 
@@ -875,7 +890,7 @@ private fun SetupStepRow(
             .fillMaxWidth()
             .testTag(testTag),
         cornerRadius = 16.dp,
-        fillColor = if (done) liquid.mutedFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.55f),
+        fillColor = if (done) liquid.mutedFill else liquid.controlFill,
         borderColor = liquid.subtleBorder,
         contentPadding = 12.dp,
         onClick = onClick,
@@ -888,7 +903,7 @@ private fun SetupStepRow(
                 modifier = Modifier
                     .size(28.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (done) liquid.activeFill else MaterialTheme.colorScheme.surface)
+                    .background(if (done) liquid.activeFill else liquid.controlFill)
                     .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50)),
                 contentAlignment = Alignment.Center,
             ) {
@@ -974,7 +989,7 @@ private fun EngineStatusRow(
             .fillMaxWidth()
             .testTag(testTag),
         cornerRadius = 18.dp,
-        fillColor = if (isReady) liquid.mutedFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+        fillColor = if (isReady) liquid.mutedFill else liquid.controlFill,
         borderColor = liquid.subtleBorder,
         contentPadding = 14.dp,
         onClick = onClick,
@@ -987,7 +1002,7 @@ private fun EngineStatusRow(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isReady) liquid.activeFill else MaterialTheme.colorScheme.surface),
+                    .background(if (isReady) liquid.activeFill else liquid.controlFill),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -1033,7 +1048,7 @@ private fun QuickSampleChip(
     val liquid = LocalLiquidColors.current
     LiquidGlassCard(
         cornerRadius = 50.dp,
-        fillColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+        fillColor = liquid.controlFill,
         borderColor = liquid.subtleBorder,
         contentPadding = 0.dp,
         onClick = onClick,

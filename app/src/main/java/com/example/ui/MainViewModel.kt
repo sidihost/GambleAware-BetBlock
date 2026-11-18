@@ -45,6 +45,111 @@ data class TriggerBreakdown(
     val count: Int,
 )
 
+data class GroupedBlockedTarget(
+    val key: String,
+    val target: String,
+    val attemptCount: Int,
+    val latestTimestamp: Long,
+    val latestSource: String,
+    val sources: List<String>,
+    val categoryName: String,
+    val isApp: Boolean,
+)
+
+fun isAppBlockSource(source: String): Boolean =
+    source.equals("App Shield", ignoreCase = true) ||
+        source.equals("Install Guard", ignoreCase = true) ||
+        source.contains("App", ignoreCase = true)
+
+fun normalizeBlockedTarget(rawTarget: String): String {
+    val trimmed = rawTarget.trim()
+    if (trimmed.isEmpty()) return "Unknown site"
+    val normalized = BlocklistMatcher.normalizeDomain(trimmed)
+    return if (normalized.isNotEmpty() && !trimmed.contains(' ') && normalized.contains('.')) {
+        normalized
+    } else {
+        trimmed
+    }
+}
+
+fun buildGroupedBlockedTargets(events: List<BlockedEventEntity>): List<GroupedBlockedTarget> {
+    if (events.isEmpty()) return emptyList()
+
+    data class Accumulator(
+        val key: String,
+        var target: String,
+        var attemptCount: Int,
+        var latestTimestamp: Long,
+        var latestSource: String,
+        val sources: LinkedHashSet<String>,
+        var categoryName: String,
+        var isApp: Boolean,
+    )
+
+    val byKey = linkedMapOf<String, Accumulator>()
+    for (event in events) {
+        val cleanTarget = normalizeBlockedTarget(event.target)
+        val appBlock = isAppBlockSource(event.source)
+        val groupKey = (if (appBlock) "app:" else "site:") + cleanTarget.lowercase(Locale.US)
+        val existing = byKey[groupKey]
+        if (existing == null) {
+            byKey[groupKey] = Accumulator(
+                key = groupKey,
+                target = cleanTarget,
+                attemptCount = 1,
+                latestTimestamp = event.timestamp,
+                latestSource = event.source,
+                sources = linkedSetOf(event.source),
+                categoryName = event.categoryName,
+                isApp = appBlock,
+            )
+        } else {
+            existing.attemptCount += 1
+            existing.sources.add(event.source)
+            if (event.timestamp >= existing.latestTimestamp) {
+                existing.latestTimestamp = event.timestamp
+                existing.latestSource = event.source
+                existing.categoryName = event.categoryName
+                existing.target = cleanTarget
+            }
+        }
+    }
+
+    return byKey.values
+        .map { acc ->
+            GroupedBlockedTarget(
+                key = acc.key,
+                target = acc.target,
+                attemptCount = acc.attemptCount,
+                latestTimestamp = acc.latestTimestamp,
+                latestSource = acc.latestSource,
+                sources = acc.sources.toList(),
+                categoryName = acc.categoryName,
+                isApp = acc.isApp,
+            )
+        }
+        .sortedWith(
+            compareByDescending<GroupedBlockedTarget> { it.latestTimestamp }
+                .thenByDescending { it.attemptCount },
+        )
+}
+
+fun formatAttemptCountLabel(count: Int): String = "$count blocked"
+
+fun formatBlockedRelativeTime(timestampMs: Long, nowMs: Long = System.currentTimeMillis()): String {
+    val diffMs = (nowMs - timestampMs).coerceAtLeast(0L)
+    val minuteMs = 60_000L
+    val hourMs = 3_600_000L
+    val dayMs = 86_400_000L
+    return when {
+        diffMs < minuteMs -> "Just now"
+        diffMs < hourMs -> "${diffMs / minuteMs}m ago"
+        diffMs < dayMs -> "${diffMs / hourMs}h ago"
+        diffMs < 7 * dayMs -> "${diffMs / dayMs}d ago"
+        else -> java.text.SimpleDateFormat("MMM d", Locale.getDefault()).format(java.util.Date(timestampMs))
+    }
+}
+
 data class RecoveryMilestone(
     val days: Int,
     val label: String,
@@ -72,6 +177,7 @@ data class MainUiState(
     val allowlistedDomains: List<BlockedDomainEntity> = emptyList(),
     val customBlockedApps: List<BlockedAppEntity> = emptyList(),
     val recentEvents: List<BlockedEventEntity> = emptyList(),
+    val groupedBlockedTargets: List<GroupedBlockedTarget> = emptyList(),
     val recentUrgeLogs: List<UrgeLogEntity> = emptyList(),
     val totalBlockedCount: Int = 0,
     val todayBlockedCount: Int = 0,
@@ -248,6 +354,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             allowlistedDomains = domains.filter { it.isAllowlisted },
             customBlockedApps = data.second,
             recentEvents = data.third,
+            groupedBlockedTargets = buildGroupedBlockedTargets(data.third),
             recentUrgeLogs = urgeLogs,
             totalBlockedCount = data.fourth,
             todayBlockedCount = data.fifth,

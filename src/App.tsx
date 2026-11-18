@@ -267,7 +267,7 @@ export function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-4 bottom-24 left-4 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-[var(--glass-border)] bg-[var(--surface)]/95 px-4 py-2.5 shadow-lg backdrop-blur-xl md:bottom-6"
+          className="fixed right-4 bottom-24 left-4 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-[var(--glass-border)] bg-[var(--surface)] px-4 py-2.5 shadow-lg md:bottom-6"
         >
           <div className="flex min-w-0 items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />

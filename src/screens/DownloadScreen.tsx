@@ -241,8 +241,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
               </button>
             ) : (
               <a
-                href="/downloads/GambleAware-Nigeria.apk"
-                download="GambleAware.apk"
+                href="/downloads/GambleAware-Nigeria.apk?v=2.1.0"
+                download="GambleAware-v2.1.apk"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
               >
                 <Download className="h-4 w-4 shrink-0" />
@@ -454,16 +454,18 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-2">
+                      <div className="flex items-center justify-between rounded-2xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2">
                         <div className="min-w-0">
                           <p className="truncate font-mono text-[11px] font-semibold text-[var(--ink)]">
                             sportybet.com
                           </p>
-                          <p className="text-[10px] text-[var(--accent-ink)]">
-                            Blocked in Chrome
+                          <p className="text-[10px] text-[var(--ink-muted)]">
+                            DNS Shield · Sportsbook · Just now
                           </p>
                         </div>
-                        <ShieldCheck className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                        <span className="shrink-0 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-2 py-0.5 font-mono text-[9.5px] font-bold text-[var(--accent-ink)]">
+                          3 blocked
+                        </span>
                       </div>
                     </div>
                   ) : null}
@@ -656,18 +658,26 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-2.5">
+                      <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2.5">
                         <p className="text-[10px] font-semibold text-[var(--ink)]">
-                          Recent Blocks
+                          Blocked Sites &amp; Apps
                         </p>
-                        <div className="mt-1.5 space-y-1 text-[10px]">
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono text-[var(--ink)]">bet9ja.com</span>
-                            <span className="text-[var(--accent-ink)]">Browser</span>
+                        <div className="mt-1.5 space-y-1.5 text-[10px]">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate font-mono font-semibold text-[var(--ink)]">
+                              bet9ja.com
+                            </span>
+                            <span className="shrink-0 rounded-full bg-[var(--soft-accent-bg)] px-2 py-0.5 font-mono text-[9px] font-bold text-[var(--accent-ink)]">
+                              4 blocked
+                            </span>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono text-[var(--ink)]">SportyBet APK</span>
-                            <span className="text-[var(--accent-ink)]">App Guard</span>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate font-mono font-semibold text-[var(--ink)]">
+                              SportyBet App
+                            </span>
+                            <span className="shrink-0 rounded-full bg-[var(--soft-accent-bg)] px-2 py-0.5 font-mono text-[9px] font-bold text-[var(--accent-ink)]">
+                              2 blocked
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -892,20 +902,19 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                       <span className="font-semibold text-[var(--ink)]">
                         • Install Guard + 2y Lock:
                       </span>{' '}
-                      Watches for newly installed betting APKs and supports Android Always-On VPN
-                      lock.
+                      Matches 130+ betting apps on DNS and supports Android Always-On VPN lock.
                     </li>
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
                         • Clean Permissions:
                       </span>{' '}
-                      Zero Accessibility service and zero Device Admin spyware triggers.
+                      Zero Accessibility, zero Device Admin, and zero background package spying.
                     </li>
                   </ul>
                 </div>
                 <a
-                  href="/downloads/GambleAware-Nigeria.apk"
-                  download="GambleAware.apk"
+                  href="/downloads/GambleAware-Nigeria.apk?v=2.1.0"
+                  download="GambleAware-v2.1.apk"
                   className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
                 >
                   <Download className="h-4 w-4 shrink-0" />
@@ -1171,8 +1180,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 </div>
 
                 <a
-                  href="/downloads/GambleAware-Nigeria.apk"
-                  download="GambleAware.apk"
+                  href="/downloads/GambleAware-Nigeria.apk?v=2.1.0"
+                  download="GambleAware-v2.1.apk"
                   className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
                 >
                   <Download className="h-4 w-4 shrink-0" />
@@ -1230,7 +1239,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                   <span className="col-span-4 pr-2 font-medium text-[var(--ink)]">
                     {row.capability}
                   </span>
-                  <span className="col-span-4 flex items-start gap-1.5 rounded-lg bg-[var(--muted-fill)]/70 px-2.5 py-1.5 font-medium text-[var(--accent-ink)]">
+                  <span className="col-span-4 flex items-start gap-1.5 rounded-lg bg-[var(--muted-fill)] px-2.5 py-1.5 font-medium text-[var(--accent-ink)]">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>{row.gambleAware}</span>
                   </span>

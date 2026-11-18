@@ -317,7 +317,7 @@ private fun InterventionScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.65f))
+                            .background(liquid.controlFill)
                             .border(1.dp, liquid.subtleBorder, RoundedCornerShape(20.dp))
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },

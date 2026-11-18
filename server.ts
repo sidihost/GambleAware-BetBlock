@@ -60,10 +60,12 @@ async function startServer() {
       if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
         if (requested.toLowerCase().endsWith('.apk')) {
           res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-          res.setHeader('Content-Disposition', 'attachment; filename="GambleAware.apk"');
+          res.setHeader('Content-Disposition', 'attachment; filename="GambleAware-v2.1.apk"');
+          res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=300');
         }
         res.setHeader('X-Content-Type-Options', 'nosniff');
-        res.setHeader('Cache-Control', 'public, max-age=300');
         res.sendFile(resolvedPath);
         return;
       }

@@ -66,6 +66,7 @@ import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
 import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
+import com.example.ui.theme.LiquidDialogContent
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
 import java.text.NumberFormat
@@ -176,6 +177,7 @@ fun LockSettingsScreen(
                             Text(
                                 text = if (isTimeLocked) "Commitment Lock Active" else "Timed Commitment Lock",
                                 style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
                             )
                             Text(
                                 text = if (isTimeLocked) {
@@ -243,7 +245,7 @@ fun LockSettingsScreen(
                             val selected = pendingLockDays == days
                             LiquidGlassCard(
                                 cornerRadius = 50.dp,
-                                fillColor = if (selected) liquid.activeFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                                fillColor = if (selected) liquid.activeFill else liquid.controlFill,
                                 borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
                                 contentPadding = 0.dp,
                                 onClick = { pendingLockDays = days },
@@ -252,7 +254,7 @@ fun LockSettingsScreen(
                                 Text(
                                     text = label,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                                 )
                             }
@@ -270,6 +272,7 @@ fun LockSettingsScreen(
                             Text(
                                 text = "Tamper & Rule Guard",
                                 style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onBackground,
                             )
                             Text(
                                 text = "Locks protection toggle, gambling categories, and custom rule removal until the timer completes",
@@ -357,6 +360,7 @@ fun LockSettingsScreen(
                                 Text(
                                     text = "Always-On DNS Shield",
                                     style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                 )
                                 Text(
                                     text = if (state.isVpnPrepared) {
@@ -410,6 +414,7 @@ fun LockSettingsScreen(
                                 Text(
                                     text = "Accountability PIN",
                                     style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                 )
                                 Text(
                                     text = if (state.settings.hasPin) {
@@ -477,6 +482,7 @@ fun LockSettingsScreen(
                                 Text(
                                     text = "Recovery & Lock Alerts",
                                     style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                 )
                                 Text(
                                     text = if (!hasNotificationPermission && state.settings.notificationsEnabled) {
@@ -550,6 +556,7 @@ fun LockSettingsScreen(
                             Text(
                                 text = "System Private DNS (Zero-VPN)",
                                 style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onBackground,
                             )
                             Text(
                                 text = if (state.privateDnsStatus.isActive) {
@@ -590,7 +597,7 @@ fun LockSettingsScreen(
                             val selected = state.settings.dailyBetSpendEstimate == amount
                             LiquidGlassCard(
                                 cornerRadius = 50.dp,
-                                fillColor = if (selected) liquid.activeFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.55f),
+                                fillColor = if (selected) liquid.activeFill else liquid.controlFill,
                                 borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
                                 contentPadding = 0.dp,
                                 onClick = { onSetDailySpend(amount) },
@@ -598,7 +605,7 @@ fun LockSettingsScreen(
                                 Text(
                                     text = "₦${nairaFormat.format(amount)}/day",
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                 )
                             }
@@ -623,7 +630,7 @@ fun LockSettingsScreen(
                                     .weight(1f)
                                     .testTag("theme_mode_${mode.name.lowercase()}"),
                                 cornerRadius = 16.dp,
-                                fillColor = if (selected) liquid.activeFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.55f),
+                                fillColor = if (selected) liquid.activeFill else liquid.controlFill,
                                 borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
                                 contentPadding = 12.dp,
                                 onClick = { onSelectTheme(mode) },
@@ -713,16 +720,20 @@ fun LockSettingsScreen(
             titleContentColor = MaterialTheme.colorScheme.onBackground,
             textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = {
-                Text(
-                    text = "Activate ${formatLockAdjective(pendingLockDays)} Lock?",
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Text(
+                        text = "Activate ${formatLockAdjective(pendingLockDays)} Lock?",
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
             },
             text = {
-                Text(
-                    text = "While Commitment Lock is active, GambleAware will not allow uninstalling the app, pausing protection, turning off categories, or deleting blocked rules until the timer completes.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Text(
+                        text = "While Commitment Lock is active, GambleAware will not allow uninstalling the app, pausing protection, turning off categories, or deleting blocked rules until the timer completes.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             },
             confirmButton = {
                 Button(
@@ -777,46 +788,50 @@ fun LockSettingsScreen(
             titleContentColor = MaterialTheme.colorScheme.onBackground,
             textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = {
-                Text(
-                    text = "Set 4-Digit Accountability PIN",
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Text(
+                        text = "Set 4-Digit Accountability PIN",
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "Enter a 4-digit PIN required to pause protection or weaken blocklist rules.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedTextField(
-                        value = pinInput,
-                        onValueChange = { if (it.length <= 4 && it.all(Char::isDigit)) pinInput = it },
-                        label = { Text("4-Digit PIN") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = pinFieldColors,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier.testTag("new_pin_input"),
-                    )
-                    OutlinedTextField(
-                        value = confirmPinInput,
-                        onValueChange = { if (it.length <= 4 && it.all(Char::isDigit)) confirmPinInput = it },
-                        label = { Text("Confirm PIN") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = pinFieldColors,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier.testTag("confirm_pin_input"),
-                    )
-                    if (pinError != null) {
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
-                            text = pinError!!,
+                            text = "Enter a 4-digit PIN required to pause protection or weaken blocklist rules.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = liquid.accentInk,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        OutlinedTextField(
+                            value = pinInput,
+                            onValueChange = { if (it.length <= 4 && it.all(Char::isDigit)) pinInput = it },
+                            label = { Text("4-Digit PIN") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = pinFieldColors,
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                            modifier = Modifier.testTag("new_pin_input"),
+                        )
+                        OutlinedTextField(
+                            value = confirmPinInput,
+                            onValueChange = { if (it.length <= 4 && it.all(Char::isDigit)) confirmPinInput = it },
+                            label = { Text("Confirm PIN") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = pinFieldColors,
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                            modifier = Modifier.testTag("confirm_pin_input"),
+                        )
+                        if (pinError != null) {
+                            Text(
+                                text = pinError!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = liquid.accentInk,
+                            )
+                        }
                     }
                 }
             },

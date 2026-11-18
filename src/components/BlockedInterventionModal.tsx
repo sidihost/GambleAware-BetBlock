@@ -141,7 +141,7 @@ export const BlockedInterventionModal: React.FC<{
 
               {/* Personal Goal Anchor Reminder */}
               {primaryGoal && goalProgress ? (
-                <div className="mt-3 w-full rounded-[18px] border border-[var(--glass-border)] bg-[var(--surface)]/85 p-3.5 text-left">
+                <div className="mt-3 w-full rounded-[18px] border border-[var(--glass-border)] bg-[var(--control-bg)] p-3.5 text-left">
                   <div className="flex items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-ink)]">
                       <Target className="h-3.5 w-3.5" />
@@ -171,7 +171,7 @@ export const BlockedInterventionModal: React.FC<{
                     onClose();
                     onCreateGoal();
                   }}
-                  className="mt-3 flex w-full cursor-pointer items-center justify-between rounded-[18px] border border-[var(--glass-border)] bg-[var(--surface)]/85 px-4 py-3 text-left hover:bg-[var(--muted-fill)]"
+                  className="mt-3 flex w-full cursor-pointer items-center justify-between rounded-[18px] border border-[var(--glass-border)] bg-[var(--control-bg)] px-4 py-3 text-left hover:bg-[var(--muted-fill)]"
                 >
                   <div className="flex items-center gap-2.5">
                     <Target className="h-4 w-4 text-[var(--accent-ink)]" />
@@ -191,7 +191,7 @@ export const BlockedInterventionModal: React.FC<{
               <button
                 type="button"
                 onClick={toggleBreathing}
-                className="mt-3.5 w-full cursor-pointer rounded-[20px] border border-[var(--subtle-border)] bg-[var(--surface)]/75 p-3.5 text-left transition-colors hover:opacity-95"
+                className="mt-3.5 w-full cursor-pointer rounded-[20px] border border-[var(--subtle-border)] bg-[var(--control-bg)] p-3.5 text-left transition-colors hover:bg-[var(--muted-fill)]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

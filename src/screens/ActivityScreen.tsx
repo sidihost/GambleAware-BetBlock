@@ -7,6 +7,7 @@ import {
   LockKeyhole,
   NotebookPen,
   Plus,
+  Server,
   Smartphone,
   Trash2,
   Wind,
@@ -21,6 +22,7 @@ import {
 } from '../components/ProgressCharts';
 import { WealthSimulatorCard } from '../components/WealthSimulatorCard';
 import { DerivedMainState, RECOVERY_MILESTONES, RecoveryGoalCategory } from '../data/types';
+import { formatAttemptCountLabel, formatBlockedTimestamp } from '../utils/blockedLogGrouping';
 import { formatNaira } from '../utils/currency';
 
 interface ActivityScreenProps {
@@ -42,6 +44,7 @@ interface ActivityScreenProps {
 
 const SOURCE_FILTERS: Array<{ value: string; label: string }> = [
   { value: 'All', label: 'All' },
+  { value: 'DNS Shield', label: 'DNS Shield' },
   { value: 'Typed URL Guard', label: 'Typed Sites' },
   { value: 'Web Shield', label: 'Websites' },
   { value: 'Search Guard', label: 'Searches' },
@@ -61,7 +64,16 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
   onDeleteGoal,
 }) => {
   const [selectedChartMode, setSelectedChartMode] = useState<0 | 1>(0);
+  const [logViewMode, setLogViewMode] = useState<'grouped' | 'timeline'>('grouped');
   const [selectedSource, setSelectedSource] = useState<string>('All');
+
+  const filteredGroupedSites = useMemo(
+    () =>
+      selectedSource === 'All'
+        ? state.groupedBlockedSites
+        : state.groupedBlockedSites.filter((g) => g.sources.includes(selectedSource)),
+    [state.groupedBlockedSites, selectedSource],
+  );
 
   const filteredEvents = useMemo(
     () =>
@@ -195,7 +207,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             className={`cursor-pointer rounded-full border px-3 py-2.5 text-xs font-medium transition-colors ${
               selectedChartMode === 0
                 ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                : 'border-[var(--subtle-border)] bg-[var(--surface)]/60 text-[var(--ink-muted)]'
+                : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
             }`}
           >
             Days &amp; Savings
@@ -206,7 +218,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             className={`cursor-pointer rounded-full border px-3 py-2.5 text-xs font-medium transition-colors ${
               selectedChartMode === 1
                 ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                : 'border-[var(--subtle-border)] bg-[var(--surface)]/60 text-[var(--ink-muted)]'
+                : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
             }`}
           >
             7-Day Blocks
@@ -324,6 +336,52 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         </LiquidGlassCard>
       ) : null}
 
+      {/* DuckDuckGo-Style Blocked Sites & Apps Log Header + Mode Switch */}
+      <div className="flex flex-col justify-between gap-2.5 px-1 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="font-display text-base font-bold text-[var(--ink)]">
+            Blocked Sites &amp; Apps
+          </h2>
+          <p className="text-xs text-[var(--ink-muted)]">
+            {state.groupedBlockedSites.length > 0
+              ? `${state.groupedBlockedSites.length} blocked targets · ${state.totalBlockedCount} total attempts`
+              : 'Intercepted domains and betting apps appear automatically'}
+          </p>
+        </div>
+        <div
+          role="tablist"
+          aria-label="Blocked log view mode"
+          className="inline-flex self-start rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] p-1 sm:self-auto"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={logViewMode === 'grouped'}
+            onClick={() => setLogViewMode('grouped')}
+            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+              logViewMode === 'grouped'
+                ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
+                : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
+            }`}
+          >
+            By Site &amp; App
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={logViewMode === 'timeline'}
+            onClick={() => setLogViewMode('timeline')}
+            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+              logViewMode === 'timeline'
+                ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
+                : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
+            }`}
+          >
+            Timeline
+          </button>
+        </div>
+      </div>
+
       {/* Source Filter Buttons */}
       <div className="flex flex-wrap gap-2">
         {SOURCE_FILTERS.map((item) => {
@@ -336,7 +394,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
               className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
                 selected
                   ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                  : 'border-[var(--glass-border)] bg-[var(--glass-fill)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                  : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
               }`}
             >
               {item.label}
@@ -345,8 +403,8 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         })}
       </div>
 
-      {/* Event List or Empty State */}
-      {filteredEvents.length === 0 ? (
+      {/* Grouped By Site & App (Default DuckDuckGo View) or Timeline Event List */}
+      {(logViewMode === 'grouped' ? filteredGroupedSites.length === 0 : filteredEvents.length === 0) ? (
         <LiquidGlassCard className="p-7 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[var(--muted-fill)]">
             <BrandGMark className="h-11 w-11" />
@@ -359,8 +417,43 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             will appear here.
           </p>
         </LiquidGlassCard>
+      ) : logViewMode === 'grouped' ? (
+        <div className="flex flex-col gap-2.5" data-testid="activity-grouped-sites-list">
+          {filteredGroupedSites.map((site) => {
+            const initials = site.target.replace(/^[^a-zA-Z0-9]+/, '').charAt(0).toUpperCase() || 'G';
+            const timeText = formatBlockedTimestamp(site.latestTimestamp, state.currentTimeMs);
+            return (
+              <LiquidGlassCard key={site.key} className="rounded-[20px] p-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] font-mono text-sm font-bold text-[var(--accent-ink)]">
+                      {site.isApp ? (
+                        <Smartphone className="h-5 w-5" />
+                      ) : site.target.includes('.') ? (
+                        initials
+                      ) : (
+                        <Globe className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-mono text-sm font-semibold text-[var(--ink)]">
+                        {site.target}
+                      </p>
+                      <p className="truncate text-xs text-[var(--ink-muted)]">
+                        {site.sources.join(' · ')} • {site.categoryName} • {timeText}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-3 py-1 font-mono text-[11px] font-bold text-[var(--accent-ink)]">
+                    {formatAttemptCountLabel(site.attemptCount)}
+                  </span>
+                </div>
+              </LiquidGlassCard>
+            );
+          })}
+        </div>
       ) : (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5" data-testid="activity-timeline-events-list">
           {filteredEvents.map((ev) => {
             const timeText = new Date(ev.timestamp).toLocaleString(undefined, {
               month: 'short',
@@ -369,7 +462,9 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
               minute: '2-digit',
             });
             const icon =
-              ev.source === 'Web Shield' ? (
+              ev.source === 'DNS Shield' ? (
+                <Server className="h-5 w-5" />
+              ) : ev.source === 'Web Shield' || ev.source === 'Typed URL Guard' ? (
                 <Globe className="h-5 w-5" />
               ) : ev.source === 'App Shield' ? (
                 <Smartphone className="h-5 w-5" />
@@ -386,9 +481,11 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
                     {icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[var(--ink)]">{ev.target}</p>
+                    <p className="truncate font-mono text-sm font-semibold text-[var(--ink)]">
+                      {ev.target}
+                    </p>
                     <p className="truncate text-xs text-[var(--ink-muted)]">
-                      {ev.source} • {timeText}
+                      {ev.source} • {ev.categoryName} • {timeText}
                     </p>
                   </div>
                 </div>

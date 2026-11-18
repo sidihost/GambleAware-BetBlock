@@ -1,25 +1,32 @@
 package com.example.ui.theme
 
+import android.os.Build
+import android.view.View
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import com.example.data.ThemeMode
 
 data class LiquidColors(
     val isDark: Boolean,
     val glassFill: Color,
     val glassSecondaryFill: Color,
+    val controlFill: Color,
+    val controlContent: Color,
     val glassBorder: Color,
     val subtleBorder: Color,
     val activeFill: Color,
     val activeContent: Color,
     val mutedFill: Color,
     val mutedContent: Color,
+    val softAccentFill: Color,
     val accentInk: Color,
     val blobOne: Color,
     val blobTwo: Color,
@@ -30,12 +37,15 @@ private val LightLiquidColors = LiquidColors(
     isDark = false,
     glassFill = LightGlassFill,
     glassSecondaryFill = LightGlassSecondary,
+    controlFill = LightControlFill,
+    controlContent = ObsidianBlack,
     glassBorder = LightGlassBorder,
     subtleBorder = LightSubtleBorder,
     activeFill = GamblePinkDeep,
     activeContent = PureWhite,
     mutedFill = LightPrimaryContainer,
     mutedContent = ObsidianBlack,
+    softAccentFill = LightSoftAccentFill,
     accentInk = GamblePinkDeep,
     blobOne = LightBlobPrimary,
     blobTwo = LightBlobSecondary,
@@ -46,12 +56,15 @@ private val DarkLiquidColors = LiquidColors(
     isDark = true,
     glassFill = DarkGlassFill,
     glassSecondaryFill = DarkGlassSecondary,
+    controlFill = DarkControlFill,
+    controlContent = PureWhite,
     glassBorder = DarkGlassBorder,
     subtleBorder = DarkSubtleBorder,
     activeFill = GamblePink,
     activeContent = ObsidianBlack,
     mutedFill = DarkPrimaryContainer,
     mutedContent = PureWhite,
+    softAccentFill = DarkSoftAccentFill,
     accentInk = GamblePinkSoft,
     blobOne = DarkBlobPrimary,
     blobTwo = DarkBlobSecondary,
@@ -141,4 +154,25 @@ fun AnchorTheme(
             content = content,
         )
     }
+}
+
+/**
+ * Ensures Material 3 Dialog and ModalBottomSheet windows disable OEM force-dark inversion
+ * (which otherwise inverts inner card surfaces on some Android skins while keeping sheet white).
+ */
+@Composable
+fun LiquidDialogContent(
+    themeMode: ThemeMode,
+    content: @Composable () -> Unit,
+) {
+    val view = LocalView.current
+    SideEffect {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            view.isForceDarkAllowed = false
+            (view.parent as? View)?.let { parent ->
+                parent.isForceDarkAllowed = false
+            }
+        }
+    }
+    AnchorTheme(themeMode = themeMode, content = content)
 }

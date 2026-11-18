@@ -3,7 +3,12 @@ package com.example
 import com.example.blocker.BlockFilterConfig
 import com.example.blocker.BlocklistMatcher
 import com.example.blocker.GamblingCategory
+import com.example.data.BlockedEventEntity
 import com.example.service.DnsPacketCodec
+import com.example.ui.buildGroupedBlockedTargets
+import com.example.ui.formatAttemptCountLabel
+import com.example.ui.formatBlockedRelativeTime
+import com.example.ui.normalizeBlockedTarget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -284,5 +289,53 @@ class BetBlockerEngineTest {
         // Malformed or non-DNS port returns null cleanly
         pkt[23] = 80
         assertNull(DnsPacketCodec.parseIpv4UdpDns(pkt))
+    }
+
+    @Test
+    fun groupsBlockedSitesAndAppsLikeDuckDuckGoTrackingList() {
+        val now = 1_700_000_000_000L
+        assertEquals("sportybet.com", normalizeBlockedTarget("https://www.SportyBet.com/ng/"))
+        assertEquals("bet9ja.com", normalizeBlockedTarget("bet9ja.com"))
+        assertEquals("SportyBet App", normalizeBlockedTarget("SportyBet App"))
+
+        val events = listOf(
+            BlockedEventEntity(
+                id = 1,
+                target = "https://www.SportyBet.com/ng/",
+                source = "Web Shield",
+                categoryName = "Sportsbook",
+                timestamp = now - 120_000L,
+            ),
+            BlockedEventEntity(
+                id = 2,
+                target = "sportybet.com",
+                source = "DNS Shield",
+                categoryName = "Sportsbook",
+                timestamp = now - 30_000L,
+            ),
+            BlockedEventEntity(
+                id = 3,
+                target = "SportyBet App",
+                source = "App Shield",
+                categoryName = "Sportsbook",
+                timestamp = now - 60_000L,
+            ),
+        )
+
+        val grouped = buildGroupedBlockedTargets(events)
+        assertEquals(2, grouped.size)
+
+        val siteGroup = grouped[0]
+        assertEquals("sportybet.com", siteGroup.target)
+        assertEquals(2, siteGroup.attemptCount)
+        assertEquals("2 blocked", formatAttemptCountLabel(siteGroup.attemptCount))
+        assertEquals("DNS Shield", siteGroup.latestSource)
+        assertFalse(siteGroup.isApp)
+        assertEquals("Just now", formatBlockedRelativeTime(siteGroup.latestTimestamp, now))
+
+        val appGroup = grouped[1]
+        assertEquals("SportyBet App", appGroup.target)
+        assertEquals(1, appGroup.attemptCount)
+        assertTrue(appGroup.isApp)
     }
 }

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Language
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.rounded.PhonelinkLock
 import androidx.compose.material.icons.rounded.PublicOff
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -58,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.BlockedEventEntity
+import com.example.ui.GroupedBlockedTarget
 import com.example.ui.MainUiState
 import com.example.ui.RECOVERY_MILESTONES
 import com.example.ui.components.BettingFreeProgressChart
@@ -66,6 +69,8 @@ import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
 import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
+import com.example.ui.formatAttemptCountLabel
+import com.example.ui.formatBlockedRelativeTime
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
 import java.text.NumberFormat
@@ -86,9 +91,11 @@ fun ActivityScreen(
 ) {
     val liquid = LocalLiquidColors.current
     var selectedChartMode by remember { mutableIntStateOf(0) } // 0 = Days & Savings, 1 = 7-Day Blocks
+    var logViewMode by remember { mutableIntStateOf(0) } // 0 = By Site & App, 1 = Timeline
     var selectedSource by remember { mutableStateOf("All") }
     val sourceOptions = listOf(
         "All",
+        "DNS Shield",
         "Typed URL Guard",
         "Web Shield",
         "Search Guard",
@@ -107,6 +114,13 @@ fun ActivityScreen(
     val filteredEvents = remember(state.recentEvents, selectedSource) {
         if (selectedSource == "All") state.recentEvents
         else state.recentEvents.filter { it.source == selectedSource }
+    }
+
+    val filteredGroupedTargets = remember(state.groupedBlockedTargets, selectedSource) {
+        if (selectedSource == "All") state.groupedBlockedTargets
+        else state.groupedBlockedTargets.filter {
+            it.sources.contains(selectedSource) || it.latestSource == selectedSource
+        }
     }
 
     val savedFormatted = remember(state.estimatedSavedAmount) {
@@ -535,6 +549,45 @@ fun ActivityScreen(
                 }
             }
 
+            // Blocked Sites & Apps Header + By Site & App / Timeline Mode Switcher
+            item {
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 16.dp,
+                ) {
+                    val groupedCount = filteredGroupedTargets.size
+                    val subtitleText = if (groupedCount > 0) {
+                        "${state.totalBlockedCount} total attempts across $groupedCount unique site${if (groupedCount == 1) "" else "s"} & app${if (groupedCount == 1) "" else "s"}"
+                    } else {
+                        "Intercepted betting websites, WebViews, DNS hosts & apps"
+                    }
+                    LiquidSectionHeader(
+                        title = "Blocked Sites & Apps",
+                        subtitle = subtitleText,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        ChartModePill(
+                            label = "By Site & App",
+                            selected = logViewMode == 0,
+                            onClick = { logViewMode = 0 },
+                            modifier = Modifier.weight(1f),
+                            testTag = "log_mode_grouped",
+                        )
+                        ChartModePill(
+                            label = "Timeline",
+                            selected = logViewMode == 1,
+                            onClick = { logViewMode = 1 },
+                            modifier = Modifier.weight(1f),
+                            testTag = "log_mode_timeline",
+                        )
+                    }
+                }
+            }
+
             // Source Filter Pills
             item {
                 FlowRow(
@@ -545,7 +598,7 @@ fun ActivityScreen(
                         val selected = selectedSource == source
                         LiquidGlassCard(
                             cornerRadius = 50.dp,
-                            fillColor = if (selected) liquid.activeFill else liquid.glassFill,
+                            fillColor = if (selected) liquid.activeFill else liquid.controlFill,
                             borderColor = if (selected) liquid.activeFill else liquid.glassBorder,
                             contentPadding = 0.dp,
                             onClick = { selectedSource = source },
@@ -554,7 +607,7 @@ fun ActivityScreen(
                             Text(
                                 text = source,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                             )
                         }
@@ -563,7 +616,8 @@ fun ActivityScreen(
             }
 
             // Event List or Empty State
-            if (filteredEvents.isEmpty()) {
+            val isListEmpty = if (logViewMode == 0) filteredGroupedTargets.isEmpty() else filteredEvents.isEmpty()
+            if (isListEmpty) {
                 item {
                     LiquidGlassCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -595,13 +649,20 @@ fun ActivityScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "When GambleAware intercepts a gambling site, in-app WebView, or betting app, it will appear in this timeline.",
+                                text = "When GambleAware intercepts a gambling site, in-app WebView, DNS lookup, or betting app, it will appear here.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
                             )
                         }
                     }
+                }
+            } else if (logViewMode == 0) {
+                items(filteredGroupedTargets, key = { it.key }) { site ->
+                    GroupedBlockedTargetRow(
+                        site = site,
+                        nowMs = state.currentTimeMs,
+                    )
                 }
             } else {
                 items(filteredEvents, key = { it.id }) { event ->
@@ -679,7 +740,7 @@ private fun ChartModePill(
     LiquidGlassCard(
         modifier = modifier.testTag(testTag),
         cornerRadius = 50.dp,
-        fillColor = if (selected) liquid.activeFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.55f),
+        fillColor = if (selected) liquid.activeFill else liquid.controlFill,
         borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
         contentPadding = 10.dp,
         onClick = onClick,
@@ -687,9 +748,89 @@ private fun ChartModePill(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
+    }
+}
+
+@Composable
+private fun GroupedBlockedTargetRow(
+    site: GroupedBlockedTarget,
+    nowMs: Long,
+) {
+    val liquid = LocalLiquidColors.current
+    val timeText = formatBlockedRelativeTime(site.latestTimestamp, nowMs)
+    val monogram = site.target.firstOrNull()?.uppercaseChar()?.toString() ?: "G"
+    val sourceSummary = site.sources.joinToString(", ")
+
+    LiquidGlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadius = 20.dp,
+        contentPadding = 14.dp,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(liquid.softAccentFill)
+                    .border(1.dp, liquid.glassBorder, RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (site.isApp) {
+                    Icon(
+                        imageVector = Icons.Rounded.Smartphone,
+                        contentDescription = null,
+                        tint = liquid.accentInk,
+                        modifier = Modifier.size(20.dp),
+                    )
+                } else {
+                    Text(
+                        text = monogram,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = liquid.accentInk,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = site.target,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "$sourceSummary • ${site.categoryName} • $timeText",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(liquid.softAccentFill)
+                    .border(1.dp, liquid.glassBorder, RoundedCornerShape(50))
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+            ) {
+                Text(
+                    text = formatAttemptCountLabel(site.attemptCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = liquid.accentInk,
+                )
+            }
+        }
     }
 }
 
@@ -700,6 +841,7 @@ private fun BlockedEventRow(event: BlockedEventEntity) {
         SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(event.timestamp))
     }
     val icon = when (event.source) {
+        "DNS Shield" -> Icons.Rounded.Dns
         "Web Shield", "Typed URL Guard" -> Icons.Rounded.Language
         "Search Guard" -> Icons.Rounded.Search
         "In-App WebView" -> Icons.Rounded.PublicOff
