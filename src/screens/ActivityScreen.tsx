@@ -23,6 +23,7 @@ import { formatNaira } from '../utils/currency';
 
 interface ActivityScreenProps {
   state: DerivedMainState;
+  isSignedIn: boolean;
   onClearHistory: () => void;
   onOpenUrgeJournal: () => void;
   onLaunchCalmReset: () => void;
@@ -43,6 +44,7 @@ const SOURCE_FILTERS: Array<{ value: string; label: string }> = [
 
 export const ActivityScreen: React.FC<ActivityScreenProps> = ({
   state,
+  isSignedIn,
   onClearHistory,
   onOpenUrgeJournal,
   onLaunchCalmReset,
@@ -129,7 +131,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         </div>
       </LiquidGlassCard>
 
-      {state.goals.length > 0 ? (
+      {isSignedIn && state.goals.length > 0 ? (
         <ActiveGoalsCard
           goals={state.goals}
           cleanExactDays={state.cleanExactDays}
@@ -143,18 +145,23 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         <LiquidGlassCard className="flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center sm:p-5">
           <div>
             <p className="font-display text-sm font-bold text-[var(--ink)]">
-              No personal recovery goal set yet
+              {isSignedIn
+                ? 'No personal recovery goal set yet'
+                : 'Sign in to create personal goals'}
             </p>
             <p className="text-xs text-[var(--ink-muted)]">
-              Create a savings or streak target to track every clean day toward what matters most.
+              {isSignedIn
+                ? 'Create a savings or streak target to track every clean day toward what matters most.'
+                : 'Create a free account or sign in to set savings targets and track every clean day.'}
             </p>
           </div>
           <button
             type="button"
             onClick={onOpenGoalModal}
-            className="h-10 w-full shrink-0 cursor-pointer rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
+            className="inline-flex h-10 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
           >
-            Create Goal
+            {!isSignedIn ? <LockKeyhole className="h-3.5 w-3.5" /> : null}
+            <span>{isSignedIn ? 'Create Goal' : 'Sign In to Create Goal'}</span>
           </button>
         </LiquidGlassCard>
       )}

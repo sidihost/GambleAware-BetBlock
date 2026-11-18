@@ -210,7 +210,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             type="text"
             value={newDomainText}
             onChange={(e) => setNewDomainText(e.target.value)}
-            placeholder="e.g. mybookie.ag"
+            placeholder="Enter a website domain"
             className="h-12 min-w-0 flex-1 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
           />
           <button
@@ -325,7 +325,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             type="text"
             value={registrySearch}
             onChange={(e) => setRegistrySearch(e.target.value)}
-            placeholder="Search blocked sites (e.g. sportybet, bet9ja)"
+            placeholder="Search built-in blocked websites"
             className="h-11 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-3.5 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
           />
         </div>
@@ -409,7 +409,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
                     type="text"
                     value={customAppLabel}
                     onChange={(e) => setCustomAppLabel(e.target.value)}
-                    placeholder="App Name (e.g. Custom Betting App)"
+                    placeholder="App name"
                     className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
                   />
                   <div className="flex gap-2">
@@ -417,7 +417,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
                       type="text"
                       value={customAppPkg}
                       onChange={(e) => setCustomAppPkg(e.target.value)}
-                      placeholder="Package ID (e.g. com.example.app)"
+                      placeholder="Android package name"
                       className="h-11 min-w-0 flex-1 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-xs text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
                     />
                     <button

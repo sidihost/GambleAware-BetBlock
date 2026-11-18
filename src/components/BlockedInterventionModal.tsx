@@ -10,6 +10,7 @@ export const BlockedInterventionModal: React.FC<{
   cleanExactDays?: number;
   estimatedSavedAmount?: number;
   primaryGoal?: RecoveryGoalEntity | null;
+  isSignedIn?: boolean;
   onCreateGoal?: () => void;
   onClose: () => void;
 }> = ({
@@ -18,6 +19,7 @@ export const BlockedInterventionModal: React.FC<{
   cleanExactDays = cleanDays,
   estimatedSavedAmount = 0,
   primaryGoal = null,
+  isSignedIn = false,
   onCreateGoal,
   onClose,
 }) => {
@@ -168,10 +170,14 @@ export const BlockedInterventionModal: React.FC<{
                     <Target className="h-4 w-4 text-[var(--accent-ink)]" />
                     <div>
                       <p className="text-xs font-bold text-[var(--ink)]">
-                        Create a recovery goal to stay locked in
+                        {isSignedIn
+                          ? 'Create a recovery goal to stay locked in'
+                          : 'Sign in to set a personal recovery goal'}
                       </p>
                       <p className="text-[11px] text-[var(--ink-muted)]">
-                        Tap to set your Naira savings or clean-days target
+                        {isSignedIn
+                          ? 'Tap to set your Naira savings or clean-days target'
+                          : 'Tap to sign in and create your private target'}
                       </p>
                     </div>
                   </div>

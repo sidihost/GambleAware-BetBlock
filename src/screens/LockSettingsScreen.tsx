@@ -380,7 +380,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                   <p className="text-[11px] text-[var(--ink-muted)]">
                     {state.privateDnsStatus.isActive
                       ? `Active: ${state.privateDnsStatus.serverHost ?? 'Automatic'}. Tap to adjust.`
-                      : 'Configure DNS-over-TLS hostname (e.g. family.adguard-dns.com)'}
+                      : 'Configure a private DNS-over-TLS hostname'}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-[var(--ink-muted)]" />

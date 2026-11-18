@@ -184,8 +184,18 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             onClick={onOpenGoalModal}
             className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span>{state.goals.length === 0 ? 'Create Goal' : 'Add Goal'}</span>
+            {cloudUser ? (
+              <Plus className="h-3.5 w-3.5" />
+            ) : (
+              <LockKeyhole className="h-3.5 w-3.5" />
+            )}
+            <span>
+              {cloudUser
+                ? state.goals.length === 0
+                  ? 'Create Goal'
+                  : 'Add Goal'
+                : 'Sign In to Create Goal'}
+            </span>
           </button>
 
           {!cloudUser ? (
@@ -195,7 +205,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:w-auto"
             >
               <UserPlus className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-              <span>Sign Up / Sign In</span>
+              <span>Create Account</span>
             </button>
           ) : null}
         </div>
@@ -205,6 +215,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
       {showGoalReminder ? (
         <GoalReminderBanner
           firstName={state.firstName}
+          isSignedIn={Boolean(cloudUser)}
           onCreateGoal={onOpenGoalModal}
           onAskCoachGoal={() => {
             const el = document.getElementById('gambleaware-ai-section');
@@ -376,16 +387,18 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             </LiquidGlassCard>
           </div>
 
-          {/* Personalized Goals List on Left Column */}
-          <ActiveGoalsCard
-            goals={state.goals}
-            cleanExactDays={state.cleanExactDays}
-            estimatedSavedAmount={state.estimatedSavedAmount}
-            onAddGoal={onOpenGoalModal}
-            onSetPrimary={onSetPrimaryGoal}
-            onToggleComplete={onToggleGoalComplete}
-            onDeleteGoal={onDeleteGoal}
-          />
+          {/* Personalized Goals List on Left Column (Signed-In Users Only) */}
+          {cloudUser ? (
+            <ActiveGoalsCard
+              goals={state.goals}
+              cleanExactDays={state.cleanExactDays}
+              estimatedSavedAmount={state.estimatedSavedAmount}
+              onAddGoal={onOpenGoalModal}
+              onSetPrimary={onSetPrimaryGoal}
+              onToggleComplete={onToggleGoalComplete}
+              onDeleteGoal={onDeleteGoal}
+            />
+          ) : null}
         </div>
 
         {/* Right Column: Gambling Login Redirect Check, GambleAware AI, Setup, SOS & Sync */}
@@ -394,7 +407,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           <LiquidGlassCard className="p-4 sm:p-5" tourKey="domain_lookup">
             <LiquidSectionHeader
               title="Check or Block a Website"
-              subtitle="Type any betting site or sign-in link (e.g. sportybet.com/login) to check or test your block screen"
+              subtitle="Enter a betting website or sign-in link to check or test your block screen"
             />
             <form
               onSubmit={(e) => {
@@ -411,7 +424,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   type="text"
                   value={state.domainLookupQuery}
                   onChange={(e) => onDomainLookupChanged(e.target.value)}
-                  placeholder="e.g. sportybet.com/login"
+                  placeholder="Enter a website or link to check"
                   className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
                 />
                 {state.domainLookupQuery ? (
@@ -490,6 +503,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           <div id="gambleaware-ai-section">
             <GeminiAgentPanel
               state={state}
+              isSignedIn={Boolean(cloudUser)}
               onToggleAiAutoBlock={onToggleAiAutoBlock}
               onAutoBlockAndRedirect={onAutoBlockFromAgent}
               onCreateSuggestedGoal={onCreateSuggestedGoal}

@@ -22,7 +22,12 @@ import {
   NavItemConfig,
 } from './components/LiquidGlass';
 import { SpotlightTourOverlay, SpotlightTourStep } from './components/SpotlightTourOverlay';
-import { AnchorRoute, InterventionPayload, ThemeMode } from './data/types';
+import {
+  AnchorRoute,
+  InterventionPayload,
+  RecoveryGoalCategory,
+  ThemeMode,
+} from './data/types';
 import { useGambleAwareState } from './hooks/useGambleAwareState';
 import { ActivityScreen } from './screens/ActivityScreen';
 import { BlocklistScreen } from './screens/BlocklistScreen';
@@ -30,6 +35,14 @@ import { DownloadScreen } from './screens/DownloadScreen';
 import { LockSettingsScreen } from './screens/LockSettingsScreen';
 import { ShieldScreen } from './screens/ShieldScreen';
 import { shouldRemindToCreateGoal } from './utils/personalization';
+
+interface GoalPrefill {
+  title: string;
+  category: RecoveryGoalCategory;
+  targetDays: number;
+  targetAmountNgn: number;
+  whyNote: string;
+}
 
 const TRIGGER_OPTIONS = ['Matchday', 'Boredom', 'Stress', 'Promo Ad', 'Late Night', 'Payday'];
 
@@ -141,7 +154,7 @@ export function App() {
   const [showAccessibilityDisclosure, setShowAccessibilityDisclosure] = useState(false);
   const [showPrivateDnsModal, setShowPrivateDnsModal] = useState(false);
   const [privateDnsInput, setPrivateDnsInput] = useState(
-    uiState.privateDnsStatus.serverHost ?? 'family.adguard-dns.com',
+    uiState.privateDnsStatus.serverHost ?? '',
   );
   const [showTimeLockedNotice, setShowTimeLockedNotice] = useState(false);
   const [pendingPinAction, setPendingPinAction] = useState<((pin: string) => void) | null>(null);
@@ -153,6 +166,9 @@ export function App() {
   const [urgeNote, setUrgeNote] = useState('');
 
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const [goalModalPrefill, setGoalModalPrefill] = useState<GoalPrefill | null>(null);
+  const [pendingGoalAfterAuth, setPendingGoalAfterAuth] = useState(false);
+  const [pendingGoalPrefill, setPendingGoalPrefill] = useState<GoalPrefill | null>(null);
   const [goalReminderDismissed, setGoalReminderDismissed] = useState(false);
 
   const [showSafeSupportSheet, setShowSafeSupportSheet] = useState(false);
@@ -174,6 +190,31 @@ export function App() {
     },
     [navigateTo],
   );
+
+  const requestOpenGoalModal = useCallback(
+    (prefill?: GoalPrefill) => {
+      if (!cloudUser) {
+        setPendingGoalAfterAuth(true);
+        setPendingGoalPrefill(prefill ?? null);
+        setIntervention(null);
+        openAuthRoute('signup');
+        return;
+      }
+      setGoalModalPrefill(prefill ?? null);
+      setShowGoalModal(true);
+    },
+    [cloudUser, openAuthRoute],
+  );
+
+  useEffect(() => {
+    if (cloudUser && pendingGoalAfterAuth) {
+      setPendingGoalAfterAuth(false);
+      setCurrentRoute('shield');
+      setGoalModalPrefill(pendingGoalPrefill);
+      setPendingGoalPrefill(null);
+      setShowGoalModal(true);
+    }
+  }, [cloudUser, pendingGoalAfterAuth, pendingGoalPrefill]);
 
   // Apply White (Light default) / Black & Pink Dark theme class & browser theme-color
   useEffect(() => {
@@ -315,18 +356,23 @@ export function App() {
             initialMode={authInitialMode}
             cloudUser={cloudUser}
             preferredName={uiState.preferredName}
-            goalsCount={uiState.goals.length}
             cloudErrorMsg={cloudErrorMsg}
+            pendingGoalNotice={pendingGoalAfterAuth}
             onSignInGoogle={signInWithGoogleCloud}
             onSignUpEmail={signUpWithEmailCloud}
             onSignInEmail={signInWithEmailCloud}
             onSendPasswordReset={sendPasswordReset}
             onRefreshVerification={refreshEmailVerification}
-            onCreateStarterGoal={(goalInput) => createGoal(goalInput)}
             onSavePreferredName={setPreferredName}
             onResendVerification={() => void resendVerificationEmail()}
             onSignOut={signOutGoogleCloud}
-            onRedirectHome={() => navigateTo('shield')}
+            onRedirectHome={() => {
+              if (!cloudUser) {
+                setPendingGoalAfterAuth(false);
+                setPendingGoalPrefill(null);
+              }
+              navigateTo('shield');
+            }}
           />
         ) : null}
 
@@ -357,13 +403,25 @@ export function App() {
             onTestOrRedirectUrl={handleTestOrRedirectUrl}
             showGoalReminder={showGoalReminder}
             onDismissGoalReminder={() => setGoalReminderDismissed(true)}
-            onOpenGoalModal={() => setShowGoalModal(true)}
+            onOpenGoalModal={() => requestOpenGoalModal()}
             onSetPrimaryGoal={setPrimaryGoal}
             onToggleGoalComplete={toggleGoalCompleted}
             onDeleteGoal={deleteGoal}
             onToggleAiAutoBlock={setAiAutoBlockEnabled}
             onAutoBlockFromAgent={handleAutoBlockFromAgent}
-            onCreateSuggestedGoal={(g) => createGoal(g)}
+            onCreateSuggestedGoal={(g) => {
+              if (!cloudUser) {
+                requestOpenGoalModal({
+                  title: g.title,
+                  category: g.category,
+                  targetDays: g.targetDays,
+                  targetAmountNgn: g.targetAmountNgn,
+                  whyNote: g.whyNote,
+                });
+              } else {
+                createGoal(g);
+              }
+            }}
             onNavigateToRules={() => navigateTo('blocklist')}
             onNavigateToProgress={() => navigateTo('activity')}
             onNavigateToLock={() => navigateTo('lock')}
@@ -419,10 +477,11 @@ export function App() {
         {currentRoute === 'activity' ? (
           <ActivityScreen
             state={uiState}
+            isSignedIn={Boolean(cloudUser)}
             onClearHistory={() => guardRestrictedAction(() => clearEventHistory())}
             onOpenUrgeJournal={() => setShowUrgeJournalSheet(true)}
             onLaunchCalmReset={launchSosCalmReset}
-            onOpenGoalModal={() => setShowGoalModal(true)}
+            onOpenGoalModal={() => requestOpenGoalModal()}
             onSetPrimaryGoal={setPrimaryGoal}
             onToggleGoalComplete={toggleGoalCompleted}
             onDeleteGoal={deleteGoal}
@@ -456,7 +515,7 @@ export function App() {
             }}
             onToggleDeviceAdmin={handleRequestDeviceAdminToggle}
             onOpenPrivateDnsSettings={() => {
-              setPrivateDnsInput(uiState.privateDnsStatus.serverHost ?? 'family.adguard-dns.com');
+              setPrivateDnsInput(uiState.privateDnsStatus.serverHost ?? '');
               setShowPrivateDnsModal(true);
             }}
             onSetDailySpend={setDailySpendEstimate}
@@ -517,16 +576,25 @@ export function App() {
           cleanExactDays={uiState.cleanExactDays}
           estimatedSavedAmount={uiState.estimatedSavedAmount}
           primaryGoal={uiState.primaryGoal}
-          onCreateGoal={() => setShowGoalModal(true)}
+          isSignedIn={Boolean(cloudUser)}
+          onCreateGoal={() => requestOpenGoalModal()}
           onClose={() => setIntervention(null)}
         />
       ) : null}
 
-      {/* Personalized Goal Modal */}
-      {showGoalModal ? (
+      {/* Personalized Goal Modal (Logged-In Users Only) */}
+      {showGoalModal && cloudUser ? (
         <GoalModal
+          initialTitle={goalModalPrefill?.title}
+          initialCategory={goalModalPrefill?.category}
+          initialDays={goalModalPrefill?.targetDays}
+          initialAmountNgn={goalModalPrefill?.targetAmountNgn}
+          initialWhy={goalModalPrefill?.whyNote}
           onSave={(input) => createGoal(input)}
-          onClose={() => setShowGoalModal(false)}
+          onClose={() => {
+            setShowGoalModal(false);
+            setGoalModalPrefill(null);
+          }}
         />
       ) : null}
 
@@ -582,7 +650,7 @@ export function App() {
               type="text"
               value={urgeNote}
               onChange={(e) => setUrgeNote(e.target.value)}
-              placeholder="Optional note (e.g. walked away during halftime)"
+              placeholder="Optional note on how you stayed clean"
               className="mt-3.5 h-12 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
             />
             <button
@@ -708,13 +776,13 @@ export function App() {
           >
             <h2 className="font-display text-lg font-bold">System Private DNS</h2>
             <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-              Optional network-level filter (e.g. family.adguard-dns.com) for extra protection.
+              Optional network-level filter hostname for extra protection.
             </p>
             <input
               type="text"
               value={privateDnsInput}
               onChange={(e) => setPrivateDnsInput(e.target.value)}
-              placeholder="family.adguard-dns.com"
+              placeholder="Enter DNS hostname"
               className="mt-3.5 h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] focus:border-[var(--ink)] focus:outline-none"
             />
             <div className="mt-5 flex justify-end gap-2">

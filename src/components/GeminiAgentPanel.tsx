@@ -19,6 +19,7 @@ import { LiquidGlassCard, LiquidSectionHeader, LiquidSwitch } from './LiquidGlas
 
 interface GeminiAgentPanelProps {
   state: DerivedMainState;
+  isSignedIn: boolean;
   onToggleAiAutoBlock: (enabled: boolean) => void;
   onAutoBlockAndRedirect: (params: {
     target: string;
@@ -39,11 +40,12 @@ interface GeminiAgentPanelProps {
 const QUICK_PROMPTS = [
   'Help me set a realistic goal today',
   "I'm tempted to place a bet right now",
-  'Is sportybet-vip-mirror.ng safe?',
+  'How do I stay strong during a trigger?',
 ];
 
 export const GeminiAgentPanel: React.FC<GeminiAgentPanelProps> = ({
   state,
+  isSignedIn,
   onToggleAiAutoBlock,
   onAutoBlockAndRedirect,
   onCreateSuggestedGoal,
@@ -154,7 +156,7 @@ export const GeminiAgentPanel: React.FC<GeminiAgentPanelProps> = ({
           type="text"
           value={promptInput}
           onChange={(e) => setPromptInput(e.target.value)}
-          placeholder="Talk to GambleAware AI or paste any link..."
+          placeholder="Talk to GambleAware AI or paste a link to check..."
           className="h-11 min-w-0 flex-1 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--surface)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
         />
         <button
@@ -235,7 +237,7 @@ export const GeminiAgentPanel: React.FC<GeminiAgentPanelProps> = ({
                 className="inline-flex h-9 w-full shrink-0 cursor-pointer items-center justify-center gap-1 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Use This Goal</span>
+                <span>{isSignedIn ? 'Use This Goal' : 'Sign In to Save Goal'}</span>
               </button>
             </div>
           ) : null}

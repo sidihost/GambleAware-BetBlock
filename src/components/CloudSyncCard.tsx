@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle2, Cloud, LogOut, RefreshCw } from 'lucide-react';
 import { CloudAccountInfo, CloudSyncStatus } from '../data/types';
+import { GoogleLogoIcon } from './GoogleLogoIcon';
 import { LiquidGlassCard } from './LiquidGlass';
 
 interface CloudSyncCardProps {
@@ -101,13 +102,13 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
           type="button"
           onClick={onSignInGoogle}
           disabled={cloudSyncStatus === 'connecting'}
-          className="mt-3.5 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 disabled:opacity-65 sm:text-sm"
+          className="mt-3.5 flex h-11 w-full cursor-pointer items-center justify-center gap-2.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] disabled:opacity-65 sm:text-sm"
         >
-          <Cloud className="h-4 w-4 shrink-0" />
+          <GoogleLogoIcon className="h-4 w-4 shrink-0" />
           <span>
             {cloudSyncStatus === 'connecting'
               ? 'Connecting Google…'
-              : 'Sync with Google'}
+              : 'Continue with Google'}
           </span>
         </button>
       )}

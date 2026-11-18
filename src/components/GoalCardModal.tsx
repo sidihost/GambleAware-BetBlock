@@ -31,58 +31,31 @@ interface GoalModalProps {
   onClose: () => void;
 }
 
-const GOAL_TEMPLATES: Array<{
-  title: string;
-  category: RecoveryGoalCategory;
-  targetDays: number;
-  targetAmountNgn: number;
-  whyNote: string;
-}> = [
-  {
-    title: 'Save ₦150,000 Rent Buffer',
-    category: 'savings',
-    targetDays: 30,
-    targetAmountNgn: 150000,
-    whyNote: 'Keep my income safe for bills and family priorities.',
-  },
-  {
-    title: '30 Days Betting-Free Streak',
-    category: 'streak',
-    targetDays: 30,
-    targetAmountNgn: 150000,
-    whyNote: 'Reset habits and stay calm on matchdays.',
-  },
-  {
-    title: '90-Day Full Habit Reset',
-    category: 'milestone',
-    targetDays: 90,
-    targetAmountNgn: 450000,
-    whyNote: 'Leave sportsbooks and casino traps behind for good.',
-  },
-];
-
 export const GoalModal: React.FC<GoalModalProps> = ({
   initialTitle = '',
   initialCategory = 'savings',
-  initialDays = 30,
-  initialAmountNgn = 150000,
+  initialDays,
+  initialAmountNgn,
   initialWhy = '',
   onSave,
   onClose,
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [category, setCategory] = useState<RecoveryGoalCategory>(initialCategory);
-  const [targetDays, setTargetDays] = useState(String(initialDays));
-  const [targetAmountNgn, setTargetAmountNgn] = useState(String(initialAmountNgn));
+  const [targetDays, setTargetDays] = useState(initialDays ? String(initialDays) : '');
+  const [targetAmountNgn, setTargetAmountNgn] = useState(
+    initialAmountNgn !== undefined && initialAmountNgn > 0 ? String(initialAmountNgn) : '',
+  );
   const [whyNote, setWhyNote] = useState(initialWhy);
   const [lockDurationDays, setLockDurationDays] = useState<number>(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsedDays = Math.max(1, Math.min(3650, parseInt(targetDays, 10) || 30));
+    const parsedDays = Math.max(1, Math.min(3650, parseInt(targetDays, 10) || 1));
     const parsedAmount = Math.max(0, Math.min(100_000_000, parseInt(targetAmountNgn, 10) || 0));
+    if (!title.trim()) return;
     onSave({
-      title: title.trim() || `${parsedDays}-Day Clean Goal`,
+      title: title.trim(),
       category,
       targetDays: parsedDays,
       targetAmountNgn: parsedAmount,
@@ -121,31 +94,11 @@ export const GoalModal: React.FC<GoalModalProps> = ({
         </div>
 
         <p className="mt-1.5 text-xs text-[var(--ink-muted)]">
-          Set a personal target so GambleAware keeps your real &ldquo;why&rdquo; front and center
-          whenever temptation strikes.
+          Set your own personal target so GambleAware keeps your real &ldquo;why&rdquo; front and
+          center whenever temptation strikes.
         </p>
 
-        {/* Quick Templates */}
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {GOAL_TEMPLATES.map((tpl) => (
-            <button
-              key={tpl.title}
-              type="button"
-              onClick={() => {
-                setTitle(tpl.title);
-                setCategory(tpl.category);
-                setTargetDays(String(tpl.targetDays));
-                setTargetAmountNgn(String(tpl.targetAmountNgn));
-                setWhyNote(tpl.whyNote);
-              }}
-              className="cursor-pointer rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-1.5 text-[11px] font-medium text-[var(--ink)] hover:opacity-85"
-            >
-              {tpl.title}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3.5">
           <div>
             <label htmlFor="goal-title" className="mb-1 block text-xs font-semibold text-[var(--ink)]">
               Goal Title
@@ -157,7 +110,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               maxLength={100}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Save ₦150,000 for Business / Tuition"
+              placeholder="What are you saving or staying clean for?"
               className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
             />
           </div>
@@ -193,11 +146,13 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               <input
                 id="goal-days"
                 type="number"
+                required
                 min={1}
                 max={3650}
                 value={targetDays}
                 onChange={(e) => setTargetDays(e.target.value)}
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] focus:border-[var(--ink)] focus:outline-none"
+                placeholder="Number of days"
+                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
               />
             </div>
             <div>
@@ -212,10 +167,11 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 type="number"
                 min={0}
                 max={100000000}
-                step={1000}
+                step={500}
                 value={targetAmountNgn}
                 onChange={(e) => setTargetAmountNgn(e.target.value)}
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] focus:border-[var(--ink)] focus:outline-none"
+                placeholder="Optional Naira amount"
+                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
               />
             </div>
           </div>
@@ -230,7 +186,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               maxLength={280}
               value={whyNote}
               onChange={(e) => setWhyNote(e.target.value)}
-              placeholder="e.g. Peace of mind and paying off rent early"
+              placeholder="Write a personal reminder to stay betting-free"
               className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
             />
           </div>
@@ -272,10 +228,11 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
 export const GoalReminderBanner: React.FC<{
   firstName: string;
+  isSignedIn: boolean;
   onCreateGoal: () => void;
   onAskCoachGoal: () => void;
   onDismiss: () => void;
-}> = ({ firstName, onCreateGoal, onAskCoachGoal, onDismiss }) => (
+}> = ({ firstName, isSignedIn, onCreateGoal, onAskCoachGoal, onDismiss }) => (
   <LiquidGlassCard className="p-4 sm:p-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -286,11 +243,14 @@ export const GoalReminderBanner: React.FC<{
           <p className="font-display text-sm font-bold text-[var(--ink)]">
             {firstName
               ? `${firstName}, set your personal recovery goal`
-              : 'Set your personal recovery goal'}
+              : isSignedIn
+                ? 'Set your personal recovery goal'
+                : 'Sign in to create your recovery goal'}
           </p>
           <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-            People who write a concrete Naira or clean-day goal stay betting-free 3x longer.
-            GambleAware AI keeps this front and center whenever you need a reminder.
+            {isSignedIn
+              ? 'Writing a concrete Naira or clean-day target keeps you focused whenever urges arise.'
+              : 'Create a free account or sign in to set your own personal Naira and clean-day recovery goals.'}
           </p>
         </div>
       </div>
@@ -300,8 +260,8 @@ export const GoalReminderBanner: React.FC<{
           onClick={onCreateGoal}
           className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
         >
-          <Plus className="h-3.5 w-3.5" />
-          <span>Create Goal</span>
+          {isSignedIn ? <Plus className="h-3.5 w-3.5" /> : <LockKeyhole className="h-3.5 w-3.5" />}
+          <span>{isSignedIn ? 'Create Goal' : 'Sign In to Set Goal'}</span>
         </button>
         <button
           type="button"

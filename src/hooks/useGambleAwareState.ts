@@ -514,9 +514,11 @@ export function useGambleAwareState() {
     [store.preferredName, cloudUser?.displayName, cloudUser?.email],
   );
 
+  const visibleGoals = useMemo(() => (cloudUser ? store.goals : []), [cloudUser, store.goals]);
+
   const primaryGoal = useMemo(
-    () => store.goals.find((g) => g.isPrimary) ?? store.goals[0] ?? null,
-    [store.goals],
+    () => visibleGoals.find((g) => g.isPrimary) ?? visibleGoals[0] ?? null,
+    [visibleGoals],
   );
 
   const uiState: DerivedMainState = useMemo(() => {
@@ -578,7 +580,7 @@ export function useGambleAwareState() {
       isAccessibilityEnabled: store.isAccessibilityEnabled,
       isDeviceAdminEnabled: store.isDeviceAdminEnabled,
       privateDnsStatus: store.privateDnsStatus,
-      goals: store.goals,
+      goals: visibleGoals,
       primaryGoal,
       customBlockedDomains: store.domains.filter((d) => !d.isAllowlisted),
       allowlistedDomains: store.domains.filter((d) => d.isAllowlisted),
@@ -615,6 +617,7 @@ export function useGambleAwareState() {
     };
   }, [
     store,
+    visibleGoals,
     nowMs,
     firstName,
     primaryGoal,
@@ -825,7 +828,13 @@ export function useGambleAwareState() {
       whyNote: string;
       lockDurationDays: number;
       isPrimary?: boolean;
-    }): RecoveryGoalEntity => {
+    }): RecoveryGoalEntity | null => {
+      const uid = activeUidRef.current ?? auth.currentUser?.uid ?? null;
+      if (!uid) {
+        setStatusBannerMessage('Sign in or create an account to create personal goals');
+        return null;
+      }
+
       const clean = sanitizeGoalFields(input);
       const now = Date.now();
       const newGoal: RecoveryGoalEntity = {
@@ -849,8 +858,7 @@ export function useGambleAwareState() {
         return { ...prev, goals: nextGoals };
       });
 
-      const uid = activeUidRef.current;
-      if (uid && auth.currentUser?.emailVerified) {
+      if (auth.currentUser?.emailVerified) {
         void upsertGoalInCloud(uid, newGoal);
       }
 
@@ -864,6 +872,8 @@ export function useGambleAwareState() {
   );
 
   const setPrimaryGoal = useCallback((goalId: string) => {
+    const uid = activeUidRef.current ?? auth.currentUser?.uid ?? null;
+    if (!uid) return;
     let targetGoal: RecoveryGoalEntity | undefined;
     setStore((prev) => {
       const updated = prev.goals.map((g) => {
@@ -874,13 +884,14 @@ export function useGambleAwareState() {
       });
       return { ...prev, goals: updated };
     });
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified && targetGoal) {
+    if (auth.currentUser?.emailVerified && targetGoal) {
       void upsertGoalInCloud(uid, targetGoal);
     }
   }, []);
 
   const toggleGoalCompleted = useCallback((goalId: string) => {
+    const uid = activeUidRef.current ?? auth.currentUser?.uid ?? null;
+    if (!uid) return;
     let updatedGoal: RecoveryGoalEntity | undefined;
     setStore((prev) => ({
       ...prev,
@@ -890,13 +901,14 @@ export function useGambleAwareState() {
         return updatedGoal;
       }),
     }));
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified && updatedGoal) {
+    if (auth.currentUser?.emailVerified && updatedGoal) {
       void upsertGoalInCloud(uid, updatedGoal);
     }
   }, []);
 
   const deleteGoal = useCallback((goalId: string) => {
+    const uid = activeUidRef.current ?? auth.currentUser?.uid ?? null;
+    if (!uid) return;
     setStore((prev) => {
       const remaining = prev.goals.filter((g) => g.goalId !== goalId);
       if (remaining.length > 0 && !remaining.some((g) => g.isPrimary)) {
@@ -904,8 +916,7 @@ export function useGambleAwareState() {
       }
       return { ...prev, goals: remaining };
     });
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified) {
+    if (auth.currentUser?.emailVerified) {
       void deleteGoalFromCloud(uid, goalId);
     }
     setStatusBannerMessage('Goal removed');
@@ -914,7 +925,7 @@ export function useGambleAwareState() {
   const addCustomDomain = useCallback((rawDomain: string, isAllowlisted: boolean) => {
     const normalized = sanitizeDomainForBlueprint(BlocklistMatcher.normalizeDomain(rawDomain));
     if (!normalized || !normalized.includes('.')) {
-      setStatusBannerMessage('Enter a valid domain such as sportybet.com');
+      setStatusBannerMessage('Enter a valid website domain');
       return;
     }
     const entity: BlockedDomainEntity = {
