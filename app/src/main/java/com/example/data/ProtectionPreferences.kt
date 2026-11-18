@@ -31,6 +31,8 @@ data class ProtectionSettingsState(
     val dailyBetSpendEstimate: Int = 5000,
     val themeMode: ThemeMode = ThemeMode.LIGHT,
     val hasCompletedTour: Boolean = false,
+    val hasCompletedInitialSetup: Boolean = false,
+    val preferredName: String = "",
     val notificationsEnabled: Boolean = true,
     val lastNotifiedMilestoneDay: Int = 0,
 ) {
@@ -83,6 +85,8 @@ class ProtectionPreferences private constructor(context: Context) {
             dailyBetSpendEstimate = prefs.getInt(KEY_DAILY_SPEND, 5000),
             themeMode = ThemeMode.entries[themeOrdinal],
             hasCompletedTour = prefs.getBoolean(KEY_HAS_COMPLETED_TOUR, false),
+            hasCompletedInitialSetup = prefs.getBoolean(KEY_HAS_COMPLETED_INITIAL_SETUP, false),
+            preferredName = prefs.getString(KEY_PREFERRED_NAME, "").orEmpty(),
             notificationsEnabled = prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true),
             lastNotifiedMilestoneDay = prefs.getInt(KEY_LAST_MILESTONE_DAY, 0),
         )
@@ -122,8 +126,31 @@ class ProtectionPreferences private constructor(context: Context) {
     fun setDailyBetSpendEstimate(amount: Int) = update { putInt(KEY_DAILY_SPEND, amount.coerceIn(0, 10_000_000)) }
     fun setThemeMode(mode: ThemeMode) = update { putInt(KEY_THEME_MODE, mode.ordinal) }
     fun setHasCompletedTour(completed: Boolean) = update { putBoolean(KEY_HAS_COMPLETED_TOUR, completed) }
+    fun setPreferredName(name: String) = update { putString(KEY_PREFERRED_NAME, name.trim().take(40)) }
     fun setNotificationsEnabled(enabled: Boolean) = update { putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled) }
     fun setLastNotifiedMilestoneDay(day: Int) = update { putInt(KEY_LAST_MILESTONE_DAY, day) }
+
+    fun completeInitialSetup(name: String, lockDays: Int) {
+        val safeDays = lockDays.coerceIn(1, 90)
+        val durationMs = safeDays.toLong() * 24L * 60L * 60L * 1000L
+        val now = System.currentTimeMillis()
+        val until = now + durationMs
+        val currentUntil = prefs.getLong(KEY_LOCK_UNTIL_MS, 0L)
+        val cleanName = name.trim().take(40)
+        update {
+            if (cleanName.isNotEmpty()) {
+                putString(KEY_PREFERRED_NAME, cleanName)
+            }
+            putBoolean(KEY_HAS_COMPLETED_INITIAL_SETUP, true)
+            putBoolean(KEY_HAS_COMPLETED_TOUR, true)
+            putBoolean(KEY_PROTECTION_ENABLED, true)
+            putBoolean(KEY_ANTI_TAMPER, true)
+            putLong(KEY_LOCK_UNTIL_MS, maxOf(currentUntil, until))
+            if (prefs.getLong(KEY_STARTED_AT_MS, 0L) == 0L) {
+                putLong(KEY_STARTED_AT_MS, now)
+            }
+        }
+    }
 
     fun activateTimeLock(durationMs: Long) {
         val until = System.currentTimeMillis() + durationMs
@@ -182,6 +209,8 @@ class ProtectionPreferences private constructor(context: Context) {
         private const val KEY_DAILY_SPEND = "daily_spend"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_HAS_COMPLETED_TOUR = "has_completed_tour"
+        private const val KEY_HAS_COMPLETED_INITIAL_SETUP = "has_completed_initial_setup"
+        private const val KEY_PREFERRED_NAME = "preferred_name"
         private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
         private const val KEY_LAST_MILESTONE_DAY = "last_milestone_day"
 

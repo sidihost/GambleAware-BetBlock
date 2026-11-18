@@ -2,5 +2,5 @@
   "name": "GambleAware",
   "description": "GambleAware Nigeria — a product of Imoogle Technology. Black & Pink liquid glass bet blocker in Nigerian Naira (₦) with universal browser/WebView/app protection, anti-uninstall lock, and Android APK download.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

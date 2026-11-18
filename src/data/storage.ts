@@ -1,3 +1,4 @@
+import { DEFAULT_HIGH_RISK_SCHEDULE } from '../utils/highRiskGuard';
 import {
   BlockedAppEntity,
   BlockedDomainEntity,
@@ -9,10 +10,11 @@ import {
   UrgeLogEntity,
 } from './types';
 
-const STORAGE_KEY = 'gambleaware_store_v1';
+export const STORAGE_KEY = 'gambleaware_store_v1';
 
 export interface PersistedStore {
   schemaVersion?: number;
+  updatedAtMs?: number;
   preferredName: string;
   settings: ProtectionSettingsState;
   isAccessibilityEnabled: boolean;
@@ -102,9 +104,7 @@ function sha256Hex(ascii: string): string {
     }
   }
 
-  return hash
-    .map((h) => (h >>> 0).toString(16).padStart(8, '0'))
-    .join('');
+  return hash.map((h) => (h >>> 0).toString(16).padStart(8, '0')).join('');
 }
 
 function generateSaltHex(bytes = 4): string {
@@ -218,7 +218,8 @@ export function clearPinAttemptState(): void {
 export function createDefaultStore(): PersistedStore {
   const now = Date.now();
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
+    updatedAtMs: 0,
     preferredName: '',
     settings: {
       isProtectionEnabled: true,
@@ -238,10 +239,11 @@ export function createDefaultStore(): PersistedStore {
       dailyBetSpendEstimate: 5000,
       themeMode: ThemeMode.LIGHT,
       hasCompletedTour: false,
+      hasCompletedInitialSetup: false,
       notificationsEnabled: true,
       lastNotifiedMilestoneDay: 0,
-      aiAutoBlockEnabled: true,
       goalReminderEnabled: true,
+      highRiskSchedule: { ...DEFAULT_HIGH_RISK_SCHEDULE },
     },
     isAccessibilityEnabled: true,
     isDeviceAdminEnabled: false,
@@ -257,44 +259,53 @@ export function createDefaultStore(): PersistedStore {
   };
 }
 
+export function normalizeStoreShape(parsed: Partial<PersistedStore>): PersistedStore {
+  const fallback = createDefaultStore();
+  const mergedSettings: ProtectionSettingsState = {
+    ...fallback.settings,
+    ...(parsed.settings ?? {}),
+    highRiskSchedule: {
+      ...DEFAULT_HIGH_RISK_SCHEDULE,
+      ...(parsed.settings?.highRiskSchedule ?? {}),
+    },
+  };
+
+  if (!parsed.schemaVersion || parsed.schemaVersion < 3) {
+    if (mergedSettings.dailyBetSpendEstimate < 500) {
+      mergedSettings.dailyBetSpendEstimate = 5000;
+    }
+    mergedSettings.themeMode = ThemeMode.LIGHT;
+  }
+
+  return {
+    schemaVersion: 4,
+    updatedAtMs: typeof parsed.updatedAtMs === 'number' ? parsed.updatedAtMs : Date.now(),
+    preferredName: typeof parsed.preferredName === 'string' ? parsed.preferredName : '',
+    settings: mergedSettings,
+    isAccessibilityEnabled:
+      typeof parsed.isAccessibilityEnabled === 'boolean'
+        ? parsed.isAccessibilityEnabled
+        : fallback.isAccessibilityEnabled,
+    isDeviceAdminEnabled:
+      typeof parsed.isDeviceAdminEnabled === 'boolean'
+        ? parsed.isDeviceAdminEnabled
+        : fallback.isDeviceAdminEnabled,
+    privateDnsStatus: parsed.privateDnsStatus ?? fallback.privateDnsStatus,
+    goals: Array.isArray(parsed.goals) ? parsed.goals : [],
+    domains: Array.isArray(parsed.domains) ? parsed.domains : [],
+    blockedApps: Array.isArray(parsed.blockedApps) ? parsed.blockedApps : [],
+    events: Array.isArray(parsed.events) ? parsed.events : [],
+    urgeLogs: Array.isArray(parsed.urgeLogs) ? parsed.urgeLogs : [],
+  };
+}
+
 export function loadStore(): PersistedStore {
   const fallback = createDefaultStore();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<PersistedStore>;
-    const mergedSettings: ProtectionSettingsState = {
-      ...fallback.settings,
-      ...(parsed.settings ?? {}),
-    };
-
-    // Migrate v1/v2 defaults cleanly to v3 White theme default & Naira baseline
-    if (!parsed.schemaVersion || parsed.schemaVersion < 3) {
-      if (mergedSettings.dailyBetSpendEstimate < 500) {
-        mergedSettings.dailyBetSpendEstimate = 5000;
-      }
-      mergedSettings.themeMode = ThemeMode.LIGHT;
-    }
-
-    return {
-      schemaVersion: 3,
-      preferredName: typeof parsed.preferredName === 'string' ? parsed.preferredName : '',
-      settings: mergedSettings,
-      isAccessibilityEnabled:
-        typeof parsed.isAccessibilityEnabled === 'boolean'
-          ? parsed.isAccessibilityEnabled
-          : fallback.isAccessibilityEnabled,
-      isDeviceAdminEnabled:
-        typeof parsed.isDeviceAdminEnabled === 'boolean'
-          ? parsed.isDeviceAdminEnabled
-          : fallback.isDeviceAdminEnabled,
-      privateDnsStatus: parsed.privateDnsStatus ?? fallback.privateDnsStatus,
-      goals: Array.isArray(parsed.goals) ? parsed.goals : [],
-      domains: Array.isArray(parsed.domains) ? parsed.domains : [],
-      blockedApps: Array.isArray(parsed.blockedApps) ? parsed.blockedApps : [],
-      events: Array.isArray(parsed.events) ? parsed.events : [],
-      urgeLogs: Array.isArray(parsed.urgeLogs) ? parsed.urgeLogs : [],
-    };
+    return normalizeStoreShape(parsed);
   } catch {
     return fallback;
   }

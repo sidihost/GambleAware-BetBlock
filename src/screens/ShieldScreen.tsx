@@ -3,6 +3,7 @@ import {
   Anchor,
   ArrowRight,
   Ban,
+  Check,
   CheckCircle2,
   ChevronRight,
   Circle,
@@ -11,30 +12,30 @@ import {
   Heart,
   LockKeyhole,
   NotebookPen,
+  Pencil,
   Plus,
   Search,
   ShieldAlert,
   Smartphone,
   Timer,
   TrendingUp,
-  UserPlus,
   Wind,
   X,
 } from 'lucide-react';
 import { GAMBLING_CATEGORY_META } from '../blocker/gamblingCategory';
-import { CloudSyncCard } from '../components/CloudSyncCard';
-import { GeminiAgentPanel } from '../components/GeminiAgentPanel';
 import { ActiveGoalsCard, GoalReminderBanner } from '../components/GoalCardModal';
+import { HighRiskGuardCard } from '../components/HighRiskGuardCard';
 import {
   LiquidGlassCard,
   LiquidSectionHeader,
   LiquidShieldOrb,
   LiquidStatusButton,
 } from '../components/LiquidGlass';
+import { RecoveryVaultCard } from '../components/RecoveryVaultCard';
+import { PersistedStore } from '../data/storage';
 import {
-  CloudAccountInfo,
-  CloudSyncStatus,
   DerivedMainState,
+  HighRiskScheduleConfig,
   RecoveryGoalCategory,
 } from '../data/types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
@@ -42,15 +43,12 @@ import { formatNaira } from '../utils/currency';
 import { getTimeOfDayGreeting } from '../utils/personalization';
 
 interface ShieldScreenProps {
+  store: PersistedStore;
   state: DerivedMainState;
-  cloudUser: CloudAccountInfo | null;
-  cloudSyncStatus: CloudSyncStatus;
-  lastSyncedAtMs: number | null;
-  cloudErrorMsg: string | null;
-  onSignInGoogle: () => void;
-  onOpenAuth: (mode?: 'signin' | 'signup') => void;
-  onSignOut: () => void;
-  onForceSync: () => void;
+  onSetPreferredName: (name: string) => void;
+  onForceSaveVault: () => void;
+  onRestoreVault: (rawKeyOrJson: string) => { ok: boolean; error?: string };
+  onToggleHighRiskWindow: (key: keyof HighRiskScheduleConfig, enabled: boolean) => void;
   onPrimaryShieldClick: () => void;
   onEnableAccessibility: () => void;
   onRequestDeviceAdmin: () => void;
@@ -59,25 +57,16 @@ interface ShieldScreenProps {
   onTestOrRedirectUrl: (rawInput: string) => void;
   showGoalReminder: boolean;
   onDismissGoalReminder: () => void;
-  onOpenGoalModal: () => void;
-  onSetPrimaryGoal: (goalId: string) => void;
-  onToggleGoalComplete: (goalId: string) => void;
-  onDeleteGoal: (goalId: string) => void;
-  onToggleAiAutoBlock: (enabled: boolean) => void;
-  onAutoBlockFromAgent: (params: {
-    target: string;
-    category: string;
-    isLoginAttempt: boolean;
-    coachNote: string;
-  }) => void;
-  onCreateSuggestedGoal: (input: {
+  onOpenGoalModal: (prefill?: {
     title: string;
     category: RecoveryGoalCategory;
     targetDays: number;
     targetAmountNgn: number;
     whyNote: string;
-    lockDurationDays: number;
   }) => void;
+  onSetPrimaryGoal: (goalId: string) => void;
+  onToggleGoalComplete: (goalId: string) => void;
+  onDeleteGoal: (goalId: string) => void;
   onNavigateToRules: () => void;
   onNavigateToProgress: () => void;
   onNavigateToLock: () => void;
@@ -88,15 +77,12 @@ interface ShieldScreenProps {
 }
 
 export const ShieldScreen: React.FC<ShieldScreenProps> = ({
+  store,
   state,
-  cloudUser,
-  cloudSyncStatus,
-  lastSyncedAtMs,
-  cloudErrorMsg,
-  onSignInGoogle,
-  onOpenAuth,
-  onSignOut,
-  onForceSync,
+  onSetPreferredName,
+  onForceSaveVault,
+  onRestoreVault,
+  onToggleHighRiskWindow,
   onPrimaryShieldClick,
   onEnableAccessibility,
   onRequestDeviceAdmin,
@@ -109,9 +95,6 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
   onSetPrimaryGoal,
   onToggleGoalComplete,
   onDeleteGoal,
-  onToggleAiAutoBlock,
-  onAutoBlockFromAgent,
-  onCreateSuggestedGoal,
   onNavigateToRules,
   onNavigateToProgress,
   onNavigateToLock,
@@ -122,6 +105,8 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 }) => {
   const { isInstalled } = usePWAInstall();
   const [promptDismissed, setPromptDismissed] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(state.preferredName);
 
   const greeting = getTimeOfDayGreeting(state.firstName);
   const isArmed = state.isFullyArmed;
@@ -162,52 +147,90 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 
   const savedFormatted = formatNaira(state.estimatedSavedAmount);
 
+  const handleSaveName = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSetPreferredName(nameDraft);
+    setEditingName(false);
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
       {/* Personalized Greeting Hero Bar */}
       <div className="flex flex-col justify-between gap-3 rounded-[24px] border border-[var(--subtle-border)] bg-[var(--glass-fill)] px-5 py-4 backdrop-blur-xl sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-            {isArmed ? 'Protection Active' : 'Protection Paused'}
-          </p>
-          <h1 className="mt-0.5 font-display text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-[26px]">
-            {greeting.headline}
-          </h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-[11px] font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
+              {isArmed ? 'Protection Active' : 'Protection Paused'}
+            </p>
+            {state.highRiskStatus.isActive ? (
+              <span className="font-mono text-[11px] font-semibold text-[var(--accent-ink)] uppercase">
+                · High-Risk Guard Heightened
+              </span>
+            ) : null}
+          </div>
+
+          {editingName ? (
+            <form onSubmit={handleSaveName} className="mt-1.5 flex max-w-sm items-center gap-2">
+              <input
+                type="text"
+                maxLength={40}
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="Enter your first name"
+                autoFocus
+                className="h-9 min-w-0 flex-1 rounded-[12px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3 text-sm text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none"
+              />
+              <button
+                type="submit"
+                aria-label="Save first name"
+                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)] hover:opacity-90"
+              >
+                <Check className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingName(false)}
+                aria-label="Cancel name edit"
+                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] border border-[var(--subtle-border)] text-[var(--ink-muted)] hover:text-[var(--ink)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </form>
+          ) : (
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-[26px]">
+                {greeting.headline}
+              </h1>
+              <button
+                type="button"
+                onClick={() => {
+                  setNameDraft(state.preferredName);
+                  setEditingName(true);
+                }}
+                aria-label="Personalize greeting name"
+                title="Personalize greeting name"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-muted)] hover:text-[var(--ink)]"
+              >
+                <Pencil className="h-3 w-3 text-[var(--accent-ink)]" />
+                <span>{state.firstName ? 'Edit name' : 'Add name'}</span>
+              </button>
+            </div>
+          )}
+
           <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
             {greeting.subline}
           </p>
         </div>
 
-        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+        <div className="flex w-full shrink-0 sm:w-auto">
           <button
             type="button"
-            onClick={onOpenGoalModal}
+            onClick={() => onOpenGoalModal()}
             className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
           >
-            {cloudUser ? (
-              <Plus className="h-3.5 w-3.5" />
-            ) : (
-              <LockKeyhole className="h-3.5 w-3.5" />
-            )}
-            <span>
-              {cloudUser
-                ? state.goals.length === 0
-                  ? 'Create Goal'
-                  : 'Add Goal'
-                : 'Sign In to Create Goal'}
-            </span>
+            <Plus className="h-3.5 w-3.5" />
+            <span>{state.goals.length === 0 ? 'Create Goal' : 'Add Goal'}</span>
           </button>
-
-          {!cloudUser ? (
-            <button
-              type="button"
-              onClick={() => onOpenAuth('signup')}
-              className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:w-auto"
-            >
-              <UserPlus className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-              <span>Create Account</span>
-            </button>
-          ) : null}
         </div>
       </div>
 
@@ -215,12 +238,8 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
       {showGoalReminder ? (
         <GoalReminderBanner
           firstName={state.firstName}
-          isSignedIn={Boolean(cloudUser)}
-          onCreateGoal={onOpenGoalModal}
-          onAskCoachGoal={() => {
-            const el = document.getElementById('gambleaware-ai-section');
-            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
+          onCreateGoal={() => onOpenGoalModal()}
+          onOpenTemplates={() => onOpenGoalModal()}
           onDismiss={onDismissGoalReminder}
         />
       ) : null}
@@ -356,7 +375,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             </div>
           </LiquidGlassCard>
 
-          {/* Responsive Metrics Trio: 2+1 full-width Est. Saved on xs phones, 3 balanced columns on sm+ */}
+          {/* Responsive Metrics Trio */}
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             <LiquidGlassCard className="rounded-[22px] p-3.5">
               <p className="truncate text-xs font-medium text-[var(--ink-muted)]">Clean Streak</p>
@@ -387,21 +406,19 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             </LiquidGlassCard>
           </div>
 
-          {/* Personalized Goals List on Left Column (Signed-In Users Only) */}
-          {cloudUser ? (
-            <ActiveGoalsCard
-              goals={state.goals}
-              cleanExactDays={state.cleanExactDays}
-              estimatedSavedAmount={state.estimatedSavedAmount}
-              onAddGoal={onOpenGoalModal}
-              onSetPrimary={onSetPrimaryGoal}
-              onToggleComplete={onToggleGoalComplete}
-              onDeleteGoal={onDeleteGoal}
-            />
-          ) : null}
+          {/* Personalized Goals List Unlocked for Everyone */}
+          <ActiveGoalsCard
+            goals={state.goals}
+            cleanExactDays={state.cleanExactDays}
+            estimatedSavedAmount={state.estimatedSavedAmount}
+            onAddGoal={() => onOpenGoalModal()}
+            onSetPrimary={onSetPrimaryGoal}
+            onToggleComplete={onToggleGoalComplete}
+            onDeleteGoal={onDeleteGoal}
+          />
         </div>
 
-        {/* Right Column: Gambling Login Redirect Check, GambleAware AI, Setup, SOS & Sync */}
+        {/* Right Column: Site Check, High-Risk Guard, GambleAware AI, Setup, Calm & Vault */}
         <div className="flex flex-col gap-4 lg:col-span-7">
           {/* Check or Block a Website */}
           <LiquidGlassCard className="p-4 sm:p-5" tourKey="domain_lookup">
@@ -425,7 +442,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   value={state.domainLookupQuery}
                   onChange={(e) => onDomainLookupChanged(e.target.value)}
                   placeholder="Enter a website or link to check"
-                  className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+                  className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
                 />
                 {state.domainLookupQuery ? (
                   <button
@@ -499,16 +516,12 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             ) : null}
           </LiquidGlassCard>
 
-          {/* GambleAware AI Protection & Goal Companion */}
-          <div id="gambleaware-ai-section">
-            <GeminiAgentPanel
-              state={state}
-              isSignedIn={Boolean(cloudUser)}
-              onToggleAiAutoBlock={onToggleAiAutoBlock}
-              onAutoBlockAndRedirect={onAutoBlockFromAgent}
-              onCreateSuggestedGoal={onCreateSuggestedGoal}
-            />
-          </div>
+          {/* Smart High-Risk Schedule Guard */}
+          <HighRiskGuardCard
+            schedule={state.settings.highRiskSchedule}
+            status={state.highRiskStatus}
+            onToggleWindow={onToggleHighRiskWindow}
+          />
 
           {showQuickOnboarding ? (
             <LiquidGlassCard className="p-4 sm:p-5">
@@ -554,7 +567,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             </LiquidGlassCard>
           ) : null}
 
-          {/* SOS Recovery Toolkit + Free Cloud Sync Row */}
+          {/* SOS Calm Support + Zero-Loss Recovery Vault */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <LiquidGlassCard className="p-4 sm:p-5" tourKey="sos_calm_bar">
               <LiquidSectionHeader
@@ -584,19 +597,16 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 onClick={onOpenSafeSupport}
                 className="mt-2.5 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] px-4 text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
               >
-                <Heart className="h-4 w-4 shrink-0" />
+                <Heart className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
                 <span>Talk to Confidential Support</span>
               </button>
             </LiquidGlassCard>
 
-            <CloudSyncCard
-              cloudUser={cloudUser}
-              cloudSyncStatus={cloudSyncStatus}
-              lastSyncedAtMs={lastSyncedAtMs}
-              cloudErrorMsg={cloudErrorMsg}
-              onSignInGoogle={onSignInGoogle}
-              onSignOut={onSignOut}
-              onForceSync={onForceSync}
+            <RecoveryVaultCard
+              store={store}
+              durableStatus={state.durableStatus}
+              onForceSaveVault={onForceSaveVault}
+              onRestoreVault={onRestoreVault}
             />
           </div>
         </div>
@@ -621,7 +631,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           <EngineStatusRow
             icon={<TrendingUp className="h-5 w-5" />}
             title="Progress & Money Saved"
-            subtitle="Check your streak, goals & Naira saved"
+            subtitle="Check your streak, simulator & ₦ saved"
             isReady={state.goals.length > 0}
             onClick={onNavigateToProgress}
           />

@@ -8,27 +8,20 @@ import {
   RefreshCw,
   Server,
   Timer,
+  UserCheck,
 } from 'lucide-react';
-import { CloudSyncCard } from '../components/CloudSyncCard';
 import { LiquidGlassCard, LiquidSectionHeader, LiquidSwitch } from '../components/LiquidGlass';
-import {
-  CloudAccountInfo,
-  CloudSyncStatus,
-  DerivedMainState,
-  THEME_MODE_LABELS,
-  ThemeMode,
-} from '../data/types';
+import { RecoveryVaultCard } from '../components/RecoveryVaultCard';
+import { PersistedStore } from '../data/storage';
+import { DerivedMainState, THEME_MODE_LABELS, ThemeMode } from '../data/types';
 import { DAILY_SPEND_OPTIONS_NGN, formatNaira } from '../utils/currency';
 
 interface LockSettingsScreenProps {
+  store: PersistedStore;
   state: DerivedMainState;
-  cloudUser: CloudAccountInfo | null;
-  cloudSyncStatus: CloudSyncStatus;
-  lastSyncedAtMs: number | null;
-  cloudErrorMsg: string | null;
-  onSignInGoogle: () => void;
-  onSignOut: () => void;
-  onForceSync: () => void;
+  onSetPreferredName: (name: string) => void;
+  onForceSaveVault: () => void;
+  onRestoreVault: (rawKeyOrJson: string) => { ok: boolean; error?: string };
   onActivateTimeLock: (days: number, antiTamper: boolean) => void;
   onToggleAntiTamper: (enabled: boolean) => void;
   onSetPin: (pin: string) => void;
@@ -51,14 +44,11 @@ const LOCK_DURATIONS = [
 ];
 
 export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
+  store,
   state,
-  cloudUser,
-  cloudSyncStatus,
-  lastSyncedAtMs,
-  cloudErrorMsg,
-  onSignInGoogle,
-  onSignOut,
-  onForceSync,
+  onSetPreferredName,
+  onForceSaveVault,
+  onRestoreVault,
   onActivateTimeLock,
   onToggleAntiTamper,
   onSetPin,
@@ -81,6 +71,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   const [pinInput, setPinInput] = useState('');
   const [confirmPinInput, setConfirmPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
+  const [nameInput, setNameInput] = useState(state.preferredName);
 
   const lockExpiryFormatted = useMemo(() => {
     if (state.settings.lockUntilEpochMs <= state.currentTimeMs) return '';
@@ -117,7 +108,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           Lock &amp; Settings
         </h1>
         <p className="text-xs text-[var(--ink-muted)]">
-          Set a protection timer, create a 4-digit PIN, and adjust your savings &amp; theme
+          Set a protection timer, 4-digit PIN, theme switch, and zero-loss Recovery Vault
         </p>
       </div>
 
@@ -240,9 +231,18 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
               <button
                 type="button"
                 onClick={onToggleDeviceAdmin}
-                className="shrink-0 cursor-pointer rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
-                {state.isDeviceAdminEnabled ? 'Turn Off' : 'Turn On'}
+                {state.isDeviceAdminEnabled && (isTimeLocked || state.settings.antiTamperLockEnabled) ? (
+                  <>
+                    <LockKeyhole className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
+                    <span>Locked On</span>
+                  </>
+                ) : state.isDeviceAdminEnabled ? (
+                  <span>Turn Off</span>
+                ) : (
+                  <span>Turn On</span>
+                )}
               </button>
             </div>
           </LiquidGlassCard>
@@ -294,22 +294,19 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
         </div>
 
         <div className="flex flex-col gap-4 lg:col-span-6">
-          {/* Free Cloud Database Sync */}
-          <CloudSyncCard
-            cloudUser={cloudUser}
-            cloudSyncStatus={cloudSyncStatus}
-            lastSyncedAtMs={lastSyncedAtMs}
-            cloudErrorMsg={cloudErrorMsg}
-            onSignInGoogle={onSignInGoogle}
-            onSignOut={onSignOut}
-            onForceSync={onForceSync}
+          {/* Zero-Loss Recovery Vault */}
+          <RecoveryVaultCard
+            store={store}
+            durableStatus={state.durableStatus}
+            onForceSaveVault={onForceSaveVault}
+            onRestoreVault={onRestoreVault}
           />
 
           {/* Recovery & Lock Alerts */}
           <LiquidGlassCard className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Bell className="h-5 w-5 shrink-0 text-[var(--ink)]" />
+                <Bell className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
                 <div className="min-w-0">
                   <p className="font-display text-base font-semibold text-[var(--ink)]">
                     Recovery &amp; Lock Alerts
@@ -388,30 +385,62 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             ) : null}
           </LiquidGlassCard>
 
-          {/* Daily Spend Baseline & Appearance */}
+          {/* Personalization, Daily Spend Baseline & Appearance */}
           <LiquidGlassCard className="p-4 sm:p-5">
             <LiquidSectionHeader
-              title="Daily Spend Baseline (₦)"
-              subtitle="Calculates your Naira savings across every betting-free day"
+              title="First Name Greeting"
+              subtitle="Optional name shown on your Home shield — saved locally with zero account"
             />
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {DAILY_SPEND_OPTIONS_NGN.map((amount) => {
-                const selected = state.settings.dailyBetSpendEstimate === amount;
-                return (
-                  <button
-                    key={amount}
-                    type="button"
-                    onClick={() => onSetDailySpend(amount)}
-                    className={`cursor-pointer rounded-full border px-3 py-1.5 font-mono text-xs font-medium transition-colors ${
-                      selected
-                        ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                        : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink-muted)] hover:text-[var(--ink)]'
-                    }`}
-                  >
-                    {formatNaira(amount)}/day
-                  </button>
-                );
-              })}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                onSetPreferredName(nameInput);
+              }}
+              className="mt-2.5 flex gap-2"
+            >
+              <div className="relative flex-1">
+                <UserCheck className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--accent-ink)]" />
+                <input
+                  type="text"
+                  maxLength={40}
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="Your first name"
+                  className="h-10 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] pr-3 pl-9 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="h-10 shrink-0 cursor-pointer rounded-[14px] bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+              >
+                Save
+              </button>
+            </form>
+
+            <div className="mt-5">
+              <LiquidSectionHeader
+                title="Daily Spend Baseline (₦)"
+                subtitle="Calculates your Naira savings across every betting-free day"
+              />
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {DAILY_SPEND_OPTIONS_NGN.map((amount) => {
+                  const selected = state.settings.dailyBetSpendEstimate === amount;
+                  return (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => onSetDailySpend(amount)}
+                      className={`cursor-pointer rounded-full border px-3 py-1.5 font-mono text-xs font-medium transition-colors ${
+                        selected
+                          ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                          : 'border-[var(--subtle-border)] bg-[var(--surface)]/65 text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                      }`}
+                    >
+                      {formatNaira(amount)}/day
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="mt-5">
@@ -529,7 +558,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 placeholder="4-Digit PIN"
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--ink)] focus:outline-none"
+                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none"
               />
               <input
                 type="password"
@@ -538,9 +567,9 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                 value={confirmPinInput}
                 onChange={(e) => setConfirmPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 placeholder="Confirm PIN"
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--ink)] focus:outline-none"
+                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none"
               />
-              {pinError ? <p className="text-xs font-medium text-[var(--ink)]">{pinError}</p> : null}
+              {pinError ? <p className="text-xs font-medium text-[var(--accent-ink)]">{pinError}</p> : null}
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button

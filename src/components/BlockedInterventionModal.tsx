@@ -10,7 +10,6 @@ export const BlockedInterventionModal: React.FC<{
   cleanExactDays?: number;
   estimatedSavedAmount?: number;
   primaryGoal?: RecoveryGoalEntity | null;
-  isSignedIn?: boolean;
   onCreateGoal?: () => void;
   onClose: () => void;
 }> = ({
@@ -19,7 +18,6 @@ export const BlockedInterventionModal: React.FC<{
   cleanExactDays = cleanDays,
   estimatedSavedAmount = 0,
   primaryGoal = null,
-  isSignedIn = false,
   onCreateGoal,
   onClose,
 }) => {
@@ -105,13 +103,11 @@ export const BlockedInterventionModal: React.FC<{
               </h2>
 
               <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)]">
-                {payload.coachNote
-                  ? payload.coachNote
-                  : payload.isAntiTamper
-                    ? 'Your GambleAware Commitment Lock prevents removing the app or weakening protection until the timer expires.'
-                    : payload.isLoginRedirect
-                      ? 'GambleAware intercepted this gambling sign-in attempt and redirected you back to safety before you could place a bet.'
-                      : 'GambleAware intercepted this attempt before it could pull you back in. Urges fade within a few minutes.'}
+                {payload.isAntiTamper
+                  ? 'Your GambleAware Commitment Lock prevents removing the app or weakening protection until the timer expires.'
+                  : payload.isLoginRedirect
+                    ? 'GambleAware intercepted this gambling sign-in attempt and redirected you back to safety before you could place a bet.'
+                    : 'GambleAware intercepted this attempt before it could pull you back in. Urges fade within a few minutes.'}
               </p>
 
               {/* Intercept summary */}
@@ -170,14 +166,10 @@ export const BlockedInterventionModal: React.FC<{
                     <Target className="h-4 w-4 text-[var(--accent-ink)]" />
                     <div>
                       <p className="text-xs font-bold text-[var(--ink)]">
-                        {isSignedIn
-                          ? 'Create a recovery goal to stay locked in'
-                          : 'Sign in to set a personal recovery goal'}
+                        Create a recovery goal to stay locked in
                       </p>
                       <p className="text-[11px] text-[var(--ink-muted)]">
-                        {isSignedIn
-                          ? 'Tap to set your Naira savings or clean-days target'
-                          : 'Tap to sign in and create your private target'}
+                        Tap to set your Naira savings or clean-days target
                       </p>
                     </div>
                   </div>

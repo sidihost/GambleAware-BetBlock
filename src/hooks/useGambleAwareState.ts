@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  updateProfile,
-} from 'firebase/auth';
 import { BlockFilterConfig, BlocklistMatcher, BlockMatchResult } from '../blocker/blocklistMatcher';
 import { GamblingCategory } from '../blocker/gamblingCategory';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
+import {
+  hydrateFromDurableLayers,
+  parseBackupInput,
+  persistToAllLayers,
+} from '../data/durableVault';
 import {
   clearPinAttemptState,
   createDefaultStore,
@@ -28,10 +23,10 @@ import {
   BlockedDomainEntity,
   BlockedEventEntity,
   CategoryBreakdown,
-  CloudAccountInfo,
-  CloudSyncStatus,
   DailyBlockStat,
   DerivedMainState,
+  DurableStorageStatus,
+  HighRiskScheduleConfig,
   InstalledAppInfo,
   ProtectionSettingsState,
   RECOVERY_MILESTONES,
@@ -41,22 +36,6 @@ import {
   TriggerBreakdown,
   UrgeLogEntity,
 } from '../data/types';
-import { auth, googleProvider } from '../firebase';
-import {
-  attachUserCloudListeners,
-  bootstrapUserCloudAccount,
-  clearEventsInCloud,
-  createBlockedEventInCloud,
-  createUrgeLogInCloud,
-  deleteBlockedAppFromCloud,
-  deleteCustomDomainFromCloud,
-  deleteGoalFromCloud,
-  syncSettingsToCloud,
-  updatePreferredNameInCloud,
-  upsertBlockedAppInCloud,
-  upsertCustomDomainInCloud,
-  upsertGoalInCloud,
-} from '../firebaseSync';
 import {
   sanitizeDomainForBlueprint,
   sanitizeEventTarget,
@@ -65,6 +44,7 @@ import {
   sanitizePreferredName,
   sanitizeUrgeFields,
 } from '../firebaseValidation';
+import { evaluateHighRiskGuard } from '../utils/highRiskGuard';
 import { detectGamblingLoginOrSite, extractFirstName } from '../utils/personalization';
 
 function formatTwoDigits(n: number): string {
@@ -116,44 +96,6 @@ function buildTriggerBreakdown(logs: UrgeLogEntity[]): TriggerBreakdown[] {
     .sort((a, b) => b.count - a.count);
 }
 
-function formatAuthErrorMessage(err: unknown): string {
-  const code =
-    typeof err === 'object' && err !== null && 'code' in err
-      ? String((err as { code?: unknown }).code)
-      : '';
-  if (code === 'auth/operation-not-allowed') {
-    return 'Email sign-in is currently unavailable. Please use Continue with Google below.';
-  }
-  if (code === 'auth/email-already-in-use') {
-    return 'An account with this email already exists. Try signing in instead.';
-  }
-  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
-    return 'That email or password did not match our records.';
-  }
-  if (code === 'auth/weak-password') {
-    return 'Please choose a password with at least 6 characters.';
-  }
-  if (code === 'auth/invalid-email') {
-    return 'Please enter a valid email address.';
-  }
-  if (code === 'auth/popup-blocked') {
-    return 'Your browser blocked the Google sign-in window. Allow popups for this site or sign in with email below.';
-  }
-  if (code === 'auth/popup-closed-by-user') {
-    return 'Sign-in was closed before finishing.';
-  }
-  if (code === 'auth/too-many-requests') {
-    return 'Too many attempts right now. Please wait a minute and try again.';
-  }
-  if (code === 'auth/network-request-failed') {
-    return 'Network error — please check your internet connection and try again.';
-  }
-  if (code === 'auth/unauthorized-domain') {
-    return 'Sign-in is not enabled on this preview domain yet. Please use the main app URL.';
-  }
-  return 'Unable to complete sign-in right now. Please try again.';
-}
-
 export function useGambleAwareState() {
   const [store, setStore] = useState<PersistedStore>(() => loadStore());
   const storeRef = useRef<PersistedStore>(store);
@@ -162,16 +104,44 @@ export function useGambleAwareState() {
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [domainLookupQuery, setDomainLookupQuery] = useState<string>('');
   const [statusBannerMessage, setStatusBannerMessage] = useState<string | null>(null);
+  const [durableStatus, setDurableStatus] = useState<DurableStorageStatus>({
+    localSaved: true,
+    indexedDbSaved: false,
+    cacheVaultSaved: false,
+    persistentGranted: null,
+    lastSavedAtMs: Date.now(),
+  });
+  const hydratedRef = useRef(false);
 
-  const [cloudUser, setCloudUser] = useState<CloudAccountInfo | null>(null);
-  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('local');
-  const [lastSyncedAtMs, setLastSyncedAtMs] = useState<number | null>(null);
-  const [cloudErrorMsg, setCloudErrorMsg] = useState<string | null>(null);
-  const activeUidRef = useRef<string | null>(null);
+  // Hydrate and auto-heal across LocalStorage, IndexedDB, and CacheStorage on boot
+  useEffect(() => {
+    let active = true;
+    void hydrateFromDurableLayers(storeRef.current).then((res) => {
+      if (!active) return;
+      hydratedRef.current = true;
+      setDurableStatus(res.status);
+      if (res.restoredStore) {
+        setStore(res.restoredStore);
+        setStatusBannerMessage('Protection state auto-restored from Recovery Vault');
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
+  // Persist every update across LocalStorage + IndexedDB + CacheStorage
   useEffect(() => {
     saveStore(store);
-  }, [store]);
+    if (!hydratedRef.current) return;
+    let active = true;
+    void persistToAllLayers(store, durableStatus.persistentGranted).then((nextStatus) => {
+      if (active) setDurableStatus(nextStatus);
+    });
+    return () => {
+      active = false;
+    };
+  }, [store, durableStatus.persistentGranted]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -188,301 +158,34 @@ export function useGambleAwareState() {
     return () => window.clearTimeout(id);
   }, [statusBannerMessage]);
 
-  // Attach Firebase Auth + Firestore real-time cloud listeners when signed in
-  useEffect(() => {
-    let unsubscribeListeners: (() => void) | null = null;
-
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (unsubscribeListeners) {
-        unsubscribeListeners();
-        unsubscribeListeners = null;
-      }
-
-      if (!user) {
-        activeUidRef.current = null;
-        setCloudUser(null);
-        setCloudSyncStatus('local');
-        setCloudErrorMsg(null);
-        return;
-      }
-
-      activeUidRef.current = user.uid;
-      setCloudUser({
-        uid: user.uid,
-        email: user.email ?? '',
-        displayName: user.displayName ?? storeRef.current.preferredName ?? 'GambleAware Member',
-        photoUrl: user.photoURL ?? null,
-        emailVerified: user.emailVerified,
-      });
-
-      if (!storeRef.current.preferredName && user.displayName) {
-        setStore((prev) => ({
-          ...prev,
-          preferredName: sanitizePreferredName(user.displayName ?? ''),
-        }));
-      }
-
-      if (!user.emailVerified) {
-        setCloudSyncStatus('local');
-        setCloudErrorMsg(null);
-        return;
-      }
-
-      setCloudSyncStatus('connecting');
-      setCloudErrorMsg(null);
-      try {
-        await bootstrapUserCloudAccount(user, storeRef.current);
-        if (activeUidRef.current !== user.uid) return;
-
-        unsubscribeListeners = attachUserCloudListeners(user.uid, {
-          onPrivateInfoUpdate: (preferredName) => {
-            if (preferredName) {
-              setStore((prev) => ({ ...prev, preferredName }));
-            }
-          },
-          onSettingsUpdate: (patch) => {
-            setStore((prev) => ({
-              ...prev,
-              settings: patch.settings,
-              isAccessibilityEnabled: patch.isAccessibilityEnabled,
-              isDeviceAdminEnabled: patch.isDeviceAdminEnabled,
-              privateDnsStatus: {
-                isActive: patch.privateDnsActive,
-                serverHost: patch.privateDnsHost,
-              },
-            }));
-            setCloudSyncStatus('synced');
-            setLastSyncedAtMs(Date.now());
-          },
-          onGoalsUpdate: (goals) => {
-            setStore((prev) => ({ ...prev, goals }));
-            setLastSyncedAtMs(Date.now());
-          },
-          onDomainsUpdate: (domains) => {
-            setStore((prev) => ({ ...prev, domains }));
-            setLastSyncedAtMs(Date.now());
-          },
-          onBlockedAppsUpdate: (blockedApps) => {
-            setStore((prev) => ({ ...prev, blockedApps }));
-            setLastSyncedAtMs(Date.now());
-          },
-          onEventsUpdate: (events) => {
-            setStore((prev) => ({ ...prev, events }));
-            setLastSyncedAtMs(Date.now());
-          },
-          onUrgeLogsUpdate: (urgeLogs) => {
-            setStore((prev) => ({ ...prev, urgeLogs }));
-            setLastSyncedAtMs(Date.now());
-          },
-        });
-        setCloudSyncStatus('synced');
-        setLastSyncedAtMs(Date.now());
-      } catch (err) {
-        setCloudSyncStatus('error');
-        setCloudErrorMsg(
-          err instanceof Error ? err.message : 'Unable to connect Free Cloud Sync right now.',
-        );
-      }
+  const mutateStore = useCallback((updater: (prev: PersistedStore) => PersistedStore) => {
+    setStore((prev) => {
+      const next = updater(prev);
+      return {
+        ...next,
+        schemaVersion: 4,
+        updatedAtMs: Date.now(),
+      };
     });
-
-    return () => {
-      unsubscribeAuth();
-      if (unsubscribeListeners) unsubscribeListeners();
-    };
-  }, []);
-
-  const pushSettingsSnapshot = useCallback((nextStore: PersistedStore) => {
-    const uid = activeUidRef.current;
-    if (!uid || !auth.currentUser?.emailVerified) return;
-    void syncSettingsToCloud(uid, nextStore)
-      .then(() => {
-        setCloudSyncStatus('synced');
-        setLastSyncedAtMs(Date.now());
-      })
-      .catch((err) => {
-        setCloudSyncStatus('error');
-        setCloudErrorMsg(err instanceof Error ? err.message : 'Cloud sync update failed');
-      });
-  }, []);
-
-  const signInWithGoogleCloud = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
-    setCloudSyncStatus('connecting');
-    setCloudErrorMsg(null);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      setStatusBannerMessage('Signed in — welcome to GambleAware');
-      return { ok: true };
-    } catch (err) {
-      const msg = formatAuthErrorMessage(err);
-      setCloudSyncStatus(activeUidRef.current ? 'error' : 'local');
-      if (!(err instanceof Error && err.message.includes('popup-closed-by-user'))) {
-        setCloudErrorMsg(msg);
-      }
-      return { ok: false, error: msg };
-    }
-  }, []);
-
-  const signUpWithEmailCloud = useCallback(
-    async (params: {
-      name: string;
-      email: string;
-      password: string;
-    }): Promise<{ ok: boolean; error?: string; verificationSent?: boolean }> => {
-      const cleanName = sanitizePreferredName(params.name);
-      if (!cleanName) {
-        return { ok: false, error: 'Please enter your name so we can personalize your dashboard.' };
-      }
-      setCloudSyncStatus('connecting');
-      setCloudErrorMsg(null);
-      setStore((prev) => ({ ...prev, preferredName: cleanName }));
-      try {
-        const cred = await createUserWithEmailAndPassword(
-          auth,
-          params.email.trim(),
-          params.password,
-        );
-        await updateProfile(cred.user, { displayName: cleanName });
-        await sendEmailVerification(cred.user).catch(() => {});
-        setCloudUser({
-          uid: cred.user.uid,
-          email: cred.user.email ?? params.email.trim(),
-          displayName: cleanName,
-          photoUrl: null,
-          emailVerified: cred.user.emailVerified,
-        });
-        setStatusBannerMessage(`Welcome, ${cleanName.split(' ')[0]}! Check your email to verify sync.`);
-        return { ok: true, verificationSent: true };
-      } catch (err) {
-        const msg = formatAuthErrorMessage(err);
-        setCloudSyncStatus(activeUidRef.current ? 'error' : 'local');
-        setCloudErrorMsg(msg);
-        return { ok: false, error: msg };
-      }
-    },
-    [],
-  );
-
-  const signInWithEmailCloud = useCallback(
-    async (params: {
-      email: string;
-      password: string;
-    }): Promise<{ ok: boolean; error?: string }> => {
-      setCloudSyncStatus('connecting');
-      setCloudErrorMsg(null);
-      try {
-        const cred = await signInWithEmailAndPassword(auth, params.email.trim(), params.password);
-        const name = cred.user.displayName || storeRef.current.preferredName;
-        if (name) {
-          setStore((prev) => ({ ...prev, preferredName: sanitizePreferredName(name) }));
-        }
-        setStatusBannerMessage('Welcome back to GambleAware');
-        return { ok: true };
-      } catch (err) {
-        const msg = formatAuthErrorMessage(err);
-        setCloudSyncStatus(activeUidRef.current ? 'error' : 'local');
-        setCloudErrorMsg(msg);
-        return { ok: false, error: msg };
-      }
-    },
-    [],
-  );
-
-  const resendVerificationEmail = useCallback(async () => {
-    if (!auth.currentUser) return;
-    try {
-      await sendEmailVerification(auth.currentUser);
-      setStatusBannerMessage('Verification link sent to your email');
-    } catch (err) {
-      setStatusBannerMessage(formatAuthErrorMessage(err));
-    }
-  }, []);
-
-  const refreshEmailVerification = useCallback(async (): Promise<{ verified: boolean }> => {
-    if (!auth.currentUser) return { verified: false };
-    try {
-      await auth.currentUser.reload();
-      const verified = Boolean(auth.currentUser.emailVerified);
-      setCloudUser({
-        uid: auth.currentUser.uid,
-        email: auth.currentUser.email ?? '',
-        displayName:
-          auth.currentUser.displayName ?? storeRef.current.preferredName ?? 'GambleAware Member',
-        photoUrl: auth.currentUser.photoURL ?? null,
-        emailVerified: verified,
-      });
-      if (verified) {
-        setCloudSyncStatus('connecting');
-        await bootstrapUserCloudAccount(auth.currentUser, storeRef.current);
-        setCloudSyncStatus('synced');
-        setLastSyncedAtMs(Date.now());
-        setStatusBannerMessage('Email verified — cloud backup is now active');
-      } else {
-        setStatusBannerMessage('Email not verified yet — check your inbox or spam folder');
-      }
-      return { verified };
-    } catch {
-      return { verified: false };
-    }
-  }, []);
-
-  const sendPasswordReset = useCallback(
-    async (email: string): Promise<{ ok: boolean; error?: string }> => {
-      const cleanEmail = email.trim();
-      if (!cleanEmail || !cleanEmail.includes('@')) {
-        return { ok: false, error: 'Enter your account email address first.' };
-      }
-      try {
-        await sendPasswordResetEmail(auth, cleanEmail);
-        setStatusBannerMessage('Password reset email sent');
-        return { ok: true };
-      } catch (err) {
-        return { ok: false, error: formatAuthErrorMessage(err) };
-      }
-    },
-    [],
-  );
-
-  const signOutGoogleCloud = useCallback(async () => {
-    await signOut(auth);
-    setCloudSyncStatus('local');
-    setCloudErrorMsg(null);
-    setStatusBannerMessage('Signed out — on-device protection stays active');
   }, []);
 
   const setPreferredName = useCallback(
     (name: string) => {
       const clean = sanitizePreferredName(name);
-      setStore((prev) => ({ ...prev, preferredName: clean }));
-      const uid = activeUidRef.current;
-      if (uid && auth.currentUser?.emailVerified) {
-        void updatePreferredNameInCloud(
-          uid,
-          auth.currentUser.email ?? '',
-          auth.currentUser.displayName ?? clean,
-          clean,
-        );
-      }
+      mutateStore((prev) => ({ ...prev, preferredName: clean }));
       if (clean) {
         setStatusBannerMessage(`Personalized for ${clean.split(' ')[0]}`);
+      } else {
+        setStatusBannerMessage('Name cleared');
       }
     },
-    [],
+    [mutateStore],
   );
 
-  const forceSyncNow = useCallback(async () => {
-    const uid = activeUidRef.current;
-    if (!uid || !auth.currentUser?.emailVerified) return;
-    setCloudSyncStatus('connecting');
-    try {
-      await syncSettingsToCloud(uid, storeRef.current);
-      setCloudSyncStatus('synced');
-      setLastSyncedAtMs(Date.now());
-      setStatusBannerMessage('Cloud database synced (₦0 Free Tier)');
-    } catch (err) {
-      setCloudSyncStatus('error');
-      setCloudErrorMsg(err instanceof Error ? err.message : 'Sync failed');
-    }
-  }, []);
+  const highRiskStatus = useMemo(
+    () => evaluateHighRiskGuard(store.settings.highRiskSchedule, nowMs),
+    [store.settings.highRiskSchedule, nowMs],
+  );
 
   const filterConfig: BlockFilterConfig = useMemo(
     () => ({
@@ -491,8 +194,8 @@ export function useGambleAwareState() {
       blockPokerAndBingo: store.settings.blockPokerAndBingo,
       blockCryptoBetting: store.settings.blockCryptoBetting,
       blockFantasyAndLottery: store.settings.blockFantasyAndLottery,
-      strictKeywordFilter: store.settings.strictKeywordFilter,
-      searchGuardEnabled: store.settings.searchGuardEnabled,
+      strictKeywordFilter: store.settings.strictKeywordFilter || highRiskStatus.isActive,
+      searchGuardEnabled: store.settings.searchGuardEnabled || highRiskStatus.isActive,
       customBlockedDomains: new Set(
         store.domains.filter((d) => !d.isAllowlisted).map((d) => d.domain),
       ),
@@ -501,7 +204,7 @@ export function useGambleAwareState() {
       ),
       customBlockedPackages: new Set(store.blockedApps.map((a) => a.packageName.toLowerCase())),
     }),
-    [store.settings, store.domains, store.blockedApps],
+    [store.settings, store.domains, store.blockedApps, highRiskStatus.isActive],
   );
 
   const domainLookupResult: BlockMatchResult | null = useMemo(() => {
@@ -510,15 +213,13 @@ export function useGambleAwareState() {
   }, [domainLookupQuery, filterConfig]);
 
   const firstName = useMemo(
-    () => extractFirstName(store.preferredName, cloudUser?.displayName, cloudUser?.email),
-    [store.preferredName, cloudUser?.displayName, cloudUser?.email],
+    () => extractFirstName(store.preferredName, null, null),
+    [store.preferredName],
   );
 
-  const visibleGoals = useMemo(() => (cloudUser ? store.goals : []), [cloudUser, store.goals]);
-
   const primaryGoal = useMemo(
-    () => visibleGoals.find((g) => g.isPrimary) ?? visibleGoals[0] ?? null,
-    [visibleGoals],
+    () => store.goals.find((g) => g.isPrimary) ?? store.goals[0] ?? null,
+    [store.goals],
   );
 
   const uiState: DerivedMainState = useMemo(() => {
@@ -580,7 +281,7 @@ export function useGambleAwareState() {
       isAccessibilityEnabled: store.isAccessibilityEnabled,
       isDeviceAdminEnabled: store.isDeviceAdminEnabled,
       privateDnsStatus: store.privateDnsStatus,
-      goals: visibleGoals,
+      goals: store.goals,
       primaryGoal,
       customBlockedDomains: store.domains.filter((d) => !d.isAllowlisted),
       allowlistedDomains: store.domains.filter((d) => d.isAllowlisted),
@@ -614,38 +315,30 @@ export function useGambleAwareState() {
       nextMilestone,
       milestoneProgressFraction,
       estimatedSavedAmount,
+      highRiskStatus,
+      durableStatus,
     };
   }, [
     store,
-    visibleGoals,
     nowMs,
     firstName,
     primaryGoal,
     domainLookupQuery,
     domainLookupResult,
     statusBannerMessage,
+    highRiskStatus,
+    durableStatus,
   ]);
-
-  const mutateStoreAndSyncSettings = useCallback(
-    (updater: (prev: PersistedStore) => PersistedStore) => {
-      setStore((prev) => {
-        const next = updater(prev);
-        pushSettingsSnapshot(next);
-        return next;
-      });
-    },
-    [pushSettingsSnapshot],
-  );
 
   const updateSettings = useCallback(
     (updater: (prev: ProtectionSettingsState) => ProtectionSettingsState) => {
-      mutateStoreAndSyncSettings((prev) => ({ ...prev, settings: updater(prev.settings) }));
+      mutateStore((prev) => ({ ...prev, settings: updater(prev.settings) }));
     },
-    [mutateStoreAndSyncSettings],
+    [mutateStore],
   );
 
   const enableProtection = useCallback(() => {
-    mutateStoreAndSyncSettings((prev) => ({
+    mutateStore((prev) => ({
       ...prev,
       isAccessibilityEnabled: true,
       settings: {
@@ -656,7 +349,7 @@ export function useGambleAwareState() {
       },
     }));
     setStatusBannerMessage('GambleAware protection active');
-  }, [mutateStoreAndSyncSettings]);
+  }, [mutateStore]);
 
   const disableProtection = useCallback(() => {
     updateSettings((s) => ({ ...s, isProtectionEnabled: false }));
@@ -664,7 +357,7 @@ export function useGambleAwareState() {
   }, [updateSettings]);
 
   const activateAccessibilityShield = useCallback(() => {
-    mutateStoreAndSyncSettings((prev) => ({
+    mutateStore((prev) => ({
       ...prev,
       isAccessibilityEnabled: true,
       settings: {
@@ -675,22 +368,40 @@ export function useGambleAwareState() {
       },
     }));
     setStatusBannerMessage('Web, Search & App guard active');
-  }, [mutateStoreAndSyncSettings]);
+  }, [mutateStore]);
 
   const enableDeviceAdmin = useCallback(() => {
-    mutateStoreAndSyncSettings((prev) => ({ ...prev, isDeviceAdminEnabled: true }));
-    setStatusBannerMessage('Uninstall lock active');
-  }, [mutateStoreAndSyncSettings]);
+    mutateStore((prev) => ({
+      ...prev,
+      isDeviceAdminEnabled: true,
+      isAccessibilityEnabled: true,
+      settings: {
+        ...prev.settings,
+        isProtectionEnabled: true,
+        antiTamperLockEnabled: true,
+        protectionStartedAtMs:
+          prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : Date.now(),
+      },
+    }));
+    setStatusBannerMessage('Uninstall & Admin lock active');
+  }, [mutateStore]);
 
   const deactivateDeviceAdmin = useCallback(() => {
-    mutateStoreAndSyncSettings((prev) => ({ ...prev, isDeviceAdminEnabled: false }));
+    if (
+      storeRef.current.settings.lockUntilEpochMs > Date.now() ||
+      storeRef.current.settings.antiTamperLockEnabled
+    ) {
+      setStatusBannerMessage('Uninstall Lock stays armed until your Commitment Lock ends');
+      return;
+    }
+    mutateStore((prev) => ({ ...prev, isDeviceAdminEnabled: false }));
     setStatusBannerMessage('Uninstall lock deactivated');
-  }, [mutateStoreAndSyncSettings]);
+  }, [mutateStore]);
 
   const setPrivateDnsHost = useCallback(
     (host: string | null) => {
       const trimmed = host?.trim().slice(0, 253) || null;
-      mutateStoreAndSyncSettings((prev) => ({
+      mutateStore((prev) => ({
         ...prev,
         privateDnsStatus: {
           isActive: Boolean(trimmed),
@@ -701,7 +412,7 @@ export function useGambleAwareState() {
         trimmed ? `Private DNS configured (${trimmed})` : 'Private DNS set to Automatic',
       );
     },
-    [mutateStoreAndSyncSettings],
+    [mutateStore],
   );
 
   const updateCategory = useCallback(
@@ -751,10 +462,37 @@ export function useGambleAwareState() {
     [updateSettings],
   );
 
+  const setHighRiskScheduleFlag = useCallback(
+    (key: keyof HighRiskScheduleConfig, enabled: boolean) => {
+      updateSettings((s) => ({
+        ...s,
+        highRiskSchedule: {
+          ...s.highRiskSchedule,
+          [key]: enabled,
+        },
+      }));
+      setStatusBannerMessage(enabled ? 'High-risk window guard armed' : 'Schedule window paused');
+    },
+    [updateSettings],
+  );
+
   const setThemeMode = useCallback(
     (mode: ThemeMode) => updateSettings((s) => ({ ...s, themeMode: mode })),
     [updateSettings],
   );
+
+  const toggleQuickTheme = useCallback(() => {
+    const isCurrentlyDark =
+      storeRef.current.settings.themeMode === ThemeMode.DARK ||
+      (storeRef.current.settings.themeMode === ThemeMode.SYSTEM &&
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const nextMode = isCurrentlyDark ? ThemeMode.LIGHT : ThemeMode.DARK;
+    updateSettings((s) => ({ ...s, themeMode: nextMode }));
+    setStatusBannerMessage(
+      nextMode === ThemeMode.DARK ? 'Switched to Black & Pink theme' : 'Switched to Crisp White theme',
+    );
+  }, [updateSettings]);
 
   const setDailySpendEstimate = useCallback(
     (amount: number) =>
@@ -783,19 +521,42 @@ export function useGambleAwareState() {
     [updateSettings],
   );
 
-  const setAiAutoBlockEnabled = useCallback(
-    (enabled: boolean) => {
-      updateSettings((s) => ({ ...s, aiAutoBlockEnabled: enabled }));
-      setStatusBannerMessage(
-        enabled ? 'GambleAware AI auto-blocking turned on' : 'GambleAware AI auto-blocking paused',
-      );
-    },
-    [updateSettings],
-  );
-
   const setGoalReminderEnabled = useCallback(
     (enabled: boolean) => updateSettings((s) => ({ ...s, goalReminderEnabled: enabled })),
     [updateSettings],
+  );
+
+  const completeInitialSetup = useCallback(
+    (params: { preferredName: string; lockDays: number; dailySpendNgn: number }) => {
+      const cleanName = sanitizePreferredName(params.preferredName);
+      const safeDays = Math.max(1, Math.min(90, Math.round(params.lockDays || 7)));
+      const safeSpend = Math.max(0, Math.min(10_000_000, Math.round(params.dailySpendNgn || 5000)));
+      const now = Date.now();
+      const until = now + safeDays * 86_400_000;
+      mutateStore((prev) => ({
+        ...prev,
+        preferredName: cleanName || prev.preferredName,
+        isAccessibilityEnabled: true,
+        isDeviceAdminEnabled: true,
+        settings: {
+          ...prev.settings,
+          isProtectionEnabled: true,
+          antiTamperLockEnabled: true,
+          hasCompletedInitialSetup: true,
+          hasCompletedTour: true,
+          dailyBetSpendEstimate: safeSpend,
+          lockUntilEpochMs: Math.max(prev.settings.lockUntilEpochMs, until),
+          protectionStartedAtMs:
+            prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : now,
+        },
+      }));
+      setStatusBannerMessage(
+        cleanName
+          ? `Locked for ${safeDays} days — welcome, ${cleanName.split(' ')[0]}`
+          : `Protection & Admin Lock armed for ${safeDays} days`,
+      );
+    },
+    [mutateStore],
   );
 
   const activateTimeLock = useCallback(
@@ -803,7 +564,7 @@ export function useGambleAwareState() {
       const durationMs = days * 86_400_000;
       const now = Date.now();
       const until = now + durationMs;
-      mutateStoreAndSyncSettings((prev) => ({
+      mutateStore((prev) => ({
         ...prev,
         settings: {
           ...prev.settings,
@@ -816,7 +577,7 @@ export function useGambleAwareState() {
       }));
       setStatusBannerMessage(`Commitment Lock active for ${days} day${days === 1 ? '' : 's'}`);
     },
-    [mutateStoreAndSyncSettings],
+    [mutateStore],
   );
 
   const createGoal = useCallback(
@@ -828,13 +589,7 @@ export function useGambleAwareState() {
       whyNote: string;
       lockDurationDays: number;
       isPrimary?: boolean;
-    }): RecoveryGoalEntity | null => {
-      const uid = activeUidRef.current ?? auth.currentUser?.uid ?? null;
-      if (!uid) {
-        setStatusBannerMessage('Sign in or create an account to create personal goals');
-        return null;
-      }
-
+    }): RecoveryGoalEntity => {
       const clean = sanitizeGoalFields(input);
       const now = Date.now();
       const newGoal: RecoveryGoalEntity = {
@@ -850,17 +605,12 @@ export function useGambleAwareState() {
         createdAtMs: now,
       };
 
-      setStore((prev) => {
+      mutateStore((prev) => {
         const demoted = newGoal.isPrimary
           ? prev.goals.map((g) => ({ ...g, isPrimary: false }))
           : prev.goals;
-        const nextGoals = [newGoal, ...demoted];
-        return { ...prev, goals: nextGoals };
+        return { ...prev, goals: [newGoal, ...demoted] };
       });
-
-      if (auth.currentUser?.emailVerified) {
-        void upsertGoalInCloud(uid, newGoal);
-      }
 
       if (clean.lockDurationDays > 0) {
         activateTimeLock(clean.lockDurationDays, true);
@@ -868,133 +618,108 @@ export function useGambleAwareState() {
       setStatusBannerMessage(`Goal created: ${newGoal.title}`);
       return newGoal;
     },
-    [activateTimeLock],
+    [activateTimeLock, mutateStore],
   );
 
-  const setPrimaryGoal = useCallback((goalId: string) => {
-    const uid = activeUidRef.current ?? auth.currentUser?.uid ?? null;
-    if (!uid) return;
-    let targetGoal: RecoveryGoalEntity | undefined;
-    setStore((prev) => {
-      const updated = prev.goals.map((g) => {
-        const match = g.goalId === goalId;
-        const next = { ...g, isPrimary: match };
-        if (match) targetGoal = next;
-        return next;
+  const setPrimaryGoal = useCallback(
+    (goalId: string) => {
+      mutateStore((prev) => ({
+        ...prev,
+        goals: prev.goals.map((g) => ({ ...g, isPrimary: g.goalId === goalId })),
+      }));
+    },
+    [mutateStore],
+  );
+
+  const toggleGoalCompleted = useCallback(
+    (goalId: string) => {
+      mutateStore((prev) => ({
+        ...prev,
+        goals: prev.goals.map((g) =>
+          g.goalId === goalId ? { ...g, isCompleted: !g.isCompleted } : g,
+        ),
+      }));
+    },
+    [mutateStore],
+  );
+
+  const deleteGoal = useCallback(
+    (goalId: string) => {
+      mutateStore((prev) => {
+        const remaining = prev.goals.filter((g) => g.goalId !== goalId);
+        if (remaining.length > 0 && !remaining.some((g) => g.isPrimary)) {
+          remaining[0] = { ...remaining[0], isPrimary: true };
+        }
+        return { ...prev, goals: remaining };
       });
-      return { ...prev, goals: updated };
-    });
-    if (auth.currentUser?.emailVerified && targetGoal) {
-      void upsertGoalInCloud(uid, targetGoal);
-    }
-  }, []);
+      setStatusBannerMessage('Goal removed');
+    },
+    [mutateStore],
+  );
 
-  const toggleGoalCompleted = useCallback((goalId: string) => {
-    const uid = activeUidRef.current ?? auth.currentUser?.uid ?? null;
-    if (!uid) return;
-    let updatedGoal: RecoveryGoalEntity | undefined;
-    setStore((prev) => ({
-      ...prev,
-      goals: prev.goals.map((g) => {
-        if (g.goalId !== goalId) return g;
-        updatedGoal = { ...g, isCompleted: !g.isCompleted };
-        return updatedGoal;
-      }),
-    }));
-    if (auth.currentUser?.emailVerified && updatedGoal) {
-      void upsertGoalInCloud(uid, updatedGoal);
-    }
-  }, []);
-
-  const deleteGoal = useCallback((goalId: string) => {
-    const uid = activeUidRef.current ?? auth.currentUser?.uid ?? null;
-    if (!uid) return;
-    setStore((prev) => {
-      const remaining = prev.goals.filter((g) => g.goalId !== goalId);
-      if (remaining.length > 0 && !remaining.some((g) => g.isPrimary)) {
-        remaining[0] = { ...remaining[0], isPrimary: true };
+  const addCustomDomain = useCallback(
+    (rawDomain: string, isAllowlisted: boolean) => {
+      const normalized = sanitizeDomainForBlueprint(BlocklistMatcher.normalizeDomain(rawDomain));
+      if (!normalized || !normalized.includes('.')) {
+        setStatusBannerMessage('Enter a valid website domain');
+        return;
       }
-      return { ...prev, goals: remaining };
-    });
-    if (auth.currentUser?.emailVerified) {
-      void deleteGoalFromCloud(uid, goalId);
-    }
-    setStatusBannerMessage('Goal removed');
-  }, []);
-
-  const addCustomDomain = useCallback((rawDomain: string, isAllowlisted: boolean) => {
-    const normalized = sanitizeDomainForBlueprint(BlocklistMatcher.normalizeDomain(rawDomain));
-    if (!normalized || !normalized.includes('.')) {
-      setStatusBannerMessage('Enter a valid website domain');
-      return;
-    }
-    const entity: BlockedDomainEntity = {
-      domain: normalized,
-      isAllowlisted,
-      categoryName: GamblingCategory.CUSTOM,
-      addedAt: Date.now(),
-    };
-    setStore((prev) => {
-      const filtered = prev.domains.filter((d) => d.domain !== normalized);
-      return {
-        ...prev,
-        domains: [entity, ...filtered],
+      const entity: BlockedDomainEntity = {
+        domain: normalized,
+        isAllowlisted,
+        categoryName: GamblingCategory.CUSTOM,
+        addedAt: Date.now(),
       };
-    });
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified) {
-      void upsertCustomDomainInCloud(uid, entity);
-    }
-    setStatusBannerMessage(isAllowlisted ? `Allowlisted ${normalized}` : `Blocked ${normalized}`);
-  }, []);
-
-  const removeCustomDomain = useCallback((domain: string) => {
-    const normalized = sanitizeDomainForBlueprint(domain);
-    setStore((prev) => ({
-      ...prev,
-      domains: prev.domains.filter((d) => d.domain !== normalized),
-    }));
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified) {
-      void deleteCustomDomainFromCloud(uid, normalized);
-    }
-    setStatusBannerMessage(`Removed ${normalized}`);
-  }, []);
-
-  const addBlockedApp = useCallback((app: InstalledAppInfo) => {
-    const pkg = sanitizePackageForBlueprint(app.packageName.toLowerCase());
-    if (!pkg) return;
-    const entity: BlockedAppEntity = {
-      packageName: pkg,
-      appLabel: app.label.slice(0, 80),
-      addedAt: Date.now(),
-    };
-    setStore((prev) => {
-      const filtered = prev.blockedApps.filter((a) => a.packageName !== pkg);
-      return {
+      mutateStore((prev) => ({
         ...prev,
-        blockedApps: [entity, ...filtered],
-      };
-    });
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified) {
-      void upsertBlockedAppInCloud(uid, entity);
-    }
-    setStatusBannerMessage(`Added ${app.label} to App Guard`);
-  }, []);
+        domains: [entity, ...prev.domains.filter((d) => d.domain !== normalized)],
+      }));
+      setStatusBannerMessage(isAllowlisted ? `Allowlisted ${normalized}` : `Blocked ${normalized}`);
+    },
+    [mutateStore],
+  );
 
-  const removeBlockedApp = useCallback((packageName: string) => {
-    const pkg = sanitizePackageForBlueprint(packageName.toLowerCase());
-    setStore((prev) => ({
-      ...prev,
-      blockedApps: prev.blockedApps.filter((a) => a.packageName !== pkg),
-    }));
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified) {
-      void deleteBlockedAppFromCloud(uid, pkg);
-    }
-    setStatusBannerMessage('Removed app rule');
-  }, []);
+  const removeCustomDomain = useCallback(
+    (domain: string) => {
+      const normalized = sanitizeDomainForBlueprint(domain);
+      mutateStore((prev) => ({
+        ...prev,
+        domains: prev.domains.filter((d) => d.domain !== normalized),
+      }));
+      setStatusBannerMessage(`Removed ${normalized}`);
+    },
+    [mutateStore],
+  );
+
+  const addBlockedApp = useCallback(
+    (app: InstalledAppInfo) => {
+      const pkg = sanitizePackageForBlueprint(app.packageName.toLowerCase());
+      if (!pkg) return;
+      const entity: BlockedAppEntity = {
+        packageName: pkg,
+        appLabel: app.label.slice(0, 80),
+        addedAt: Date.now(),
+      };
+      mutateStore((prev) => ({
+        ...prev,
+        blockedApps: [entity, ...prev.blockedApps.filter((a) => a.packageName !== pkg)],
+      }));
+      setStatusBannerMessage(`Added ${app.label} to App Guard`);
+    },
+    [mutateStore],
+  );
+
+  const removeBlockedApp = useCallback(
+    (packageName: string) => {
+      const pkg = sanitizePackageForBlueprint(packageName.toLowerCase());
+      mutateStore((prev) => ({
+        ...prev,
+        blockedApps: prev.blockedApps.filter((a) => a.packageName !== pkg),
+      }));
+      setStatusBannerMessage('Removed app rule');
+    },
+    [mutateStore],
+  );
 
   const setPin = useCallback(
     (pin: string) => {
@@ -1038,12 +763,7 @@ export function useGambleAwareState() {
     [store.settings.pinHash],
   );
 
-  const verifyPin = useCallback(
-    (pin: string) => {
-      return attemptPin(pin).ok;
-    },
-    [attemptPin],
-  );
+  const verifyPin = useCallback((pin: string) => attemptPin(pin).ok, [attemptPin]);
 
   const clearPin = useCallback(
     (currentPin: string) => {
@@ -1073,25 +793,24 @@ export function useGambleAwareState() {
     updateSettings((s) => ({ ...s, hasCompletedTour: false }));
   }, [updateSettings]);
 
-  const logUrgeResisted = useCallback((triggerTag: string, note: string) => {
-    const clean = sanitizeUrgeFields(triggerTag, note);
-    const now = Date.now();
-    const newLog: UrgeLogEntity = {
-      id: now,
-      triggerTag: clean.triggerTag,
-      note: clean.note,
-      timestamp: now,
-    };
-    setStore((prev) => ({
-      ...prev,
-      urgeLogs: [newLog, ...prev.urgeLogs],
-    }));
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified) {
-      void createUrgeLogInCloud(uid, newLog);
-    }
-    setStatusBannerMessage(`Urge resisted & logged (${newLog.triggerTag})`);
-  }, []);
+  const logUrgeResisted = useCallback(
+    (triggerTag: string, note: string) => {
+      const clean = sanitizeUrgeFields(triggerTag, note);
+      const now = Date.now();
+      const newLog: UrgeLogEntity = {
+        id: now,
+        triggerTag: clean.triggerTag,
+        note: clean.note,
+        timestamp: now,
+      };
+      mutateStore((prev) => ({
+        ...prev,
+        urgeLogs: [newLog, ...prev.urgeLogs],
+      }));
+      setStatusBannerMessage(`Urge resisted & logged (${newLog.triggerTag})`);
+    },
+    [mutateStore],
+  );
 
   const logBlockedEvent = useCallback(
     (target: string, source: string, category: string) => {
@@ -1103,16 +822,12 @@ export function useGambleAwareState() {
         categoryName: category,
         timestamp: now,
       };
-      setStore((prev) => ({
+      mutateStore((prev) => ({
         ...prev,
         events: [ev, ...prev.events],
       }));
-      const uid = activeUidRef.current;
-      if (uid && auth.currentUser?.emailVerified) {
-        void createBlockedEventInCloud(uid, ev);
-      }
     },
-    [],
+    [mutateStore],
   );
 
   const checkGamblingLoginAttempt = useCallback(
@@ -1138,13 +853,33 @@ export function useGambleAwareState() {
   );
 
   const clearEventHistory = useCallback(() => {
-    setStore((prev) => ({ ...prev, events: [] }));
-    const uid = activeUidRef.current;
-    if (uid && auth.currentUser?.emailVerified) {
-      void clearEventsInCloud(uid);
-    }
+    mutateStore((prev) => ({ ...prev, events: [] }));
     setStatusBannerMessage('Blocked activity log cleared');
-  }, []);
+  }, [mutateStore]);
+
+  const restoreFromVaultBackup = useCallback(
+    (rawKeyOrJson: string): { ok: boolean; error?: string } => {
+      const parsed = parseBackupInput(rawKeyOrJson);
+      if (!parsed) {
+        return {
+          ok: false,
+          error: 'Invalid Recovery Key or backup file. Check that you pasted the full GA1 key.',
+        };
+      }
+      const stamped: PersistedStore = { ...parsed, updatedAtMs: Date.now() };
+      setStore(stamped);
+      void persistToAllLayers(stamped, durableStatus.persistentGranted).then(setDurableStatus);
+      setStatusBannerMessage('Restored 100% of streak, goals & rules from Recovery Vault');
+      return { ok: true };
+    },
+    [durableStatus.persistentGranted],
+  );
+
+  const forceBackupSync = useCallback(async () => {
+    const status = await persistToAllLayers(storeRef.current, durableStatus.persistentGranted);
+    setDurableStatus(status);
+    setStatusBannerMessage('Vault snapshot saved across Local, IndexedDB & Cache');
+  }, [durableStatus.persistentGranted]);
 
   const resetAllData = useCallback(() => {
     setStore(createDefaultStore());
@@ -1153,20 +888,9 @@ export function useGambleAwareState() {
   const clearBanner = useCallback(() => setStatusBannerMessage(null), []);
 
   return {
+    store,
     uiState,
-    cloudUser,
-    cloudSyncStatus,
-    lastSyncedAtMs,
-    cloudErrorMsg,
-    signInWithGoogleCloud,
-    signUpWithEmailCloud,
-    signInWithEmailCloud,
-    resendVerificationEmail,
-    refreshEmailVerification,
-    sendPasswordReset,
-    signOutGoogleCloud,
     setPreferredName,
-    forceSyncNow,
     updateDomainLookupQuery: setDomainLookupQuery,
     checkGamblingLoginAttempt,
     enableProtection,
@@ -1181,11 +905,13 @@ export function useGambleAwareState() {
     setAppShieldEnabled,
     setSearchGuardEnabled,
     setAntiTamperEnabled,
+    setHighRiskScheduleFlag,
     setThemeMode,
+    toggleQuickTheme,
     setDailySpendEstimate,
     setNotificationsEnabled,
-    setAiAutoBlockEnabled,
     setGoalReminderEnabled,
+    completeInitialSetup,
     createGoal,
     setPrimaryGoal,
     toggleGoalCompleted,
@@ -1205,6 +931,8 @@ export function useGambleAwareState() {
     logUrgeResisted,
     logBlockedEvent,
     clearEventHistory,
+    restoreFromVaultBackup,
+    forceBackupSync,
     resetAllData,
     clearBanner,
   };

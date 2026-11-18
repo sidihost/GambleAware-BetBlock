@@ -12,8 +12,8 @@ import {
   X,
 } from 'lucide-react';
 import { AppHeader } from './components/AppHeader';
-import { AuthScreen } from './components/AuthScreen';
 import { BlockedInterventionModal } from './components/BlockedInterventionModal';
+import { FirstRunSetupModal } from './components/FirstRunSetupModal';
 import { GoalModal } from './components/GoalCardModal';
 import {
   LiquidFloatingNavBar,
@@ -76,20 +76,9 @@ const SUPPORT_LINKS = [
 
 export function App() {
   const {
+    store,
     uiState,
-    cloudUser,
-    cloudSyncStatus,
-    lastSyncedAtMs,
-    cloudErrorMsg,
-    signInWithGoogleCloud,
-    signUpWithEmailCloud,
-    signInWithEmailCloud,
-    resendVerificationEmail,
-    refreshEmailVerification,
-    sendPasswordReset,
-    signOutGoogleCloud,
     setPreferredName,
-    forceSyncNow,
     updateDomainLookupQuery,
     checkGamblingLoginAttempt,
     enableProtection,
@@ -104,10 +93,12 @@ export function App() {
     setAppShieldEnabled,
     setSearchGuardEnabled,
     setAntiTamperEnabled,
+    setHighRiskScheduleFlag,
     setThemeMode,
+    toggleQuickTheme,
     setDailySpendEstimate,
     setNotificationsEnabled,
-    setAiAutoBlockEnabled,
+    completeInitialSetup,
     createGoal,
     setPrimaryGoal,
     toggleGoalCompleted,
@@ -124,17 +115,10 @@ export function App() {
     completeTour,
     replayTour,
     logUrgeResisted,
-    logBlockedEvent,
     clearEventHistory,
+    restoreFromVaultBackup,
+    forceBackupSync,
   } = useGambleAwareState();
-
-  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>(() => {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname.replace(/\/+$/, '').toLowerCase();
-      if (path === '/signup') return 'signup';
-    }
-    return 'signin';
-  });
 
   const [currentRoute, setCurrentRoute] = useState<AnchorRoute>(() => {
     if (typeof window !== 'undefined') {
@@ -143,10 +127,8 @@ export function App() {
       if (path === '/rules') return 'blocklist';
       if (path === '/progress') return 'activity';
       if (path === '/lock') return 'lock';
-      if (path === '/login' || path === '/signin' || path === '/signup') return 'auth';
       const routeParam = new URLSearchParams(window.location.search).get('page');
       if (routeParam === 'download') return 'download';
-      if (routeParam === 'login' || routeParam === 'signup') return 'auth';
     }
     return 'shield';
   });
@@ -167,8 +149,6 @@ export function App() {
 
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [goalModalPrefill, setGoalModalPrefill] = useState<GoalPrefill | null>(null);
-  const [pendingGoalAfterAuth, setPendingGoalAfterAuth] = useState(false);
-  const [pendingGoalPrefill, setPendingGoalPrefill] = useState<GoalPrefill | null>(null);
   const [goalReminderDismissed, setGoalReminderDismissed] = useState(false);
 
   const [showSafeSupportSheet, setShowSafeSupportSheet] = useState(false);
@@ -180,41 +160,13 @@ export function App() {
 
   const navigateTo = useCallback((route: AnchorRoute) => {
     setCurrentRoute(route);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   }, []);
 
-  const openAuthRoute = useCallback(
-    (mode: 'signin' | 'signup' = 'signin') => {
-      setAuthInitialMode(mode);
-      navigateTo('auth');
-    },
-    [navigateTo],
-  );
-
-  const requestOpenGoalModal = useCallback(
-    (prefill?: GoalPrefill) => {
-      if (!cloudUser) {
-        setPendingGoalAfterAuth(true);
-        setPendingGoalPrefill(prefill ?? null);
-        setIntervention(null);
-        openAuthRoute('signup');
-        return;
-      }
-      setGoalModalPrefill(prefill ?? null);
-      setShowGoalModal(true);
-    },
-    [cloudUser, openAuthRoute],
-  );
-
-  useEffect(() => {
-    if (cloudUser && pendingGoalAfterAuth) {
-      setPendingGoalAfterAuth(false);
-      setCurrentRoute('shield');
-      setGoalModalPrefill(pendingGoalPrefill);
-      setPendingGoalPrefill(null);
-      setShowGoalModal(true);
-    }
-  }, [cloudUser, pendingGoalAfterAuth, pendingGoalPrefill]);
+  const requestOpenGoalModal = useCallback((prefill?: GoalPrefill) => {
+    setGoalModalPrefill(prefill ?? null);
+    setShowGoalModal(true);
+  }, []);
 
   // Apply White (Light default) / Black & Pink Dark theme class & browser theme-color
   useEffect(() => {
@@ -251,6 +203,10 @@ export function App() {
 
   const handleRequestDeviceAdminToggle = () => {
     if (uiState.isDeviceAdminEnabled) {
+      if (uiState.isTimeLockedNow || uiState.settings.antiTamperLockEnabled) {
+        setShowTimeLockedNotice(true);
+        return;
+      }
       guardRestrictedAction(() => deactivateDeviceAdmin());
     } else {
       enableDeviceAdmin();
@@ -285,30 +241,6 @@ export function App() {
     [checkGamblingLoginAttempt, updateDomainLookupQuery],
   );
 
-  const handleAutoBlockFromAgent = useCallback(
-    (params: {
-      target: string;
-      category: string;
-      isLoginAttempt: boolean;
-      coachNote: string;
-    }) => {
-      if (params.target.includes('.')) {
-        addCustomDomain(params.target, false);
-      }
-      logBlockedEvent(params.target, 'AI Agent', params.category);
-      setIntervention({
-        target: params.target,
-        source: 'AI Agent',
-        category: params.category,
-        isAntiTamper: false,
-        autoStartBreathing: false,
-        isLoginRedirect: params.isLoginAttempt,
-        coachNote: params.coachNote,
-      });
-    },
-    [addCustomDomain, logBlockedEvent],
-  );
-
   const handleTourSelectStep = useCallback((step: SpotlightTourStep) => {
     setCurrentRoute(step.route);
   }, []);
@@ -333,16 +265,14 @@ export function App() {
       <AppHeader
         currentRoute={currentRoute}
         onSelectRoute={navigateTo}
-        cloudUser={cloudUser}
-        firstName={uiState.firstName}
-        cloudSyncStatus={cloudSyncStatus}
-        onAuthClick={() => openAuthRoute('signin')}
+        themeMode={uiState.settings.themeMode}
+        onToggleQuickTheme={toggleQuickTheme}
       />
 
       {/* Floating Status Toast */}
       {uiState.statusBannerMessage ? (
-        <div className="pointer-events-none fixed top-16 left-0 right-0 z-40 flex justify-center px-4 md:top-20">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] px-4 py-2 text-xs font-semibold text-[var(--ink)] backdrop-blur-xl">
+        <div className="pointer-events-none fixed right-0 bottom-[84px] left-0 z-40 flex justify-center px-4 md:top-[72px] md:bottom-auto">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--surface)] px-4 py-2 text-xs font-semibold text-[var(--ink)] shadow-xl">
             <Info className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
             <span>{uiState.statusBannerMessage}</span>
           </div>
@@ -351,42 +281,14 @@ export function App() {
 
       {/* Main Route View */}
       <main className="min-h-[calc(100vh-4rem)]">
-        {currentRoute === 'auth' ? (
-          <AuthScreen
-            initialMode={authInitialMode}
-            cloudUser={cloudUser}
-            preferredName={uiState.preferredName}
-            cloudErrorMsg={cloudErrorMsg}
-            pendingGoalNotice={pendingGoalAfterAuth}
-            onSignInGoogle={signInWithGoogleCloud}
-            onSignUpEmail={signUpWithEmailCloud}
-            onSignInEmail={signInWithEmailCloud}
-            onSendPasswordReset={sendPasswordReset}
-            onRefreshVerification={refreshEmailVerification}
-            onSavePreferredName={setPreferredName}
-            onResendVerification={() => void resendVerificationEmail()}
-            onSignOut={signOutGoogleCloud}
-            onRedirectHome={() => {
-              if (!cloudUser) {
-                setPendingGoalAfterAuth(false);
-                setPendingGoalPrefill(null);
-              }
-              navigateTo('shield');
-            }}
-          />
-        ) : null}
-
         {currentRoute === 'shield' ? (
           <ShieldScreen
+            store={store}
             state={uiState}
-            cloudUser={cloudUser}
-            cloudSyncStatus={cloudSyncStatus}
-            lastSyncedAtMs={lastSyncedAtMs}
-            cloudErrorMsg={cloudErrorMsg}
-            onSignInGoogle={() => void signInWithGoogleCloud()}
-            onOpenAuth={openAuthRoute}
-            onSignOut={() => void signOutGoogleCloud()}
-            onForceSync={() => void forceSyncNow()}
+            onSetPreferredName={setPreferredName}
+            onForceSaveVault={() => void forceBackupSync()}
+            onRestoreVault={restoreFromVaultBackup}
+            onToggleHighRiskWindow={setHighRiskScheduleFlag}
             onPrimaryShieldClick={() => {
               if (!uiState.isAccessibilityEnabled) {
                 setShowAccessibilityDisclosure(true);
@@ -403,25 +305,10 @@ export function App() {
             onTestOrRedirectUrl={handleTestOrRedirectUrl}
             showGoalReminder={showGoalReminder}
             onDismissGoalReminder={() => setGoalReminderDismissed(true)}
-            onOpenGoalModal={() => requestOpenGoalModal()}
+            onOpenGoalModal={requestOpenGoalModal}
             onSetPrimaryGoal={setPrimaryGoal}
             onToggleGoalComplete={toggleGoalCompleted}
             onDeleteGoal={deleteGoal}
-            onToggleAiAutoBlock={setAiAutoBlockEnabled}
-            onAutoBlockFromAgent={handleAutoBlockFromAgent}
-            onCreateSuggestedGoal={(g) => {
-              if (!cloudUser) {
-                requestOpenGoalModal({
-                  title: g.title,
-                  category: g.category,
-                  targetDays: g.targetDays,
-                  targetAmountNgn: g.targetAmountNgn,
-                  whyNote: g.whyNote,
-                });
-              } else {
-                createGoal(g);
-              }
-            }}
             onNavigateToRules={() => navigateTo('blocklist')}
             onNavigateToProgress={() => navigateTo('activity')}
             onNavigateToLock={() => navigateTo('lock')}
@@ -477,11 +364,10 @@ export function App() {
         {currentRoute === 'activity' ? (
           <ActivityScreen
             state={uiState}
-            isSignedIn={Boolean(cloudUser)}
             onClearHistory={() => guardRestrictedAction(() => clearEventHistory())}
             onOpenUrgeJournal={() => setShowUrgeJournalSheet(true)}
             onLaunchCalmReset={launchSosCalmReset}
-            onOpenGoalModal={() => requestOpenGoalModal()}
+            onOpenGoalModal={requestOpenGoalModal}
             onSetPrimaryGoal={setPrimaryGoal}
             onToggleGoalComplete={toggleGoalCompleted}
             onDeleteGoal={deleteGoal}
@@ -490,14 +376,11 @@ export function App() {
 
         {currentRoute === 'lock' ? (
           <LockSettingsScreen
+            store={store}
             state={uiState}
-            cloudUser={cloudUser}
-            cloudSyncStatus={cloudSyncStatus}
-            lastSyncedAtMs={lastSyncedAtMs}
-            cloudErrorMsg={cloudErrorMsg}
-            onSignInGoogle={() => void signInWithGoogleCloud()}
-            onSignOut={() => void signOutGoogleCloud()}
-            onForceSync={() => void forceSyncNow()}
+            onSetPreferredName={setPreferredName}
+            onForceSaveVault={() => void forceBackupSync()}
+            onRestoreVault={restoreFromVaultBackup}
             onActivateTimeLock={activateTimeLock}
             onToggleAntiTamper={(enabled) => {
               if (enabled) setAntiTamperEnabled(true);
@@ -531,27 +414,30 @@ export function App() {
         ) : null}
 
         {currentRoute === 'download' ? (
-          <DownloadScreen
-            state={uiState}
-            onOpenBlocker={() => navigateTo('shield')}
-            onSignInGoogle={() => openAuthRoute('signup')}
-            isSignedIn={Boolean(cloudUser)}
-          />
+          <DownloadScreen state={uiState} onOpenBlocker={() => navigateTo('shield')} />
         ) : null}
       </main>
 
       {/* Mobile Floating Liquid Glass Bottom Nav Bar */}
-      <LiquidFloatingNavBar
-        items={navItems}
-        selectedRoute={currentRoute === 'auth' ? 'shield' : currentRoute}
-        onSelect={navigateTo}
-      />
+      <LiquidFloatingNavBar items={navItems} selectedRoute={currentRoute} onSelect={navigateTo} />
 
-      {/* Interactive Guided Spotlight Tour */}
-      {!uiState.settings.hasCompletedTour &&
+      {/* Automatic Mandatory First-Install Name + Admin Lock-In Setup */}
+      {!uiState.settings.hasCompletedInitialSetup &&
       !autostartSkipped &&
-      currentRoute !== 'download' &&
-      currentRoute !== 'auth' ? (
+      currentRoute !== 'download' ? (
+        <FirstRunSetupModal
+          initialName={uiState.preferredName}
+          initialDailySpend={uiState.settings.dailyBetSpendEstimate}
+          onActivateAdminAndShield={enableDeviceAdmin}
+          onCompleteLockedSetup={completeInitialSetup}
+        />
+      ) : null}
+
+      {/* Interactive Guided Spotlight Tour (when replayed from Settings) */}
+      {uiState.settings.hasCompletedInitialSetup &&
+      !uiState.settings.hasCompletedTour &&
+      !autostartSkipped &&
+      currentRoute !== 'download' ? (
         <SpotlightTourOverlay
           onSelectStep={handleTourSelectStep}
           onDismissTour={() => {
@@ -576,14 +462,13 @@ export function App() {
           cleanExactDays={uiState.cleanExactDays}
           estimatedSavedAmount={uiState.estimatedSavedAmount}
           primaryGoal={uiState.primaryGoal}
-          isSignedIn={Boolean(cloudUser)}
           onCreateGoal={() => requestOpenGoalModal()}
           onClose={() => setIntervention(null)}
         />
       ) : null}
 
-      {/* Personalized Goal Modal (Logged-In Users Only) */}
-      {showGoalModal && cloudUser ? (
+      {/* Personalized Goal Modal — Open Immediately Without Login */}
+      {showGoalModal ? (
         <GoalModal
           initialTitle={goalModalPrefill?.title}
           initialCategory={goalModalPrefill?.category}
@@ -609,7 +494,7 @@ export function App() {
           <div className="max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
+                <CheckCircle2 className="h-5 w-5 text-[var(--accent-ink)]" />
                 <h2 className="font-display text-lg font-bold">Log a Resisted Urge</h2>
               </div>
               <button
@@ -651,7 +536,7 @@ export function App() {
               value={urgeNote}
               onChange={(e) => setUrgeNote(e.target.value)}
               placeholder="Optional note on how you stayed clean"
-              className="mt-3.5 h-12 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+              className="mt-3.5 h-12 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
             <button
               type="button"
@@ -679,7 +564,7 @@ export function App() {
           <div className="max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Heart className="h-5 w-5" />
+                <Heart className="h-5 w-5 text-[var(--accent-ink)]" />
                 <h2 className="font-display text-lg font-bold">Confidential Recovery Support</h2>
               </div>
               <button
@@ -708,7 +593,7 @@ export function App() {
                     <p className="text-sm font-semibold text-[var(--ink)]">{item.title}</p>
                     <p className="text-xs text-[var(--ink-muted)]">{item.subtitle}</p>
                   </div>
-                  <ExternalLink className="h-4 w-4 shrink-0 text-[var(--ink)]" />
+                  <ExternalLink className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
                 </a>
               ))}
             </div>
@@ -783,7 +668,7 @@ export function App() {
               value={privateDnsInput}
               onChange={(e) => setPrivateDnsInput(e.target.value)}
               placeholder="Enter DNS hostname"
-              className="mt-3.5 h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] focus:border-[var(--ink)] focus:outline-none"
+              className="mt-3.5 h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none"
             />
             <div className="mt-5 flex justify-end gap-2">
               <button
@@ -879,9 +764,11 @@ export function App() {
               onChange={(e) => setPinAttempt(e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder="4-Digit PIN"
               autoFocus
-              className="mt-3.5 h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--ink)] focus:outline-none"
+              className="mt-3.5 h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none"
             />
-            {pinError ? <p className="mt-2 text-xs font-medium text-[var(--ink)]">{pinError}</p> : null}
+            {pinError ? (
+              <p className="mt-2 text-xs font-medium text-[var(--accent-ink)]">{pinError}</p>
+            ) : null}
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"

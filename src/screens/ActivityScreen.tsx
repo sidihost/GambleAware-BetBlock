@@ -7,6 +7,7 @@ import {
   Globe,
   LockKeyhole,
   NotebookPen,
+  Plus,
   Smartphone,
   Trash2,
   Wind,
@@ -18,16 +19,22 @@ import {
   BettingFreeProgressChart,
   InteractiveBlockedBarChart,
 } from '../components/ProgressCharts';
-import { DerivedMainState, RECOVERY_MILESTONES } from '../data/types';
+import { WealthSimulatorCard } from '../components/WealthSimulatorCard';
+import { DerivedMainState, RECOVERY_MILESTONES, RecoveryGoalCategory } from '../data/types';
 import { formatNaira } from '../utils/currency';
 
 interface ActivityScreenProps {
   state: DerivedMainState;
-  isSignedIn: boolean;
   onClearHistory: () => void;
   onOpenUrgeJournal: () => void;
   onLaunchCalmReset: () => void;
-  onOpenGoalModal: () => void;
+  onOpenGoalModal: (prefill?: {
+    title: string;
+    category: RecoveryGoalCategory;
+    targetDays: number;
+    targetAmountNgn: number;
+    whyNote: string;
+  }) => void;
   onSetPrimaryGoal: (goalId: string) => void;
   onToggleGoalComplete: (goalId: string) => void;
   onDeleteGoal: (goalId: string) => void;
@@ -44,7 +51,6 @@ const SOURCE_FILTERS: Array<{ value: string; label: string }> = [
 
 export const ActivityScreen: React.FC<ActivityScreenProps> = ({
   state,
-  isSignedIn,
   onClearHistory,
   onOpenUrgeJournal,
   onLaunchCalmReset,
@@ -77,7 +83,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             Recovery Progress
           </h1>
           <p className="text-xs text-[var(--ink-muted)]">
-            Betting-free streak, personal goals, savings &amp; intercept history
+            Betting-free streak, wealth simulator, personal goals &amp; intercept history
           </p>
         </div>
         {state.recentEvents.length > 0 ? (
@@ -131,12 +137,12 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         </div>
       </LiquidGlassCard>
 
-      {isSignedIn && state.goals.length > 0 ? (
+      {state.goals.length > 0 ? (
         <ActiveGoalsCard
           goals={state.goals}
           cleanExactDays={state.cleanExactDays}
           estimatedSavedAmount={state.estimatedSavedAmount}
-          onAddGoal={onOpenGoalModal}
+          onAddGoal={() => onOpenGoalModal()}
           onSetPrimary={onSetPrimaryGoal}
           onToggleComplete={onToggleGoalComplete}
           onDeleteGoal={onDeleteGoal}
@@ -145,26 +151,28 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         <LiquidGlassCard className="flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center sm:p-5">
           <div>
             <p className="font-display text-sm font-bold text-[var(--ink)]">
-              {isSignedIn
-                ? 'No personal recovery goal set yet'
-                : 'Sign in to create personal goals'}
+              No personal recovery goal set yet
             </p>
             <p className="text-xs text-[var(--ink-muted)]">
-              {isSignedIn
-                ? 'Create a savings or streak target to track every clean day toward what matters most.'
-                : 'Create a free account or sign in to set savings targets and track every clean day.'}
+              Create a Naira savings or streak target right here — stored safely across all 3 device layers.
             </p>
           </div>
           <button
             type="button"
-            onClick={onOpenGoalModal}
+            onClick={() => onOpenGoalModal()}
             className="inline-flex h-10 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
           >
-            {!isSignedIn ? <LockKeyhole className="h-3.5 w-3.5" /> : null}
-            <span>{isSignedIn ? 'Create Goal' : 'Sign In to Create Goal'}</span>
+            <Plus className="h-3.5 w-3.5" />
+            <span>Create Goal</span>
           </button>
         </LiquidGlassCard>
       )}
+
+      {/* Interactive Naira Reclaimed Simulator */}
+      <WealthSimulatorCard
+        initialDailySpendNgn={state.settings.dailyBetSpendEstimate}
+        onApplyProjectionAsGoal={(prefill) => onOpenGoalModal(prefill)}
+      />
 
       {/* Interactive Visual Progress Chart */}
       <LiquidGlassCard className="p-4 sm:p-5" tourKey="progress_dashboard">

@@ -360,7 +360,13 @@ fun LockSettingsScreen(
                             border = BorderStroke(1.dp, liquid.subtleBorder),
                             modifier = Modifier.testTag("toggle_device_admin_button"),
                         ) {
-                            Text(if (state.isDeviceAdminEnabled) "Disable" else "Enable")
+                            Text(
+                                when {
+                                    state.isDeviceAdminEnabled && (isTimeLocked || state.settings.antiTamperLockEnabled) -> "Locked"
+                                    state.isDeviceAdminEnabled -> "Disable"
+                                    else -> "Enable"
+                                },
+                            )
                         }
                     }
                 }

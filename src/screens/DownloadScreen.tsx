@@ -4,12 +4,14 @@ import {
   ArrowUpRight,
   Check,
   CheckCircle2,
+  Copy,
   Download,
   LockKeyhole,
   Share2,
   Smartphone,
   TrendingUp,
 } from 'lucide-react';
+import { BrandAnchorMark } from '../components/AppHeader';
 import { LiquidGlassCard } from '../components/LiquidGlass';
 import { DerivedMainState } from '../data/types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
@@ -18,8 +20,6 @@ import { formatNaira } from '../utils/currency';
 interface DownloadScreenProps {
   state: DerivedMainState;
   onOpenBlocker: () => void;
-  onSignInGoogle: () => void;
-  isSignedIn: boolean;
 }
 
 type ShowcaseTab = 'guard' | 'savings' | 'lock';
@@ -37,18 +37,18 @@ const FEATURES = [
   },
   {
     num: '03',
-    title: 'Lock Timer That Prevents Deleting the App',
-    body: 'Lock your protection from 1 to 90 days. Once active, GambleAware cannot be turned off or deleted until your countdown reaches zero.',
+    title: 'Smart High-Risk Schedule Guard',
+    body: 'Automatically intensifies strict keyword & search blocking overnight (10 PM – 5 AM), matchday weekends, and salary paydays.',
   },
   {
     num: '04',
-    title: 'Live Naira (₦) Savings Tracker',
-    body: 'Set what you used to spend each day on betting and watch your real Naira savings add up every single day you stay clean.',
+    title: 'Live Naira (₦) Savings & Goal Tracker',
+    body: 'Set what you used to spend each day on betting and watch your real Naira savings add up toward concrete goals.',
   },
   {
     num: '05',
-    title: 'Free Online Backup Across Devices',
-    body: 'Sign in with Google or email at ₦0 cost to keep your streak, Naira savings, personal goals, and blocked websites synced.',
+    title: 'Zero-Loss 3-Layer Recovery Vault',
+    body: 'Protected across LocalStorage, IndexedDB, and Cache Vault with 1-tap Recovery Keys & JSON backups — no sign-up required.',
   },
   {
     num: '06',
@@ -59,41 +59,37 @@ const FEATURES = [
 
 const COMPARISON_ROWS = [
   {
-    capability: '640+ Betting Sites & New Lookalike Links',
-    apk: 'All Browsers & Social Apps',
-    pwa: 'Site Checker & Custom List',
+    capability: 'Price & Sign-Up',
+    apk: 'Free Forever · Zero Sign-Up',
+    pwa: 'Paid Subscription · Account Required',
   },
   {
-    capability: 'Betting Sign-In Blocker & Redirect',
-    apk: 'Automatic On Your Phone',
-    pwa: 'Instant Web Redirect',
+    capability: '639+ Sites & Social App WebViews (IG, TikTok, TG)',
+    apk: 'Blocked Without Using Your VPN Slot',
+    pwa: 'Occupies Your Single Phone VPN Slot',
   },
   {
-    capability: '130+ Betting Apps Blocked Automatically',
-    apk: 'Blocks Apps From Opening',
-    pwa: 'App Blocklist Rules',
+    capability: '130+ Betting Apps & New APK Install Guard',
+    apk: 'Stops Existing & Newly Installed Apps',
+    pwa: 'Limited to Domain Filter Only',
   },
   {
-    capability: 'Prevent Uninstalling Until Timer Ends',
-    apk: 'Phone Delete Lock Enforced',
-    pwa: 'Lock Timer & 4-Digit PIN',
+    capability: 'Default Admin Lock & Anti-Tamper Countdown',
+    apk: 'Locked On Install · Blocks Settings Removal',
+    pwa: 'Standard Subscription Uninstall Flow',
   },
   {
-    capability: 'Personal Goals, Naira Saved & Cloud Backup',
-    apk: 'Included (Free Forever)',
-    pwa: 'Included (Free Forever)',
+    capability: '₦ Naira Simulator, Payday Guard & 3-Layer Vault',
+    apk: 'Included Built-In (Offline Zero-Loss)',
+    pwa: 'No Local Currency Guard or Vault Key',
   },
 ];
 
-export const DownloadScreen: React.FC<DownloadScreenProps> = ({
-  state,
-  onOpenBlocker,
-  onSignInGoogle,
-  isSignedIn,
-}) => {
+export const DownloadScreen: React.FC<DownloadScreenProps> = ({ state, onOpenBlocker }) => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [activeTab, setActiveTab] = useState<ShowcaseTab>('guard');
   const [showBrowserGuide, setShowBrowserGuide] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const builtInDomainCount = state.builtInDomainCount;
   const dailySpendEstimate = state.settings.dailyBetSpendEstimate;
@@ -105,13 +101,23 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
   const thirtyDayGoal = formatNaira(dailySpendEstimate * 30);
   const latestEvent = state.recentEvents[0] ?? null;
 
+  const handleCopyAppUrl = async () => {
+    try {
+      await navigator.clipboard.writeText('https://gbb.sidihost.sbs');
+      setCopiedUrl(true);
+      window.setTimeout(() => setCopiedUrl(false), 2000);
+    } catch {
+      setCopiedUrl(false);
+    }
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-6 pb-28 md:px-6 md:pt-10 md:pb-16">
       {/* Hero Split Section */}
       <section className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
         <div className="flex flex-col items-start lg:col-span-6">
           <p className="text-xs font-semibold tracking-widest text-[var(--accent-ink)] uppercase">
-            Free Gambling Blocker · Built for Everyday Use
+            Free Gambling Blocker · Zero Sign-Up Required
           </p>
 
           <h1 className="mt-3 font-display text-4xl leading-[1.06] font-bold tracking-tight text-[var(--ink)] sm:text-5xl">
@@ -120,7 +126,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
 
           <p className="mt-4 max-w-xl text-base leading-relaxed text-[var(--ink-muted)]">
             Full protection across mobile browsers, social apps, and {builtInDomainCount}+ betting
-            websites — with live Naira (₦) savings, personal goals, and free backup.
+            websites — with live Naira (₦) savings, High-Risk Schedule Guard, and Zero-Loss Recovery Vault.
           </p>
 
           {/* Primary + Secondary Action Cluster */}
@@ -191,19 +197,22 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
               <span>Back to Home Dashboard</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
-            {!isSignedIn ? (
-              <button
-                type="button"
-                onClick={onSignInGoogle}
-                className="inline-flex cursor-pointer items-center gap-1 text-[var(--ink-muted)] hover:text-[var(--ink)]"
-              >
-                <span>Sign in with Google to save progress</span>
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => void handleCopyAppUrl()}
+              className="inline-flex cursor-pointer items-center gap-1 text-[var(--ink-muted)] hover:text-[var(--ink)]"
+            >
+              {copiedUrl ? (
+                <Check className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
+              )}
+              <span>{copiedUrl ? 'App Link Copied' : 'Share App Link'}</span>
+            </button>
           </div>
         </div>
 
-        {/* Right: Live Android Device Companion Showcase */}
+        {/* Right: Theme-Unified Live Companion Showcase */}
         <div className="flex flex-col items-center lg:col-span-6">
           <div
             role="tablist"
@@ -241,79 +250,77 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
           <div className="relative">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-6 rounded-[56px] opacity-35 blur-2xl"
+              className="pointer-events-none absolute -inset-6 rounded-[56px] opacity-25 blur-2xl"
               style={{
                 background:
-                  'radial-gradient(circle at 50% 35%, rgba(255, 61, 154, 0.36), transparent 68%)',
+                  'radial-gradient(circle at 50% 35%, var(--active-fill), transparent 68%)',
               }}
             />
 
-            <div className="relative w-[292px] rounded-[42px] border-[3px] border-[#2B2028] bg-[#0B090C] p-2.5 shadow-2xl sm:w-[308px]">
+            <div className="relative w-[292px] rounded-[42px] border-[3px] border-[var(--glass-border)] bg-[var(--surface)] p-2.5 shadow-2xl sm:w-[308px]">
               <div
                 aria-hidden="true"
-                className="absolute top-24 -right-[5px] h-14 w-[3px] rounded-r-sm bg-[#3A2B35]"
+                className="absolute top-24 -right-[5px] h-14 w-[3px] rounded-r-sm bg-[var(--subtle-border)]"
               />
               <div
                 aria-hidden="true"
-                className="absolute top-42 -right-[5px] h-9 w-[3px] rounded-r-sm bg-[#3A2B35]"
+                className="absolute top-42 -right-[5px] h-9 w-[3px] rounded-r-sm bg-[var(--subtle-border)]"
               />
 
-              <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[#070609] text-[#F9F5F8]">
-                <div className="flex items-center justify-between px-5 pt-3 pb-2 text-[10px] font-mono text-white/75">
+              <div className="overflow-hidden rounded-[32px] border border-[var(--subtle-border)] bg-[var(--canvas)] text-[var(--ink)]">
+                <div className="flex items-center justify-between px-5 pt-3 pb-2 font-mono text-[10px] text-[var(--ink-muted)]">
                   <span>{state.isFullyArmed ? 'GUARD ON' : 'STANDBY'}</span>
-                  <div className="h-3.5 w-3.5 rounded-full border border-white/15 bg-black" />
+                  <div className="h-3.5 w-3.5 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)]" />
                   <span>PRIVATE</span>
                 </div>
 
                 {activeTab === 'guard' ? (
                   <div className="flex flex-col items-center px-4 pt-2 pb-5">
                     <div className="flex w-full items-center justify-between text-xs">
-                      <span className="font-display font-bold text-white">GambleAware</span>
-                      <span className="rounded-full bg-[#FF3D9A] px-2 py-0.5 font-mono text-[10px] font-semibold text-black">
+                      <span className="font-display font-bold text-[var(--ink)]">GambleAware</span>
+                      <span className="font-mono text-[10px] font-bold text-[var(--accent-ink)]">
                         {state.isFullyArmed ? 'ACTIVE' : 'PAUSED'}
                       </span>
                     </div>
 
-                    <div className="relative mt-4 flex h-28 w-28 items-center justify-center rounded-full border border-[#FF3D9A]/35 bg-[#FF3D9A]/10">
-                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#FF3D9A] text-black shadow-lg">
-                        <Anchor className="h-9 w-9" />
-                      </div>
+                    <div className="relative mt-4 flex h-28 w-28 items-center justify-center rounded-full border border-[var(--glass-border)] bg-[var(--muted-fill)]">
+                      <BrandAnchorMark className="h-20 w-20 shadow-lg" />
                     </div>
 
-                    <p className="mt-3 font-display text-sm font-semibold text-white">
+                    <p className="mt-3 font-display text-sm font-semibold text-[var(--ink)]">
                       {state.isFullyArmed ? 'Web & App Guard Active' : 'Protection Paused'}
                     </p>
-                    <p className="mt-0.5 text-center text-[11px] text-white/60">
+                    <p className="mt-0.5 text-center text-[11px] text-[var(--ink-muted)]">
                       {builtInDomainCount}+ sportsbooks &amp; 130+ betting apps guarded
                     </p>
 
                     <div className="mt-3.5 grid w-full grid-cols-2 gap-2">
-                      <div className="rounded-2xl border border-white/10 bg-[#141016] p-2.5">
-                        <p className="text-[10px] text-white/55">Your Streak</p>
-                        <p className="mt-0.5 font-mono text-sm font-bold text-white">
+                      <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2.5">
+                        <p className="text-[10px] text-[var(--ink-muted)]">Your Streak</p>
+                        <p className="mt-0.5 font-mono text-sm font-bold text-[var(--ink)]">
                           {cleanMetric}
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-[#FF3D9A]/30 bg-[#1B1018] p-2.5">
-                        <p className="text-[10px] text-white/65">Naira Saved</p>
-                        <p className="mt-0.5 font-mono text-sm font-bold text-[#FF72B8]">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--muted-fill)] p-2.5">
+                        <p className="text-[10px] text-[var(--ink-muted)]">Naira Saved</p>
+                        <p className="mt-0.5 font-mono text-sm font-bold text-[var(--accent-ink)]">
                           {savedSoFar}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-2.5 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#141016] px-3 py-2.5">
+                    <div className="mt-2.5 flex w-full items-center justify-between rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-2.5">
                       <div className="min-w-0">
-                        <p className="truncate font-mono text-[11px] font-semibold text-white">
+                        <p className="truncate font-mono text-[11px] font-semibold text-[var(--ink)]">
                           {latestEvent ? latestEvent.target : 'Real-Time Filter Ready'}
                         </p>
-                        <p className="text-[10px] text-[#FF72B8]">
+                        <p className="text-[10px] text-[var(--accent-ink)]">
                           {latestEvent
                             ? `${latestEvent.source} · Intercepted`
                             : `Custom Rules: ${state.customBlockedDomains.length} domains`}
                         </p>
                       </div>
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-[#FF3D9A]" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
                     </div>
                   </div>
                 ) : null}
@@ -322,24 +329,24 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                   <div className="flex flex-col px-4 pt-2 pb-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-mono text-[10px] text-white/55 uppercase">
+                        <p className="font-mono text-[10px] text-[var(--ink-muted)] uppercase">
                           30-Day Goal Target
                         </p>
-                        <p className="font-display text-lg font-bold text-[#FF72B8] tabular-nums">
+                        <p className="font-display text-lg font-bold text-[var(--accent-ink)] tabular-nums">
                           {thirtyDayGoal}
                         </p>
                       </div>
-                      <span className="rounded-full border border-[#FF3D9A]/35 bg-[#1B1018] px-2.5 py-1 font-mono text-[10px] text-[#FF72B8]">
+                      <span className="font-mono text-[11px] font-semibold text-[var(--ink)]">
                         {formatNaira(dailySpendEstimate)}/day
                       </span>
                     </div>
 
-                    <div className="mt-3 rounded-2xl border border-white/10 bg-[#130F15] p-3">
+                    <div className="mt-3 rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-3">
                       <svg viewBox="0 0 220 96" className="h-24 w-full">
                         <defs>
                           <linearGradient id="goalNairaFill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#FF3D9A" stopOpacity="0.4" />
-                            <stop offset="100%" stopColor="#FF3D9A" stopOpacity="0" />
+                            <stop offset="0%" stopColor="var(--active-fill)" stopOpacity="0.34" />
+                            <stop offset="100%" stopColor="var(--active-fill)" stopOpacity="0" />
                           </linearGradient>
                         </defs>
                         <line
@@ -347,7 +354,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                           y1="78"
                           x2="220"
                           y2="78"
-                          stroke="rgba(255,255,255,0.08)"
+                          stroke="var(--subtle-border)"
                           strokeWidth="1"
                         />
                         <line
@@ -355,7 +362,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                           y1="44"
                           x2="220"
                           y2="44"
-                          stroke="rgba(255,255,255,0.06)"
+                          stroke="var(--subtle-border)"
                           strokeDasharray="3 3"
                           strokeWidth="1"
                         />
@@ -366,7 +373,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                         <path
                           d="M 8 80 Q 64 72 112 52 T 212 16"
                           fill="none"
-                          stroke="#FF3D9A"
+                          stroke="var(--active-fill)"
                           strokeWidth="2.5"
                           strokeLinecap="round"
                         />
@@ -374,13 +381,13 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                           cx="112"
                           cy="52"
                           r="4"
-                          fill="#FFFFFF"
-                          stroke="#FF3D9A"
+                          fill="var(--canvas)"
+                          stroke="var(--active-fill)"
                           strokeWidth="2"
                         />
-                        <circle cx="212" cy="16" r="4.5" fill="#FF3D9A" />
+                        <circle cx="212" cy="16" r="4.5" fill="var(--active-fill)" />
                       </svg>
-                      <div className="mt-1 flex justify-between font-mono text-[9px] text-white/50">
+                      <div className="mt-1 flex justify-between font-mono text-[9px] text-[var(--ink-muted)]">
                         <span>Day 1</span>
                         <span>Day 14</span>
                         <span>Day 30</span>
@@ -388,22 +395,19 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                     </div>
 
                     <div className="mt-3 space-y-1.5">
-                      <p className="text-[10px] font-medium text-white/60">
+                      <p className="text-[10px] font-medium text-[var(--ink-muted)]">
                         Your Logged Trigger Patterns
                       </p>
                       {state.triggerBreakdown.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] text-[var(--ink)]">
                           {state.triggerBreakdown.slice(0, 4).map((item) => (
-                            <span
-                              key={item.triggerTag}
-                              className="rounded-full border border-white/10 bg-[#17121A] px-2.5 py-1 font-mono text-[10px] text-white/85"
-                            >
+                            <span key={item.triggerTag}>
                               {item.triggerTag} · {item.count}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[11px] leading-relaxed text-white/55">
+                        <p className="text-[11px] leading-relaxed text-[var(--ink-muted)]">
                           No urges logged yet. Record resisted urges on the Guard or Progress tabs.
                         </p>
                       )}
@@ -414,12 +418,12 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                 {activeTab === 'lock' ? (
                   <div className="flex flex-col px-4 pt-2 pb-5">
                     <div className="flex items-center justify-between">
-                      <span className="font-display text-sm font-bold text-white">
+                      <span className="font-display text-sm font-bold text-[var(--ink)]">
                         Commitment Lock
                       </span>
-                      <LockKeyhole className="h-4 w-4 text-[#FF3D9A]" />
+                      <LockKeyhole className="h-4 w-4 text-[var(--accent-ink)]" />
                     </div>
-                    <p className="mt-1 text-[11px] text-white/60">
+                    <p className="mt-1 text-[11px] text-[var(--ink-muted)]">
                       {state.isTimeLockedNow
                         ? 'Uninstalls & Settings tampering blocked'
                         : 'Set a 1–90 day lock from the Lock tab'}
@@ -429,12 +433,12 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                       {state.lockClockQuad.map((slot) => (
                         <div
                           key={slot.unit}
-                          className="flex flex-col items-center rounded-2xl border border-[#FF3D9A]/30 bg-[#181118] py-2.5"
+                          className="flex flex-col items-center rounded-2xl border border-[var(--glass-border)] bg-[var(--muted-fill)] py-2.5"
                         >
-                          <span className="font-mono text-base font-bold text-white tabular-nums">
+                          <span className="font-mono text-base font-bold text-[var(--ink)] tabular-nums">
                             {slot.digits}
                           </span>
-                          <span className="font-mono text-[9px] text-[#FF72B8]">
+                          <span className="font-mono text-[9px] text-[var(--accent-ink)]">
                             {slot.unit}
                           </span>
                         </div>
@@ -452,18 +456,18 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
                           on: state.settings.antiTamperLockEnabled,
                         },
                         {
-                          label: 'Online Account Backup',
-                          on: isSignedIn,
+                          label: '3-Layer Recovery Vault',
+                          on: true,
                         },
                       ].map((row) => (
                         <div
                           key={row.label}
-                          className="flex items-center justify-between rounded-xl border border-white/10 bg-[#141016] px-3 py-2"
+                          className="flex items-center justify-between rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-2"
                         >
-                          <span className="text-white/90">{row.label}</span>
+                          <span className="text-[var(--ink)]">{row.label}</span>
                           <span
                             className={`font-mono text-[10px] font-semibold ${
-                              row.on ? 'text-[#FF3D9A]' : 'text-white/45'
+                              row.on ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-muted)]'
                             }`}
                           >
                             {row.on ? 'ON' : 'OFF'}
@@ -534,7 +538,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
               {
                 step: '3',
                 title: 'Turn on your Blocker & Lock Timer',
-                desc: 'Follow the 3 simple on-screen steps and sign in to save your goals online.',
+                desc: 'Follow the 3 simple on-screen steps and copy your GA1 Recovery Key.',
               },
             ].map((item) => (
               <li key={item.step} className="flex gap-3">
@@ -563,11 +567,18 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
 
         <LiquidGlassCard className="p-5 sm:p-6 lg:col-span-7">
           <p className="text-xs font-semibold text-[var(--accent-ink)] uppercase">
-            Choose Your Option
+            Built to Beat Paid Blockers
           </p>
           <h2 className="mt-1.5 font-display text-xl font-bold text-[var(--ink)]">
-            Android Phone App vs. Web Dashboard
+            GambleAware vs. Gamban — Plus Web App Notes
           </h2>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+            Unlike paid VPN blockers, GambleAware is free forever, never hijacks your phone&apos;s
+            VPN slot, prompts Admin &amp; Uninstall Lock automatically on install, and protects your
+            streak with a 3-layer Vault. Use the Web App on any device for instant site checking,
+            Smart Schedules, Naira savings tracking, and Goals—install the Android App for
+            system-wide app, browser, and delete-lock enforcement.
+          </p>
 
           {/* Mobile stacked comparison cards */}
           <div className="mt-4 divide-y divide-[var(--subtle-border)]/60 sm:hidden">
@@ -575,15 +586,15 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
               <div key={row.capability} className="space-y-1.5 py-3 text-xs">
                 <p className="font-semibold text-[var(--ink)]">{row.capability}</p>
                 <div className="flex items-center justify-between gap-2 text-[11px]">
-                  <span className="text-[var(--ink-muted)]">Phone App:</span>
-                  <span className="inline-flex items-center gap-1 font-medium text-[var(--accent-ink)]">
+                  <span className="text-[var(--ink-muted)]">GambleAware:</span>
+                  <span className="inline-flex items-center gap-1 text-right font-medium text-[var(--accent-ink)]">
                     <Check className="h-3.5 w-3.5 shrink-0" />
                     <span>{row.apk}</span>
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-[11px]">
-                  <span className="text-[var(--ink-muted)]">Web App:</span>
-                  <span className="text-[var(--ink-muted)]">{row.pwa}</span>
+                  <span className="text-[var(--ink-muted)]">Gamban:</span>
+                  <span className="text-right text-[var(--ink-muted)]">{row.pwa}</span>
                 </div>
               </div>
             ))}
@@ -592,19 +603,19 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
           {/* Desktop 12-col comparison table */}
           <div className="mt-4 hidden divide-y divide-[var(--subtle-border)]/60 sm:block">
             <div className="grid grid-cols-12 gap-2 pb-2 text-[11px] font-semibold text-[var(--ink-muted)] uppercase">
-              <span className="col-span-6">What you get</span>
-              <span className="col-span-3 text-[var(--accent-ink)]">Phone App</span>
-              <span className="col-span-3">Web App</span>
+              <span className="col-span-5">Capability</span>
+              <span className="col-span-4 text-[var(--accent-ink)]">GambleAware</span>
+              <span className="col-span-3">Gamban</span>
             </div>
             {COMPARISON_ROWS.map((row) => (
               <div
                 key={row.capability}
                 className="grid grid-cols-12 items-center gap-2 py-3 text-xs"
               >
-                <span className="col-span-6 pr-2 font-medium text-[var(--ink)]">
+                <span className="col-span-5 pr-2 font-medium text-[var(--ink)]">
                   {row.capability}
                 </span>
-                <span className="col-span-3 flex items-center gap-1 font-medium text-[var(--accent-ink)]">
+                <span className="col-span-4 flex items-center gap-1 font-medium text-[var(--accent-ink)]">
                   <Check className="h-3.5 w-3.5 shrink-0" />
                   <span>{row.apk}</span>
                 </span>

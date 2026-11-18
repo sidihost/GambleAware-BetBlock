@@ -78,13 +78,20 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             }
         }
 
-        // 2. Hardened Anti-Uninstall & Anti-Tamper Guard while Commitment Lock Timer is active
+        // 2. Hardened Anti-Uninstall & Anti-Tamper Guard
         // Covers Settings, Package Installer uninstall dialogs, Play Store uninstall, and OEM managers
-        if (settings.antiTamperLockEnabled && settings.isTimeLocked() && pkg in TAMPER_SENSITIVE_PACKAGES) {
+        val isTamperLocked = settings.antiTamperLockEnabled &&
+            (settings.isTimeLocked() || (settings.hasCompletedInitialSetup && AnchorDeviceAdminReceiver.isAdminActive(this)))
+        if (isTamperLocked && pkg in TAMPER_SENSITIVE_PACKAGES) {
             val root = rootInActiveWindow
             if (root != null && containsAntiTamperSettingsScreen(root, pkg)) {
+                val targetLabel = if (settings.isTimeLocked()) {
+                    formatRemainingLock(settings.remainingLockMs())
+                } else {
+                    "Admin Lock Armed"
+                }
                 triggerIntervention(
-                    target = formatRemainingLock(settings.remainingLockMs()),
+                    target = targetLabel,
                     source = "Uninstall Lock",
                     category = GamblingCategory.CUSTOM,
                     isAntiTamper = true,
@@ -453,8 +460,14 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             "com.miui.securitycenter",
             "com.samsung.android.lool",
             "com.coloros.safecenter",
+            "com.coloros.appmanager",
+            "com.oplus.safecenter",
             "com.oneplus.security",
             "com.huawei.systemmanager",
+            "com.transsion.phonemanager",
+            "com.talpa.hios",
+            "com.vivo.permissionmanager",
+            "com.iqoo.secure",
         )
 
         private val KNOWN_BROWSER_PACKAGES = setOf(

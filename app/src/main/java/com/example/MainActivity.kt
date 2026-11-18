@@ -73,6 +73,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -171,10 +172,14 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
         }
     }
 
-    val activeTourKey = if (!state.settings.hasCompletedTour) activeTourStep?.targetKey else null
+    val activeTourKey = if (state.settings.hasCompletedInitialSetup && !state.settings.hasCompletedTour) {
+        activeTourStep?.targetKey
+    } else {
+        null
+    }
 
-    LaunchedEffect(activeTourStep, state.settings.hasCompletedTour) {
-        if (!state.settings.hasCompletedTour) {
+    LaunchedEffect(activeTourStep, state.settings.hasCompletedInitialSetup, state.settings.hasCompletedTour) {
+        if (state.settings.hasCompletedInitialSetup && !state.settings.hasCompletedTour) {
             val step = activeTourStep ?: return@LaunchedEffect
             if (currentRoute != step.route) {
                 navController.navigate(step.route) {
@@ -205,6 +210,10 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
 
     fun requestDeviceAdminToggle() {
         if (state.isDeviceAdminEnabled) {
+            if (state.isTimeLockedNow || state.settings.antiTamperLockEnabled) {
+                showTimeLockedNotice = true
+                return
+            }
             guardRestrictedAction { viewModel.deactivateDeviceAdmin() }
         } else {
             deviceAdminLauncher.launch(AnchorDeviceAdminReceiver.buildEnableAdminIntent(context))
@@ -490,7 +499,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
 
                     // Automatic Auto-Selecting Spotlight In-App Tour (placed in full root coordinate space)
                     AnimatedVisibility(
-                        visible = !state.settings.hasCompletedTour,
+                        visible = state.settings.hasCompletedInitialSetup && !state.settings.hasCompletedTour,
                         enter = fadeIn(),
                         exit = fadeOut(),
                     ) {
@@ -744,6 +753,145 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
             confirmButton = {
                 Button(onClick = { showTimeLockedNotice = false }) {
                     Text("Understood")
+                }
+            },
+        )
+    }
+
+    // Mandatory Undismissable First-Install Flow:
+    // 1. Name prompt -> 2. Automatic Device Admin prompt -> 3. Accessibility Shield -> 4. Default Lock-In
+    if (!state.settings.hasCompletedInitialSetup) {
+        var setupName by remember { mutableStateOf(state.settings.preferredName) }
+        var setupStep by remember { mutableIntStateOf(1) }
+        var setupLockDays by remember { mutableIntStateOf(7) }
+
+        LaunchedEffect(state.isDeviceAdminEnabled, state.isAccessibilityEnabled, setupStep) {
+            if (setupStep == 2 && state.isDeviceAdminEnabled) {
+                setupStep = if (state.isAccessibilityEnabled) 4 else 3
+            } else if (setupStep == 3 && state.isAccessibilityEnabled) {
+                setupStep = 4
+            }
+        }
+
+        val currentStep = when {
+            setupStep == 1 -> 1
+            !state.isDeviceAdminEnabled -> 2
+            !state.isAccessibilityEnabled -> 3
+            else -> 4
+        }
+
+        AlertDialog(
+            onDismissRequest = { /* Mandatory setup cannot be bypassed */ },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
+            title = {
+                Text(
+                    when (currentStep) {
+                        1 -> "Who Are We Protecting?"
+                        2 -> "Enable Uninstall & Admin Lock"
+                        3 -> "Turn On Blocker Service"
+                        else -> "Lock Protection In"
+                    },
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    when (currentStep) {
+                        1 -> {
+                            Text(
+                                "Enter your first name so your clean streak and block screens stay personal. Next, GambleAware automatically prompts Device Admin protection so you cannot undo setup in a weak moment.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            OutlinedTextField(
+                                value = setupName,
+                                onValueChange = { setupName = it.take(40) },
+                                label = { Text("First Name (Optional)") },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("initial_setup_name_input"),
+                            )
+                        }
+                        2 -> {
+                            Text(
+                                "Required before using GambleAware: activate Android Device Admin so nobody—not even a late-night urge—can quickly uninstall the blocker.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        3 -> {
+                            Text(
+                                "Now enable GambleAware inside Accessibility Settings so it blocks betting websites, search queries, and installed betting apps across your whole phone.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        else -> {
+                            Text(
+                                "Pick your default Commitment Lock duration. Once locked, neither Device Admin nor blocking can be turned off until the timer ends.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                listOf(1 to "24 Hours", 7 to "7 Days", 30 to "30 Days", 90 to "90 Days").forEach { (days, label) ->
+                                    val selected = setupLockDays == days
+                                    val liquid = LocalLiquidColors.current
+                                    LiquidGlassCard(
+                                        cornerRadius = 50.dp,
+                                        fillColor = if (selected) liquid.activeFill else liquid.mutedFill,
+                                        borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
+                                        contentPadding = 0.dp,
+                                        onClick = { setupLockDays = days },
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        when (currentStep) {
+                            1 -> {
+                                viewModel.setPreferredName(setupName)
+                                setupStep = 2
+                                if (!state.isDeviceAdminEnabled) {
+                                    deviceAdminLauncher.launch(AnchorDeviceAdminReceiver.buildEnableAdminIntent(context))
+                                } else if (!state.isAccessibilityEnabled) {
+                                    context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                                }
+                            }
+                            2 -> {
+                                deviceAdminLauncher.launch(AnchorDeviceAdminReceiver.buildEnableAdminIntent(context))
+                            }
+                            3 -> {
+                                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            }
+                            else -> {
+                                viewModel.completeInitialSetup(setupName, setupLockDays)
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("initial_setup_confirm_button"),
+                ) {
+                    Text(
+                        when (currentStep) {
+                            1 -> "Continue & Arm Admin Lock"
+                            2 -> "Activate Device Admin"
+                            3 -> "Open Accessibility Settings"
+                            else -> "Lock In ${setupLockDays}-Day Shield"
+                        },
+                    )
                 }
             },
         )

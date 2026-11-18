@@ -146,8 +146,12 @@ fun ShieldScreen(
                             verticalAlignment = Alignment.Top,
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
+                                val firstName = state.settings.preferredName.trim()
+                                    .split(Regex("\\s+"))
+                                    .firstOrNull()
+                                    .orEmpty()
                                 Text(
-                                    text = "GambleAware",
+                                    text = if (firstName.isNotEmpty()) "GambleAware • $firstName" else "GambleAware",
                                     style = MaterialTheme.typography.headlineMedium,
                                     color = MaterialTheme.colorScheme.onBackground,
                                 )

@@ -310,10 +310,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deactivateDeviceAdmin() {
+        val snapshot = repository.prefs.currentSnapshot()
+        if (snapshot.isTimeLocked() || snapshot.antiTamperLockEnabled) {
+            bannerFlow.value = "Uninstall Lock stays active until your Commitment Lock ends"
+            return
+        }
         val ctx = getApplication<Application>()
         AnchorDeviceAdminReceiver.deactivateAdmin(ctx)
         deviceAdminFlow.value = AnchorDeviceAdminReceiver.isAdminActive(ctx)
         bannerFlow.value = "Uninstall lock deactivated"
+    }
+
+    fun setPreferredName(name: String) {
+        repository.prefs.setPreferredName(name)
+    }
+
+    fun completeInitialSetup(name: String, lockDays: Int) {
+        repository.prefs.completeInitialSetup(name, lockDays)
+        refreshSystemServiceStatus()
+        val first = name.trim().split(Regex("\\s+")).firstOrNull().orEmpty()
+        bannerFlow.value = if (first.isNotEmpty()) {
+            "Locked for $lockDays days — welcome, $first"
+        } else {
+            "Admin Lock & Shield armed for $lockDays days"
+        }
     }
 
     fun updateCategory(category: GamblingCategory, enabled: Boolean) {

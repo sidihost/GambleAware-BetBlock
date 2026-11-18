@@ -28,18 +28,24 @@ export interface RecoveryGoalEntity {
   createdAtMs: number;
 }
 
-export interface GeminiAgentAnalysis {
-  riskLevel: 'safe' | 'caution' | 'high_risk' | 'gambling_login' | string;
-  shouldAutoBlock: boolean;
-  isLoginAttempt: boolean;
-  detectedDomain: string;
-  category: string;
-  shouldRemindGoal: boolean;
-  coachMessage: string;
-  suggestedGoalTitle: string;
-  suggestedGoalTargetDays: number;
-  suggestedGoalAmountNgn: number;
-  suggestedGoalWhy: string;
+export interface HighRiskScheduleConfig {
+  lateNightLockout: boolean;
+  matchdayWeekendGuard: boolean;
+  paydaySurgeGuard: boolean;
+}
+
+export interface HighRiskWindowStatus {
+  isActive: boolean;
+  activeLabels: string[];
+  nextWindowHint: string;
+}
+
+export interface DurableStorageStatus {
+  localSaved: boolean;
+  indexedDbSaved: boolean;
+  cacheVaultSaved: boolean;
+  persistentGranted: boolean | null;
+  lastSavedAtMs: number;
 }
 
 export interface ProtectionSettingsState {
@@ -60,10 +66,11 @@ export interface ProtectionSettingsState {
   dailyBetSpendEstimate: number;
   themeMode: ThemeMode;
   hasCompletedTour: boolean;
+  hasCompletedInitialSetup: boolean;
   notificationsEnabled: boolean;
   lastNotifiedMilestoneDay: number;
-  aiAutoBlockEnabled: boolean;
   goalReminderEnabled: boolean;
+  highRiskSchedule: HighRiskScheduleConfig;
 }
 
 export interface BlockedDomainEntity {
@@ -136,17 +143,7 @@ export const RECOVERY_MILESTONES: RecoveryMilestone[] = [
   { days: 365, label: '365d', title: 'One Year' },
 ];
 
-export type AnchorRoute = 'shield' | 'blocklist' | 'activity' | 'lock' | 'download' | 'auth';
-
-export type CloudSyncStatus = 'local' | 'connecting' | 'synced' | 'error';
-
-export interface CloudAccountInfo {
-  uid: string;
-  email: string;
-  displayName: string;
-  photoUrl: string | null;
-  emailVerified: boolean;
-}
+export type AnchorRoute = 'shield' | 'blocklist' | 'activity' | 'lock' | 'download';
 
 export interface InterventionPayload {
   target: string;
@@ -155,7 +152,6 @@ export interface InterventionPayload {
   isAntiTamper: boolean;
   autoStartBreathing: boolean;
   isLoginRedirect?: boolean;
-  coachNote?: string;
 }
 
 export interface DerivedMainState {
@@ -199,4 +195,6 @@ export interface DerivedMainState {
   nextMilestone: RecoveryMilestone;
   milestoneProgressFraction: number;
   estimatedSavedAmount: number;
+  highRiskStatus: HighRiskWindowStatus;
+  durableStatus: DurableStorageStatus;
 }

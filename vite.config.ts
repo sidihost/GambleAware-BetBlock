@@ -15,7 +15,7 @@ export default defineConfig({
         name: 'GambleAware',
         short_name: 'GambleAware',
         description:
-          'GambleAware by Imoogle Technology — gambling site and app blocker with Naira (₦) savings tracking, recovery goals, lock timers, and free cloud sync.',
+          'GambleAware by Imoogle Technology — instant gambling site and app blocker with Naira (₦) savings tracking, high-risk schedule guards, lock timers, and zero-loss recovery vault.',
         theme_color: '#FFFFFF',
         background_color: '#FFFFFF',
         display: 'standalone',

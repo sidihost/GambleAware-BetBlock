@@ -177,7 +177,7 @@ export const SpotlightTourOverlay: React.FC<{
 
       {/* Top Skip Bar */}
       <div className="relative z-10 mx-auto flex max-w-[600px] items-center justify-between px-5 pt-4">
-        <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3.5 py-1.5 text-xs font-semibold text-[var(--ink)] backdrop-blur-xl">
+        <span className="font-mono text-xs font-semibold tracking-wider text-white uppercase">
           GambleAware Tour
         </span>
         <button
@@ -214,12 +214,10 @@ export const SpotlightTourOverlay: React.FC<{
 
           <p className="mt-3 text-sm leading-relaxed text-[var(--ink-muted)]">{step.body}</p>
 
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {step.highlights.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink)]"
-              >
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] font-semibold text-[var(--accent-ink)]">
+            {step.highlights.map((tag, idx) => (
+              <span key={tag}>
+                {idx > 0 ? '· ' : ''}
                 {tag}
               </span>
             ))}

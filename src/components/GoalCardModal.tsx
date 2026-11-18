@@ -98,6 +98,56 @@ export const GoalModal: React.FC<GoalModalProps> = ({
           center whenever temptation strikes.
         </p>
 
+        {/* 1-Tap Quick Templates */}
+        <div className="mt-3.5">
+          <p className="mb-1.5 text-[11px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
+            Quick Templates
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              {
+                label: '30d · Save ₦150k',
+                title: '30 Days Betting-Free Savings',
+                cat: 'savings' as RecoveryGoalCategory,
+                days: '30',
+                amount: '150000',
+                why: 'Keep my hard-earned money for rent and family.',
+              },
+              {
+                label: '7d · Weekend Shield',
+                title: 'Matchday Weekend Clean Streak',
+                cat: 'streak' as RecoveryGoalCategory,
+                days: '7',
+                amount: '35000',
+                why: 'No football slip regrets this week.',
+              },
+              {
+                label: '90d · Full Reset',
+                title: '90-Day Debt & Habit Reset',
+                cat: 'milestone' as RecoveryGoalCategory,
+                days: '90',
+                amount: '450000',
+                why: 'Rebuild peace of mind and trust.',
+              },
+            ].map((tpl) => (
+              <button
+                key={tpl.label}
+                type="button"
+                onClick={() => {
+                  setTitle(tpl.title);
+                  setCategory(tpl.cat);
+                  setTargetDays(tpl.days);
+                  setTargetAmountNgn(tpl.amount);
+                  setWhyNote(tpl.why);
+                }}
+                className="cursor-pointer rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:border-[var(--active-fill)]"
+              >
+                {tpl.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-4 space-y-3.5">
           <div>
             <label htmlFor="goal-title" className="mb-1 block text-xs font-semibold text-[var(--ink)]">
@@ -111,7 +161,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What are you saving or staying clean for?"
-              className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+              className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
           </div>
 
@@ -152,7 +202,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 value={targetDays}
                 onChange={(e) => setTargetDays(e.target.value)}
                 placeholder="Number of days"
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
               />
             </div>
             <div>
@@ -171,7 +221,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 value={targetAmountNgn}
                 onChange={(e) => setTargetAmountNgn(e.target.value)}
                 placeholder="Optional Naira amount"
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
               />
             </div>
           </div>
@@ -187,7 +237,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               value={whyNote}
               onChange={(e) => setWhyNote(e.target.value)}
               placeholder="Write a personal reminder to stay betting-free"
-              className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--ink)] focus:outline-none"
+              className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
           </div>
 
@@ -228,11 +278,10 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
 export const GoalReminderBanner: React.FC<{
   firstName: string;
-  isSignedIn: boolean;
   onCreateGoal: () => void;
-  onAskCoachGoal: () => void;
+  onOpenTemplates: () => void;
   onDismiss: () => void;
-}> = ({ firstName, isSignedIn, onCreateGoal, onAskCoachGoal, onDismiss }) => (
+}> = ({ firstName, onCreateGoal, onOpenTemplates, onDismiss }) => (
   <LiquidGlassCard className="p-4 sm:p-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -243,14 +292,10 @@ export const GoalReminderBanner: React.FC<{
           <p className="font-display text-sm font-bold text-[var(--ink)]">
             {firstName
               ? `${firstName}, set your personal recovery goal`
-              : isSignedIn
-                ? 'Set your personal recovery goal'
-                : 'Sign in to create your recovery goal'}
+              : 'Set your personal recovery goal'}
           </p>
           <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-            {isSignedIn
-              ? 'Writing a concrete Naira or clean-day target keeps you focused whenever urges arise.'
-              : 'Create a free account or sign in to set your own personal Naira and clean-day recovery goals.'}
+            Writing a concrete Naira or clean-day target keeps you focused whenever urges arise.
           </p>
         </div>
       </div>
@@ -260,16 +305,16 @@ export const GoalReminderBanner: React.FC<{
           onClick={onCreateGoal}
           className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
         >
-          {isSignedIn ? <Plus className="h-3.5 w-3.5" /> : <LockKeyhole className="h-3.5 w-3.5" />}
-          <span>{isSignedIn ? 'Create Goal' : 'Sign In to Set Goal'}</span>
+          <Plus className="h-3.5 w-3.5" />
+          <span>Create Goal</span>
         </button>
         <button
           type="button"
-          onClick={onAskCoachGoal}
+          onClick={onOpenTemplates}
           className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
         >
           <Compass className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-          <span>Get Ideas</span>
+          <span>Quick Presets</span>
         </button>
         <button
           type="button"
