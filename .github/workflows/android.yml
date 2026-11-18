@@ -34,7 +34,9 @@ jobs:
         fi
 
     - name: Run unit tests and build APK
-      run: ./gradlew testDebugUnitTest assembleDebug
+      env:
+        JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
+      run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
 
     - name: Package GambleAware-Nigeria.apk
       run: |
