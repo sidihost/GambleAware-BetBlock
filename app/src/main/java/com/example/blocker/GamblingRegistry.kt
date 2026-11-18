@@ -348,4 +348,35 @@ object GamblingRegistry {
         "wager now", "jackpot", "crypto casino", "crash game", "betting odds",
         "book a bet", "booking code", "aviator", "virtual football", "cashout",
     )
+
+    val adNetworkDomains: Set<String> = setOf(
+        "1xbet-promo.com", "1xbetpartners.com", "melbet-partners.com", "betwinner-aff.com",
+        "sportybet-promo.com", "bet9ja-promo.com", "stakepromo.com", "roobetpromo.com",
+        "popads.net", "popcash.net", "propellerads.com", "adsterra.com", "exoclick.com",
+        "trafficjunky.net", "juicyads.com", "clickadu.com", "hilltopads.net", "galaksion.com",
+        "richads.com", "evadav.com", "rollerads.com", "monetag.com", "onclickads.net",
+        "betting-bonuses.com", "freebets-promo.com", "odds-redirect.com", "casino-affiliates.net",
+    )
+
+    val instantTypedPrefixes: List<Pair<String, GamblingCategory>> = listOf(
+        "sporty" to GamblingCategory.SPORTSBOOK,
+        "1xbe" to GamblingCategory.SPORTSBOOK,
+        "bet9j" to GamblingCategory.SPORTSBOOK,
+        "betki" to GamblingCategory.SPORTSBOOK,
+        "mspor" to GamblingCategory.SPORTSBOOK,
+        "betpa" to GamblingCategory.SPORTSBOOK,
+        "22be" to GamblingCategory.SPORTSBOOK,
+        "melbe" to GamblingCategory.SPORTSBOOK,
+        "betwi" to GamblingCategory.SPORTSBOOK,
+        "parip" to GamblingCategory.SPORTSBOOK,
+        "parim" to GamblingCategory.SPORTSBOOK,
+        "bet36" to GamblingCategory.SPORTSBOOK,
+        "stake." to GamblingCategory.CRYPTO_BETTING,
+        "roobe" to GamblingCategory.CRYPTO_BETTING,
+        "rollb" to GamblingCategory.CRYPTO_BETTING,
+        "duelb" to GamblingCategory.CRYPTO_BETTING,
+        "draftk" to GamblingCategory.SPORTSBOOK,
+        "fandu" to GamblingCategory.SPORTSBOOK,
+        "pokers" to GamblingCategory.POKER_BINGO,
+    )
 }

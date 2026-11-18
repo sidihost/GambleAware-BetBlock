@@ -198,279 +198,278 @@ private fun InterventionScreen(
             contentAlignment = Alignment.Center,
         ) {
             LiquidGlassCard(
-                modifier = Modifier
-                    .widthIn(max = 460.dp)
-                    .verticalScroll(rememberScrollState()),
-                contentPadding = 24.dp,
+                modifier = Modifier.widthIn(max = 460.dp),
+                contentPadding = 22.dp,
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = "GambleAware",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    if (isAntiTamper) {
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .background(liquid.activeFill),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Lock,
-                                contentDescription = "Locked by GambleAware",
-                                tint = liquid.activeContent,
-                                modifier = Modifier.size(34.dp),
-                            )
-                        }
-                    } else if (isCalmResetLaunch) {
-                        BrandGEmblem(modifier = Modifier.size(72.dp))
-                    } else {
-                        BettingBrandLogo(
-                            target = target,
-                            size = 76.dp,
-                            cornerRadius = 22.dp,
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = if (isAntiTamper) {
-                            "Uninstall & Tamper Locked"
-                        } else {
-                            "Pause & Breathe"
-                        },
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = if (isAntiTamper) {
-                            "Your GambleAware Commitment Lock prevents removing the app or weakening protection until the timer expires."
-                        } else {
-                            "GambleAware intercepted this attempt before it could pull you back in. Urges fade within a few minutes."
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    val badgeLabel = when {
-                        isAntiTamper -> "UNINSTALL BLOCKED"
-                        source.contains("App", ignoreCase = true) ||
-                            source.contains("Install", ignoreCase = true) -> "BETTING APP BLOCKED"
-                        else -> "BETTING SITE BLOCKED"
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(liquid.mutedFill)
-                            .border(1.dp, liquid.subtleBorder, RoundedCornerShape(18.dp))
-                            .padding(horizontal = 14.dp, vertical = 14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (!isAntiTamper && !isCalmResetLaunch) {
-                            BettingBrandLogo(
-                                target = target,
-                                size = 42.dp,
-                                cornerRadius = 12.dp,
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(liquid.activeFill)
-                                    .padding(horizontal = 9.dp, vertical = 3.dp),
-                            ) {
-                                Text(
-                                    text = badgeLabel,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = liquid.activeContent,
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = if (!isAntiTamper && !isCalmResetLaunch && brandIdentity.isExactCatalogMatch) {
-                                    "${brandIdentity.displayName} • $target"
-                                } else {
-                                    target
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Blocked by $source • $category",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = "$cleanDays d",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = liquid.accentInk,
-                            )
-                            Text(
-                                text = "Streak",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    if (!isAntiTamper && !isCalmResetLaunch) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(liquid.softAccentFill)
-                                .border(1.dp, liquid.glassBorder, RoundedCornerShape(14.dp))
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.VerifiedUser,
-                                contentDescription = null,
-                                tint = liquid.accentInk,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "House-Edge Math: 30 bets at ₦${nairaFmt.format(stakeNgn)} statistically lose ~₦${nairaFmt.format(expectedThirtyBetLoss)} to operator margin.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Interactive Monochrome 60s Calm Reset Card
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(liquid.controlFill)
-                            .border(1.dp, liquid.subtleBorder, RoundedCornerShape(20.dp))
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = ripple(),
-                            ) {
-                                if (calmSecondsLeft == 0) {
-                                    calmSecondsLeft = 60
-                                    isBreathingActive = true
-                                } else {
-                                    isBreathingActive = !isBreathingActive
-                                }
-                            }
-                            .padding(14.dp)
-                            .testTag("intervention_calm_reset"),
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
+                        Text(
+                            text = "GambleAware",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        if (isAntiTamper) {
+                            Box(
+                                modifier = Modifier
+                                    .size(68.dp)
+                                    .clip(CircleShape)
+                                    .background(liquid.activeFill),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Lock,
+                                    contentDescription = "Locked by GambleAware",
+                                    tint = liquid.activeContent,
+                                    modifier = Modifier.size(32.dp),
+                                )
+                            }
+                        } else if (isCalmResetLaunch) {
+                            BrandGEmblem(modifier = Modifier.size(68.dp))
+                        } else {
+                            BettingBrandLogo(
+                                target = target,
+                                size = 72.dp,
+                                cornerRadius = 22.dp,
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Text(
+                            text = if (isAntiTamper) {
+                                "Uninstall & Tamper Locked"
+                            } else {
+                                "Pause & Breathe"
+                            },
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = if (isAntiTamper) {
+                                "Your GambleAware Commitment Lock prevents removing the app or weakening protection until the timer expires."
+                            } else {
+                                "GambleAware intercepted this attempt before it could pull you back in. Urges fade within a few minutes."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        val statusEyebrow = when {
+                            isAntiTamper -> "LOCKED BY COMMITMENT TIMER"
+                            source.contains("App", ignoreCase = true) ||
+                                source.contains("Install", ignoreCase = true) -> "BETTING APP BLOCKED"
+                            else -> "BETTING SITE BLOCKED"
+                        }
+                        val cleanDisplayName = if (isAntiTamper || isCalmResetLaunch) {
+                            target
+                        } else {
+                            formatBlockedTargetDisplay(target)
+                        }
+
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(liquid.mutedFill)
+                                .border(1.dp, liquid.subtleBorder, RoundedCornerShape(18.dp))
+                                .padding(horizontal = 14.dp, vertical = 14.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (!isAntiTamper && !isCalmResetLaunch) {
+                                BettingBrandLogo(
+                                    target = target,
+                                    size = 42.dp,
+                                    cornerRadius = 12.dp,
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = statusEyebrow,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = liquid.accentInk,
+                                    letterSpacing = 0.7.sp,
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = cleanDisplayName,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Blocked by $source • $category",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = "$cleanDays d",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = liquid.accentInk,
+                                )
+                                Text(
+                                    text = "Streak",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+
+                        if (!isAntiTamper && !isCalmResetLaunch) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(liquid.softAccentFill)
+                                    .border(1.dp, liquid.glassBorder, RoundedCornerShape(14.dp))
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Air,
+                                    imageVector = Icons.Rounded.VerifiedUser,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    tint = liquid.accentInk,
                                     modifier = Modifier.size(18.dp),
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "60s Calm Reset",
-                                    style = MaterialTheme.typography.titleSmall,
+                                    text = "House-Edge Math: 30 bets at ₦${nairaFmt.format(stakeNgn)} statistically lose ~₦${nairaFmt.format(expectedThirtyBetLoss)} to operator margin.",
+                                    style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onBackground,
                                 )
                             }
-                            Text(
-                                text = if (isBreathingActive) "${calmSecondsLeft}s • Tap to pause" else if (calmSecondsLeft == 0) "Completed • Restart" else "Tap to begin",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
                         }
 
-                        AnimatedVisibility(visible = isBreathingActive || calmSecondsLeft < 60) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-                            ) {
-                                val ringAccent = liquid.activeFill
-                                Box(
-                                    modifier = Modifier.size(104.dp),
-                                    contentAlignment = Alignment.Center,
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Interactive 60s Calm Reset Card
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(liquid.controlFill)
+                                .border(1.dp, liquid.subtleBorder, RoundedCornerShape(20.dp))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple(),
                                 ) {
-                                    Canvas(modifier = Modifier.fillMaxSize()) {
-                                        val center = Offset(size.width / 2f, size.height / 2f)
-                                        val maxR = size.minDimension / 2f
-                                        drawCircle(
-                                            color = ringAccent.copy(alpha = 0.22f),
-                                            radius = maxR * 0.94f,
-                                            center = center,
-                                            style = Stroke(width = 1.dp.toPx()),
-                                        )
-                                        drawCircle(
-                                            color = ringAccent.copy(alpha = 0.16f),
-                                            radius = maxR * ringScale,
-                                            center = center,
-                                        )
-                                        drawCircle(
-                                            color = ringAccent,
-                                            radius = maxR * ringScale,
-                                            center = center,
-                                            style = Stroke(width = 1.85.dp.toPx()),
-                                        )
+                                    if (calmSecondsLeft == 0) {
+                                        calmSecondsLeft = 60
+                                        isBreathingActive = true
+                                    } else {
+                                        isBreathingActive = !isBreathingActive
                                     }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = phaseLabel,
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                        )
-                                        Text(
-                                            text = "${calmSecondsLeft}s",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
+                                }
+                                .padding(14.dp)
+                                .testTag("intervention_calm_reset"),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Air,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "60s Calm Reset",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                }
+                                Text(
+                                    text = if (isBreathingActive) "${calmSecondsLeft}s • Tap to pause" else if (calmSecondsLeft == 0) "Completed • Restart" else "Tap to begin",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+
+                            AnimatedVisibility(visible = isBreathingActive || calmSecondsLeft < 60) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.padding(top = 10.dp, bottom = 2.dp),
+                                ) {
+                                    val ringAccent = liquid.activeFill
+                                    Box(
+                                        modifier = Modifier.size(96.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Canvas(modifier = Modifier.fillMaxSize()) {
+                                            val center = Offset(size.width / 2f, size.height / 2f)
+                                            val maxR = size.minDimension / 2f
+                                            drawCircle(
+                                                color = ringAccent.copy(alpha = 0.22f),
+                                                radius = maxR * 0.94f,
+                                                center = center,
+                                                style = Stroke(width = 1.dp.toPx()),
+                                            )
+                                            drawCircle(
+                                                color = ringAccent.copy(alpha = 0.16f),
+                                                radius = maxR * ringScale,
+                                                center = center,
+                                            )
+                                            drawCircle(
+                                                color = ringAccent,
+                                                radius = maxR * ringScale,
+                                                center = center,
+                                                style = Stroke(width = 1.85.dp.toPx()),
+                                            )
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = phaseLabel,
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                            )
+                                            Text(
+                                                text = "${calmSecondsLeft}s",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    // Pinned action footer — always visible above fold
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     if (!isAntiTamper) {
                         OutlinedButton(
@@ -482,7 +481,7 @@ private fun InterventionScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp)
+                                .height(46.dp)
                                 .testTag("intervention_bank_stake_button"),
                             shape = RoundedCornerShape(50),
                             border = BorderStroke(1.dp, liquid.glassBorder),
@@ -507,14 +506,14 @@ private fun InterventionScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
                     Button(
                         onClick = onGoHome,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
+                            .height(50.dp)
                             .testTag("intervention_return_home"),
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(
@@ -529,13 +528,13 @@ private fun InterventionScreen(
                         Text("Return Safely Home")
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedButton(
                         onClick = onOpenGambleAware,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
+                            .height(44.dp)
                             .testTag("intervention_open_gambleaware"),
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, liquid.subtleBorder),
@@ -546,13 +545,14 @@ private fun InterventionScreen(
                         Text("Open GambleAware")
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
                         text = "A product of Imoogle Technology",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }

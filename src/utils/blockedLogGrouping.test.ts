@@ -3,6 +3,7 @@ import test from 'node:test';
 import { BlockedEventEntity } from '../data/types';
 import {
   formatAttemptCountLabel,
+  formatBlockedTargetDisplay,
   formatBlockedTimestamp,
   groupBlockedEvents,
   normalizeBlockedTarget,
@@ -16,6 +17,13 @@ test('normalizeBlockedTarget strips protocol, www, paths, and keeps domain or ap
   assert.equal(normalizeBlockedTarget('com.sportybet.android'), 'SportyBet');
   assert.equal(normalizeBlockedTarget('ng.bet9ja.app'), 'Bet9ja Mobile');
   assert.equal(normalizeBlockedTarget('team.opay.pay'), 'OPay');
+
+  assert.equal(formatBlockedTargetDisplay('sportybet.com'), 'SportyBet');
+  assert.equal(formatBlockedTargetDisplay('m.bet9ja.com'), 'Bet9ja');
+  assert.equal(formatBlockedTargetDisplay('com.android.chrome'), 'Google Chrome');
+  assert.equal(formatBlockedTargetDisplay('com.sportybet.android'), 'SportyBet');
+  assert.equal(formatBlockedTargetDisplay('mycustombet.io'), 'Mycustombet');
+  assert.equal(formatBlockedTargetDisplay('popads.net'), 'PopAds Ad Network');
 });
 
 test('groupBlockedEvents aggregates repeated attempts by site and sorts newest first', () => {
@@ -30,14 +38,14 @@ test('groupBlockedEvents aggregates repeated attempts by site and sorts newest f
     {
       id: 2,
       target: 'bet9ja.com',
-      source: 'DNS Shield',
+      source: 'Browser Shield',
       categoryName: 'Sportsbook',
       timestamp: 2_000,
     },
     {
       id: 3,
       target: 'sportybet.com',
-      source: 'DNS Shield',
+      source: 'Browser Shield',
       categoryName: 'Sportsbook',
       timestamp: 3_000,
     },
@@ -59,8 +67,8 @@ test('groupBlockedEvents aggregates repeated attempts by site and sorts newest f
 
   assert.equal(grouped[1].target, 'sportybet.com');
   assert.equal(grouped[1].attemptCount, 2);
-  assert.equal(grouped[1].latestSource, 'DNS Shield');
-  assert.deepEqual(grouped[1].sources.sort(), ['DNS Shield', 'Web Shield']);
+  assert.equal(grouped[1].latestSource, 'Browser Shield');
+  assert.deepEqual(grouped[1].sources.sort(), ['Browser Shield', 'Web Shield']);
   assert.equal(grouped[1].isApp, false);
 
   assert.equal(grouped[2].target, 'bet9ja.com');

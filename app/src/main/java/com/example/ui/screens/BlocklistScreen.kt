@@ -67,6 +67,7 @@ import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
 import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
+import com.example.ui.formatBlockedTargetDisplay
 import com.example.ui.theme.LiquidDialogContent
 import com.example.ui.theme.LocalLiquidColors
 
@@ -79,6 +80,7 @@ fun BlocklistScreen(
     onToggleBrowserShield: (Boolean) -> Unit,
     onToggleAppShield: (Boolean) -> Unit,
     onToggleSearchGuard: (Boolean) -> Unit,
+    onToggleAdBlocker: (Boolean) -> Unit = {},
     onToggleDepositGuard: (Boolean) -> Unit = {},
     onAddCustomDomain: (String, Boolean) -> Unit,
     onRemoveCustomDomain: (String, Boolean) -> Unit,
@@ -221,15 +223,22 @@ fun BlocklistScreen(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     CategorySwitchRow(
-                        title = "System-Wide Domain & WebView DNS Guard",
-                        subtitle = "Blocks gambling domains inside Chrome, Firefox, Brave, Custom Tabs & social WebViews",
+                        title = "All-Browser & WebView Guard (Zero-VPN)",
+                        subtitle = "Blocks gambling domains & while-typing URLs across 20+ browsers & social WebViews while allowing your own VPN",
                         checked = state.settings.browserShieldEnabled,
                         onCheckedChange = onToggleBrowserShield,
                         testTag = "switch_browser_shield",
                     )
                     CategorySwitchRow(
+                        title = "Gambling Ads, Popunders & Affiliates",
+                        subtitle = "Strips betting promo popups, affiliate trackers & redirect banners in real time",
+                        checked = state.settings.adBlockerEnabled,
+                        onCheckedChange = onToggleAdBlocker,
+                        testTag = "switch_ad_blocker",
+                    )
+                    CategorySwitchRow(
                         title = "Betting App & Install Guard",
-                        subtitle = "Flags 120+ betting APKs upon install & blocks their servers on DNS",
+                        subtitle = "Blocks 120+ betting APKs on launch & flags new gambling installs automatically",
                         checked = state.settings.appShieldEnabled,
                         onCheckedChange = onToggleAppShield,
                         testTag = "switch_app_shield",
@@ -289,7 +298,7 @@ fun BlocklistScreen(
                                             color = MaterialTheme.colorScheme.onBackground,
                                         )
                                         Text(
-                                            text = brand.primaryDomain,
+                                            text = brand.region,
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
@@ -502,7 +511,7 @@ fun BlocklistScreen(
                                         color = MaterialTheme.colorScheme.onBackground,
                                     )
                                     Text(
-                                        text = app.packageName,
+                                        text = "App Shield active",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
@@ -585,19 +594,21 @@ fun BlocklistScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = domain,
+                                        text = if (brandMeta.isExactCatalogMatch) {
+                                            brandMeta.displayName
+                                        } else {
+                                            formatBlockedTargetDisplay(domain)
+                                        },
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onBackground,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
-                                    if (brandMeta.isExactCatalogMatch) {
-                                        Text(
-                                            text = brandMeta.displayName,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
+                                    Text(
+                                        text = category.displayName,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
                             Text(
@@ -714,7 +725,7 @@ fun BlocklistScreen(
                                             color = MaterialTheme.colorScheme.onBackground,
                                         )
                                         Text(
-                                            text = app.packageName,
+                                            text = if (alreadyBlocked) "Protected by App Shield" else "Installed app",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
@@ -829,7 +840,7 @@ private fun DomainRuleRow(
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = domain,
+            text = formatBlockedTargetDisplay(domain),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f),
@@ -839,7 +850,7 @@ private fun DomainRuleRow(
         IconButton(onClick = onDelete) {
             Icon(
                 imageVector = Icons.Rounded.DeleteOutline,
-                contentDescription = "Delete $domain",
+                contentDescription = "Delete ${formatBlockedTargetDisplay(domain)}",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

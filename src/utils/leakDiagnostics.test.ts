@@ -33,4 +33,17 @@ test('deducts points accurately when Device Admin uninstall lock is off', () => 
   assert.equal(audit.score, 75);
   assert.equal(audit.gradeLabel, 'Hardened');
   assert.equal(audit.layers.find((l) => l.id === 'admin_uninstall')?.isHealthy, false);
+
+  const noAdGuard = evaluateShieldLeakAudit({
+    settings: {
+      ...store.settings,
+      adBlockerEnabled: false,
+      depositGuardEnabled: true,
+    },
+    isAccessibilityEnabled: true,
+    isDeviceAdminEnabled: true,
+    nowMs: 1_700_000_000_000,
+  });
+  assert.equal(noAdGuard.score, 80);
+  assert.equal(noAdGuard.layers.find((l) => l.id === 'search_redirect')?.isHealthy, false);
 });

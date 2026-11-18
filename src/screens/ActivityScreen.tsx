@@ -17,9 +17,12 @@ import {
   BettingFreeProgressChart,
   InteractiveBlockedBarChart,
 } from '../components/ProgressCharts';
-import { WealthSimulatorCard } from '../components/WealthSimulatorCard';
 import { DerivedMainState, RECOVERY_MILESTONES, RecoveryGoalCategory } from '../data/types';
-import { formatAttemptCountLabel, formatBlockedTimestamp } from '../utils/blockedLogGrouping';
+import {
+  formatAttemptCountLabel,
+  formatBlockedTargetDisplay,
+  formatBlockedTimestamp,
+} from '../utils/blockedLogGrouping';
 import { formatNaira } from '../utils/currency';
 
 interface ActivityScreenProps {
@@ -42,7 +45,7 @@ interface ActivityScreenProps {
 
 const SOURCE_FILTERS: Array<{ value: string; label: string }> = [
   { value: 'All', label: 'All' },
-  { value: 'DNS Shield', label: 'DNS Shield' },
+  { value: 'Browser Shield', label: 'Browser Guard' },
   { value: 'Typed URL Guard', label: 'Typed Sites' },
   { value: 'Web Shield', label: 'Websites' },
   { value: 'Search Guard', label: 'Searches' },
@@ -95,7 +98,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             Recovery Progress
           </h1>
           <p className="text-xs text-[var(--ink-muted)]">
-            Betting-free streak, wealth simulator, personal goals &amp; intercept history
+            Betting-free streak, personal goals, urges resisted &amp; intercept history
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -195,12 +198,6 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           </button>
         </LiquidGlassCard>
       )}
-
-      {/* Interactive Naira Reclaimed Simulator */}
-      <WealthSimulatorCard
-        initialDailySpendNgn={state.settings.dailyBetSpendEstimate}
-        onApplyProjectionAsGoal={(prefill) => onOpenGoalModal(prefill)}
-      />
 
       {/* Interactive Visual Progress Chart */}
       <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="progress_dashboard">
@@ -443,7 +440,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
                     <BettingBrandLogo target={site.target} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-mono text-xs font-semibold text-[var(--ink)] sm:text-sm">
-                        {site.target}
+                        {formatBlockedTargetDisplay(site.target)}
                       </p>
                       <p className="truncate text-[11px] text-[var(--ink-muted)]">
                         {site.sources.join(' · ')} · {site.categoryName} · {timeText}
@@ -474,7 +471,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
                   <BettingBrandLogo target={ev.target} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-mono text-xs font-semibold text-[var(--ink)] sm:text-sm">
-                      {ev.target}
+                      {formatBlockedTargetDisplay(ev.target)}
                     </p>
                     <p className="truncate text-[11px] text-[var(--ink-muted)]">
                       {ev.source} · {ev.categoryName} · {timeText}

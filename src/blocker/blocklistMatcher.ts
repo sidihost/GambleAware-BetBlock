@@ -9,6 +9,7 @@ export interface BlockFilterConfig {
   blockFantasyAndLottery: boolean;
   strictKeywordFilter: boolean;
   searchGuardEnabled: boolean;
+  adBlockerEnabled?: boolean;
   customBlockedDomains: Set<string>;
   allowlistedDomains: Set<string>;
   customBlockedPackages: Set<string>;
@@ -46,33 +47,43 @@ const AMBIGUOUS_BRAND_STEMS = new Set([
   'glossy', 'rosy', 'dotty', 'wink', 'pub', 'tab', 'hardrock', 'fanatics',
 ]);
 
-const DISTINCTIVE_LONG_PREFIXES: Array<[string, GamblingCategory]> = [
-  ['sportybet', GamblingCategory.SPORTSBOOK],
-  ['betbonanza', GamblingCategory.SPORTSBOOK],
-  ['winnersgoldenbet', GamblingCategory.SPORTSBOOK],
-  ['hollywoodbets', GamblingCategory.SPORTSBOOK],
-  ['williamhill', GamblingCategory.SPORTSBOOK],
-  ['paddypower', GamblingCategory.SPORTSBOOK],
-  ['ladbrokes', GamblingCategory.SPORTSBOOK],
-  ['mozzartbet', GamblingCategory.SPORTSBOOK],
-  ['premierbet', GamblingCategory.SPORTSBOOK],
-  ['sportpesa', GamblingCategory.SPORTSBOOK],
-  ['merrybet', GamblingCategory.SPORTSBOOK],
-  ['nairabet', GamblingCategory.SPORTSBOOK],
-  ['accessbet', GamblingCategory.SPORTSBOOK],
-  ['surebet247', GamblingCategory.SPORTSBOOK],
-  ['betwinner', GamblingCategory.SPORTSBOOK],
-  ['draftkings', GamblingCategory.SPORTSBOOK],
-  ['pokerstars', GamblingCategory.POKER_BINGO],
-  ['partypoker', GamblingCategory.POKER_BINGO],
-  ['prizepicks', GamblingCategory.FANTASY_LOTTERY],
-  ['underdogfantasy', GamblingCategory.FANTASY_LOTTERY],
-  ['parlayplay', GamblingCategory.FANTASY_LOTTERY],
-  ['lottoland', GamblingCategory.FANTASY_LOTTERY],
-  ['babaijebu', GamblingCategory.FANTASY_LOTTERY],
-  ['chumbacasino', GamblingCategory.CASINO],
-  ['luckylandslots', GamblingCategory.CASINO],
-  ['jackpotcitycasino', GamblingCategory.CASINO],
+const INSTANT_BRAND_PREFIXES: Array<[string, GamblingCategory, number]> = [
+  ['1xbet', GamblingCategory.SPORTSBOOK, 4],
+  ['1xbit', GamblingCategory.SPORTSBOOK, 4],
+  ['22bet', GamblingCategory.SPORTSBOOK, 4],
+  ['bet9ja', GamblingCategory.SPORTSBOOK, 5],
+  ['betking', GamblingCategory.SPORTSBOOK, 5],
+  ['msport', GamblingCategory.SPORTSBOOK, 5],
+  ['betpawa', GamblingCategory.SPORTSBOOK, 5],
+  ['bangbet', GamblingCategory.SPORTSBOOK, 5],
+  ['paripesa', GamblingCategory.SPORTSBOOK, 5],
+  ['melbet', GamblingCategory.SPORTSBOOK, 5],
+  ['nairabet', GamblingCategory.SPORTSBOOK, 5],
+  ['betwinner', GamblingCategory.SPORTSBOOK, 5],
+  ['mozzartbet', GamblingCategory.SPORTSBOOK, 5],
+  ['babaijebu', GamblingCategory.FANTASY_LOTTERY, 5],
+  ['sportybet', GamblingCategory.SPORTSBOOK, 6],
+  ['merrybet', GamblingCategory.SPORTSBOOK, 6],
+  ['accessbet', GamblingCategory.SPORTSBOOK, 6],
+  ['surebet247', GamblingCategory.SPORTSBOOK, 6],
+  ['betbonanza', GamblingCategory.SPORTSBOOK, 6],
+  ['winnersgoldenbet', GamblingCategory.SPORTSBOOK, 6],
+  ['hollywoodbets', GamblingCategory.SPORTSBOOK, 6],
+  ['williamhill', GamblingCategory.SPORTSBOOK, 6],
+  ['paddypower', GamblingCategory.SPORTSBOOK, 6],
+  ['ladbrokes', GamblingCategory.SPORTSBOOK, 6],
+  ['premierbet', GamblingCategory.SPORTSBOOK, 6],
+  ['sportpesa', GamblingCategory.SPORTSBOOK, 6],
+  ['draftkings', GamblingCategory.SPORTSBOOK, 6],
+  ['pokerstars', GamblingCategory.POKER_BINGO, 6],
+  ['partypoker', GamblingCategory.POKER_BINGO, 6],
+  ['prizepicks', GamblingCategory.FANTASY_LOTTERY, 6],
+  ['underdogfantasy', GamblingCategory.FANTASY_LOTTERY, 6],
+  ['parlayplay', GamblingCategory.FANTASY_LOTTERY, 6],
+  ['lottoland', GamblingCategory.FANTASY_LOTTERY, 6],
+  ['chumbacasino', GamblingCategory.CASINO, 6],
+  ['luckylandslots', GamblingCategory.CASINO, 6],
+  ['jackpotcitycasino', GamblingCategory.CASINO, 6],
 ];
 
 const TYPED_BETTING_INTENT_PHRASES = [
@@ -80,6 +91,11 @@ const TYPED_BETTING_INTENT_PHRASES = [
   'online casino', 'live casino', 'crypto casino',
   'place bet', 'betting site', 'betting odds',
   'sports betting', 'sportsbook', 'aviator game',
+];
+
+const TYPED_AD_TRACKER_TERMS = [
+  'popads', 'popcash', 'adsterra', 'propellerads', 'exoclick',
+  '1xpartners', '1xbetpartners', 'bet365affiliates', 'betting ad', 'casino ad', 'gambling popunder',
 ];
 
 let cachedUnambiguousTypedStems: Array<[string, GamblingCategory]> | null = null;
@@ -256,6 +272,49 @@ export const BlocklistMatcher = {
     return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
   },
 
+  matchAdOrTrackerUrl(rawDomainOrUrl: string, config: BlockFilterConfig): BlockMatchResult {
+    if (config.adBlockerEnabled === false) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+    const lower = foldHomoglyphs(rawDomainOrUrl.trim().toLowerCase());
+    if (!lower) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const host = this.normalizeDomain(rawDomainOrUrl);
+    if (host) {
+      if (
+        matchesDomainHierarchy(host, GamblingRegistry.safeDomains) !== null ||
+        matchesDomainHierarchy(host, config.allowlistedDomains) !== null
+      ) {
+        return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+      }
+
+      const adHostMatch = matchesDomainHierarchy(host, GamblingRegistry.gamblingAdTrackerDomains);
+      if (adHostMatch !== null) {
+        return {
+          isBlocked: true,
+          matchedTarget: adHostMatch,
+          category: GamblingCategory.CASINO,
+          reason: 'Blocked gambling ad or popunder tracker',
+        };
+      }
+    }
+
+    for (const sig of GamblingRegistry.gamblingAdUrlSignatures) {
+      if (lower.includes(sig)) {
+        return {
+          isBlocked: true,
+          matchedTarget: host || 'Betting Promo Tracker',
+          category: GamblingCategory.SPORTSBOOK,
+          reason: 'Blocked gambling affiliate or promo ad link',
+        };
+      }
+    }
+
+    return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+  },
+
   matchDomainOrUrl(rawDomainOrUrl: string, config: BlockFilterConfig, depth = 0): BlockMatchResult {
     const rawLower = foldHomoglyphs(rawDomainOrUrl.trim().toLowerCase());
     if (INTERNAL_SCHEME_PREFIXES.some((prefix) => rawLower.startsWith(prefix))) {
@@ -331,6 +390,9 @@ export const BlocklistMatcher = {
         }
       }
     }
+
+    const adMatch = this.matchAdOrTrackerUrl(rawDomainOrUrl, config);
+    if (adMatch.isBlocked) return adMatch;
 
     return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
   },
@@ -456,15 +518,28 @@ export const BlocklistMatcher = {
       }
     }
 
-    if (noSpace && stripped.length >= 7 && !stripped.includes('.')) {
-      for (const [fullBrand, category] of DISTINCTIVE_LONG_PREFIXES) {
+    if (noSpace && !stripped.includes('.')) {
+      for (const [fullBrand, category, minLen] of INSTANT_BRAND_PREFIXES) {
         if (!isCategoryEnabled(category, config)) continue;
-        if (fullBrand.startsWith(stripped)) {
+        if (stripped.length >= minLen && fullBrand.startsWith(stripped)) {
           return {
             isBlocked: true,
             matchedTarget: fullBrand,
             category,
             reason: `Blocked "${fullBrand}" immediately while typing`,
+          };
+        }
+      }
+    }
+
+    if (config.adBlockerEnabled !== false) {
+      for (const adTerm of TYPED_AD_TRACKER_TERMS) {
+        if (lower.includes(adTerm)) {
+          return {
+            isBlocked: true,
+            matchedTarget: adTerm,
+            category: GamblingCategory.CASINO,
+            reason: 'Blocked gambling ad or affiliate tracker while typing',
           };
         }
       }

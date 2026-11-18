@@ -79,6 +79,7 @@ class AnchorRepository private constructor(context: Context) {
             blockFantasyAndLottery = settingsState.blockFantasyAndLottery,
             strictKeywordFilter = settingsState.strictKeywordFilter,
             searchGuardEnabled = settingsState.searchGuardEnabled,
+            adBlockerEnabled = settingsState.adBlockerEnabled,
             customBlockedDomains = domains.filter { !it.isAllowlisted }.map { it.domain }.toSet(),
             allowlistedDomains = domains.filter { it.isAllowlisted }.map { it.domain }.toSet(),
             customBlockedPackages = apps.map { it.packageName.lowercase() }.toSet(),

@@ -46,12 +46,18 @@ test('blocks betting sites immediately while typing before pressing Enter or typ
   };
 
   for (const typed of [
+    'sporty',
     'sportybet',
     'sportyb',
+    'bet9j',
     'bet9ja',
+    '1xbe',
     '1xbet',
+    'betki',
     'betking',
+    'mspor',
     'msport',
+    'betpa',
     'bet365',
     'stake.c',
     'sportybet.n',
@@ -75,10 +81,37 @@ test('blocks betting sites immediately while typing before pressing Enter or typ
     'Search or type web address',
     'bet',
     'sta',
+    'sport',
+    'sports',
   ]) {
     const res = BlocklistMatcher.matchTypedBrowserInput(safe, customConfig);
     assert.equal(res.isBlocked, false, `Expected safe input NOT blocked while typing: "${safe}"`);
   }
+});
+
+test('blocks gambling ad networks, popunders, and affiliate links when adBlockerEnabled is true', () => {
+  for (const adUrl of [
+    'https://popads.net/pop.js',
+    'https://adsterra.com/banner',
+    'https://1xpartners.com/signup',
+    'https://news-example.org/sports?btag=99123_promo',
+  ]) {
+    const res = BlocklistMatcher.matchDomainOrUrl(adUrl, defaultConfig);
+    assert.equal(res.isBlocked, true, `Expected ad/affiliate URL ${adUrl} to be blocked`);
+  }
+
+  const typedAd = BlocklistMatcher.matchTypedBrowserInput('adsterra', defaultConfig);
+  assert.equal(typedAd.isBlocked, true);
+
+  const disabledConfig: BlockFilterConfig = {
+    ...defaultConfig,
+    adBlockerEnabled: false,
+  };
+  assert.equal(BlocklistMatcher.matchDomainOrUrl('https://popads.net/pop.js', disabledConfig).isBlocked, false);
+  assert.equal(
+    BlocklistMatcher.matchDomainOrUrl('https://news-example.org/sports?btag=99123_promo', disabledConfig).isBlocked,
+    false,
+  );
 });
 
 test('unwraps social redirect links and catches Cyrillic homoglyph spoofing while sparing normal fintechs', () => {

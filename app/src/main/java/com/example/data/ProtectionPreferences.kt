@@ -24,6 +24,7 @@ data class ProtectionSettingsState(
     val browserShieldEnabled: Boolean = true,
     val appShieldEnabled: Boolean = true,
     val searchGuardEnabled: Boolean = true,
+    val adBlockerEnabled: Boolean = true,
     val antiTamperLockEnabled: Boolean = true,
     val lockUntilEpochMs: Long = 0L,
     val hasPin: Boolean = false,
@@ -83,6 +84,7 @@ class ProtectionPreferences private constructor(context: Context) {
             browserShieldEnabled = prefs.getBoolean(KEY_BROWSER_SHIELD, true),
             appShieldEnabled = prefs.getBoolean(KEY_APP_SHIELD, true),
             searchGuardEnabled = prefs.getBoolean(KEY_SEARCH_GUARD, true),
+            adBlockerEnabled = prefs.getBoolean(KEY_AD_BLOCKER_ENABLED, true),
             antiTamperLockEnabled = prefs.getBoolean(KEY_ANTI_TAMPER, true),
             lockUntilEpochMs = prefs.getLong(KEY_LOCK_UNTIL_MS, 0L),
             hasPin = !prefs.getString(KEY_PIN_HASH, null).isNullOrEmpty(),
@@ -132,6 +134,7 @@ class ProtectionPreferences private constructor(context: Context) {
     fun setBrowserShieldEnabled(enabled: Boolean) = update { putBoolean(KEY_BROWSER_SHIELD, enabled) }
     fun setAppShieldEnabled(enabled: Boolean) = update { putBoolean(KEY_APP_SHIELD, enabled) }
     fun setSearchGuardEnabled(enabled: Boolean) = update { putBoolean(KEY_SEARCH_GUARD, enabled) }
+    fun setAdBlockerEnabled(enabled: Boolean) = update { putBoolean(KEY_AD_BLOCKER_ENABLED, enabled) }
     fun setAntiTamperLockEnabled(enabled: Boolean) = update { putBoolean(KEY_ANTI_TAMPER, enabled) }
     fun setDailyBetSpendEstimate(amount: Int) = update { putInt(KEY_DAILY_SPEND, amount.coerceIn(0, 10_000_000)) }
     fun setThemeMode(mode: ThemeMode) = update { putInt(KEY_THEME_MODE, mode.ordinal) }
@@ -256,6 +259,7 @@ class ProtectionPreferences private constructor(context: Context) {
         private const val KEY_BROWSER_SHIELD = "browser_shield"
         private const val KEY_APP_SHIELD = "app_shield"
         private const val KEY_SEARCH_GUARD = "search_guard"
+        private const val KEY_AD_BLOCKER_ENABLED = "ad_blocker_enabled"
         private const val KEY_ANTI_TAMPER = "anti_tamper"
         private const val KEY_LOCK_UNTIL_MS = "lock_until_ms"
         private const val KEY_PIN_HASH = "pin_hash"

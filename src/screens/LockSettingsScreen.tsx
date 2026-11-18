@@ -2,9 +2,12 @@ import React, { useMemo, useState } from 'react';
 import {
   Bell,
   ChevronRight,
+  Cloud,
   Download,
   LockKeyhole,
   LockOpen,
+  LogIn,
+  LogOut,
   RefreshCw,
   Server,
   Timer,
@@ -45,6 +48,11 @@ interface LockSettingsScreenProps {
   onReplayTour: () => void;
   onToggleNotifications: (enabled: boolean) => void;
   onOpenDownloadPage: () => void;
+  userEmail?: string | null;
+  cloudError?: string | null;
+  isSyncingCloud?: boolean;
+  onSignIn?: () => void;
+  onSignOut?: () => void;
 }
 
 export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
@@ -69,6 +77,11 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   onReplayTour,
   onToggleNotifications,
   onOpenDownloadPage,
+  userEmail,
+  cloudError,
+  isSyncingCloud,
+  onSignIn,
+  onSignOut,
 }) => {
   const { isIOS } = usePWAInstall();
   const isTimeLocked = state.isTimeLockedNow;
@@ -316,6 +329,53 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
         </div>
 
         <div className="flex flex-col gap-3.5 lg:col-span-6">
+          {/* Cloud Lock Persistence & Wipe Recovery */}
+          <LiquidGlassCard className="p-3.5 sm:p-4">
+            <div className="flex items-start justify-between gap-2.5">
+              <div className="flex min-w-0 flex-1 items-start gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
+                  <Cloud className="h-4 w-4" />
+                </div>
+                <LiquidSectionHeader
+                  title="Cloud Lock & Wipe Recovery"
+                  subtitle={
+                    userEmail
+                      ? `Signed in as ${userEmail}${isSyncingCloud ? ' · Syncing...' : ' · Active'}`
+                      : 'Sign in with Google so Commitment Lock, PIN & goals re-arm automatically if your phone is wiped or flashed'
+                  }
+                />
+              </div>
+              {userEmail && onSignOut ? (
+                <button
+                  type="button"
+                  onClick={onSignOut}
+                  className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              ) : onSignIn ? (
+                <button
+                  type="button"
+                  onClick={onSignIn}
+                  data-testid="lock-google-signin-button"
+                  className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  <span>Sign In</span>
+                </button>
+              ) : null}
+            </div>
+            <p className="mt-2.5 text-xs leading-relaxed text-[var(--ink-muted)]">
+              Lock timers and 4-digit PIN hashes sync upward-only to Firebase so signing back in
+              after a factory reset restores your remaining lock automatically. For Android hardware
+              enterprise reset protection, set Device Owner via ADB after setup.
+            </p>
+            {cloudError ? (
+              <p className="mt-1.5 text-xs font-medium text-[var(--accent-ink)]">{cloudError}</p>
+            ) : null}
+          </LiquidGlassCard>
+
           {/* Zero-Loss Recovery Vault */}
           <RecoveryVaultCard
             store={store}
@@ -359,7 +419,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                 <p className="text-xs text-[var(--ink-muted)]">
                   {isIOS
                     ? 'Copy the 22 betting sites for Safari Screen Time or save to Home Screen'
-                    : 'Download the Play-Protect-safe Android APK with On-Device DNS Shield'}
+                    : 'Download Android APK with Zero-VPN All-Browser Guard, Ad Blocker & Cloud Lock Sync'}
                 </p>
               </div>
               <ChevronRight className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
@@ -413,7 +473,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           <LiquidGlassCard className="p-3.5 sm:p-4">
             <LiquidSectionHeader
               title="First Name Greeting"
-              subtitle="Optional name shown on your Home shield — saved locally with zero account"
+              subtitle="Optional name shown on your Home shield"
             />
             <form
               onSubmit={(e) => {

@@ -60,7 +60,7 @@ export const RECOVERY_RESOURCES: RecoveryResourceItem[] = [
     steps: [
       'Register once using your legal name, date of birth, postcode, and current email/phone.',
       'Choose 6 months, 1 year, or 5 years (cannot be cancelled early before your chosen expiry).',
-      'Layer alongside GambleAware DNS Shield to cover offshore & unlicensed sites outside UK regulation.',
+      'Layer alongside GambleAware All-Browser & Ad Shield to cover offshore & unlicensed sites outside UK regulation.',
     ],
     url: 'https://www.gamstop.co.uk',
     urlLabel: 'Visit gamstop.co.uk',
@@ -87,7 +87,7 @@ export const RECOVERY_RESOURCES: RecoveryResourceItem[] = [
     subtitle:
       'No single tool is complete alone. Combine software blocking + bank merchant freezes + operator self-exclusion + accountability.',
     steps: [
-      'Layer 1 (Device): Keep GambleAware DNS Shield + App Guard + Device Admin Lock armed.',
+      'Layer 1 (Device): Keep GambleAware All-Browser & Ad Shield + Device Admin Lock armed.',
       'Layer 2 (Money): Lock disposable funds & enable bank card gambling merchant blocks.',
       'Layer 3 (Operators): Opt out of promo SMS/email lists and request permanent account closure from past bookmakers.',
       'Layer 4 (Human): Pair Buddy Co-Lock or speak confidentially via Support Desk after any close call.',

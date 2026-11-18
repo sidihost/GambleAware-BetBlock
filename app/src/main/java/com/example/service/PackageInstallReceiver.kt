@@ -21,9 +21,9 @@ class PackageInstallReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
             -> {
-                if (settings.isProtectionEnabled && GambleAwareVpnService.isPrepared(appContext)) {
-                    GambleAwareVpnService.start(appContext)
-                }
+                repository.setShieldRunning(
+                    settings.isProtectionEnabled && GambleAwareAccessibilityService.isEnabled(appContext),
+                )
             }
             Intent.ACTION_PACKAGE_ADDED,
             Intent.ACTION_PACKAGE_REPLACED,

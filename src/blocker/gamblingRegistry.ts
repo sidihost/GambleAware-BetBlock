@@ -332,4 +332,23 @@ export const GamblingRegistry = {
     'wager now', 'jackpot', 'crypto casino', 'crash game', 'betting odds',
     'book a bet', 'booking code', 'aviator', 'virtual football', 'cashout',
   ],
+
+  gamblingAdTrackerDomains: new Set([
+    'popads.net', 'popcash.net', 'propellerads.com', 'adsterra.com', 'adsterratools.com',
+    'exoclick.com', 'trafficjunky.com', 'juicyads.com', 'hilltopads.net', 'clickadu.com',
+    'admaven.com', 'galaksion.com', 'monetag.com', 'evadav.com', 'push.house',
+    'richads.com', 'mgid.com', 'revcontent.com', 'taboola.com', 'outbrain.com',
+    'bet365affiliates.com', '1xpartners.com', '1xbetpartners.com', 'partner1xbet.com',
+    'betwaypartners.com', 'stakeaffiliates.com', 'incomeaccess.com', 'affiliatesys.com',
+    'melbetpartners.com', 'mostbetpartners.com', 'parimatchaffiliates.com', 'betssonaffiliates.com',
+    'kindredaffiliates.com', 'leovegasaffiliates.com', '888affiliates.com', 'williamhillaffiliates.com',
+    'paddypowerpartners.com', 'netrefer.com', 'cellxpert.com', 'myaffiliates.com',
+    'trackier.com', 'voluum.com', 'binom.org', 'redtrack.io',
+  ]),
+
+  gamblingAdUrlSignatures: [
+    'btag=', 'affid=', 'aff_id=', 'affiliate_id=', 'partner_id=', 'promo_bet=',
+    '/promo/casino', '/promo/bet', '/bonus/sportsbook', '/bonus/casino',
+    '/affiliates/bet', '/affiliates/casino', '/popunder', '/casino-ad', '/bet-ad',
+  ],
 };

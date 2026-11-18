@@ -25,7 +25,7 @@ export const TiltRadarCard: React.FC<TiltRadarCardProps> = ({
 }) => {
   const [showPromoTester, setShowPromoTester] = useState(false);
   const [promoInput, setPromoInput] = useState(
-    lastTestedUrl || 'sportybet.com/deposit?code=BC894K2&bonus=freebet',
+    lastTestedUrl || 'SportyBet slip code BC894K2',
   );
   const stakeAmount = Math.max(500, dailySpendNgn || 5000);
 

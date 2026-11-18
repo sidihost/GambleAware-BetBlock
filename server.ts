@@ -19,12 +19,14 @@ async function startServer() {
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    const firebaseConnect =
+      'https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://firebaseinstallations.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com';
     const connectSrc = IS_PRODUCTION
-      ? "connect-src 'self'"
-      : "connect-src 'self' ws://localhost:* ws://127.0.0.1:*";
+      ? `connect-src 'self' ${firebaseConnect}`
+      : `connect-src 'self' ws://localhost:* ws://127.0.0.1:* ${firebaseConnect}`;
     res.setHeader(
       'Content-Security-Policy',
-      `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; ${connectSrc}; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';`,
+      `default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.google.com; font-src 'self' data:; ${connectSrc}; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';`,
     );
     next();
   });

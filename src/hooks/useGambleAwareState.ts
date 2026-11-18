@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BlockFilterConfig, BlocklistMatcher, BlockMatchResult } from '../blocker/blocklistMatcher';
 import { GamblingCategory } from '../blocker/gamblingCategory';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
+import type { CloudRecoverySnapshot } from '../services/firestoreSync';
 import {
   hydrateFromDurableLayers,
   parseBackupInput,
@@ -218,6 +219,7 @@ export function useGambleAwareState() {
       blockFantasyAndLottery: store.settings.blockFantasyAndLottery,
       strictKeywordFilter: store.settings.strictKeywordFilter || highRiskStatus.isActive,
       searchGuardEnabled: store.settings.searchGuardEnabled || highRiskStatus.isActive,
+      adBlockerEnabled: store.settings.adBlockerEnabled !== false,
       customBlockedDomains: new Set(
         store.domains.filter((d) => !d.isAllowlisted).map((d) => d.domain),
       ),
@@ -495,6 +497,18 @@ export function useGambleAwareState() {
 
   const setAntiTamperEnabled = useCallback(
     (enabled: boolean) => updateSettings((s) => ({ ...s, antiTamperLockEnabled: enabled })),
+    [updateSettings],
+  );
+
+  const setAdBlockerEnabled = useCallback(
+    (enabled: boolean) => {
+      updateSettings((s) => ({ ...s, adBlockerEnabled: enabled }));
+      setStatusBannerMessage(
+        enabled
+          ? 'Gambling Ad, Popunder & Affiliate Blocker active'
+          : 'Gambling Ad Blocker paused',
+      );
+    },
     [updateSettings],
   );
 
@@ -1221,6 +1235,105 @@ export function useGambleAwareState() {
     updateSettings,
   ]);
 
+  const applyCloudRecoverySnapshot = useCallback(
+    (snapshot: CloudRecoverySnapshot): { restoredLock: boolean; restoredGoalsCount: number } => {
+      const now = Date.now();
+      const cloudSettings = snapshot.settings;
+      const cloudLockUntil = Number(cloudSettings?.lockUntilEpochMs || 0);
+      const isCloudLockActive = cloudLockUntil > now;
+      let restoredGoalsCount = 0;
+
+      mutateStore((prev) => {
+        const mergedLockUntil = Math.max(prev.settings.lockUntilEpochMs, cloudLockUntil);
+        const isMergedLocked = mergedLockUntil > now;
+
+        const existingGoalIds = new Set(prev.goals.map((g) => g.goalId));
+        const missingCloudGoals = snapshot.goals.filter((g) => !existingGoalIds.has(g.goalId));
+        restoredGoalsCount = missingCloudGoals.length;
+        const mergedGoals = [...prev.goals, ...missingCloudGoals].sort(
+          (a, b) => b.createdAtMs - a.createdAtMs,
+        );
+
+        const existingDomains = new Set(prev.domains.map((d) => d.domain));
+        const missingCloudDomains = snapshot.domains.filter(
+          (d) => !existingDomains.has(d.domain),
+        );
+        const mergedDomains = [...prev.domains, ...missingCloudDomains];
+
+        const cloudStartMs = Number(cloudSettings?.protectionStartedAtMs || 0);
+        const localStartMs = prev.settings.protectionStartedAtMs;
+        const mergedStartMs =
+          cloudStartMs > 0 && localStartMs > 0
+            ? Math.min(cloudStartMs, localStartMs)
+            : Math.max(cloudStartMs, localStartMs);
+
+        return {
+          ...prev,
+          isAccessibilityEnabled:
+            isMergedLocked || Boolean(cloudSettings?.isAccessibilityEnabled)
+              ? true
+              : prev.isAccessibilityEnabled,
+          isDeviceAdminEnabled:
+            isMergedLocked || Boolean(cloudSettings?.isDeviceAdminEnabled)
+              ? true
+              : prev.isDeviceAdminEnabled,
+          goals: mergedGoals,
+          domains: mergedDomains,
+          settings: {
+            ...prev.settings,
+            isProtectionEnabled: isMergedLocked
+              ? true
+              : (cloudSettings?.isProtectionEnabled ?? prev.settings.isProtectionEnabled),
+            blockSportsbooks:
+              cloudSettings?.blockSportsbooks ?? prev.settings.blockSportsbooks,
+            blockCasinos: cloudSettings?.blockCasinos ?? prev.settings.blockCasinos,
+            blockPokerAndBingo:
+              cloudSettings?.blockPokerAndBingo ?? prev.settings.blockPokerAndBingo,
+            blockCryptoBetting:
+              cloudSettings?.blockCryptoBetting ?? prev.settings.blockCryptoBetting,
+            blockFantasyAndLottery:
+              cloudSettings?.blockFantasyAndLottery ?? prev.settings.blockFantasyAndLottery,
+            strictKeywordFilter:
+              cloudSettings?.strictKeywordFilter ?? prev.settings.strictKeywordFilter,
+            browserShieldEnabled:
+              cloudSettings?.browserShieldEnabled ?? prev.settings.browserShieldEnabled,
+            appShieldEnabled: cloudSettings?.appShieldEnabled ?? prev.settings.appShieldEnabled,
+            searchGuardEnabled:
+              cloudSettings?.searchGuardEnabled ?? prev.settings.searchGuardEnabled,
+            adBlockerEnabled:
+              cloudSettings?.aiAutoBlockEnabled ?? prev.settings.adBlockerEnabled,
+            antiTamperLockEnabled: isMergedLocked
+              ? true
+              : (cloudSettings?.antiTamperLockEnabled ?? prev.settings.antiTamperLockEnabled),
+            lockUntilEpochMs: mergedLockUntil,
+            pinHash: prev.settings.pinHash || cloudSettings?.pinHash || null,
+            protectionStartedAtMs: mergedStartMs,
+            dailyBetSpendEstimate:
+              cloudSettings && cloudSettings.dailyBetSpendEstimate > 0
+                ? cloudSettings.dailyBetSpendEstimate
+                : prev.settings.dailyBetSpendEstimate,
+            hasCompletedInitialSetup:
+              isMergedLocked || prev.settings.hasCompletedInitialSetup || mergedGoals.length > 0,
+            hasCompletedTour:
+              isMergedLocked || prev.settings.hasCompletedTour || Boolean(cloudSettings?.hasCompletedTour),
+          },
+        };
+      });
+
+      if (isCloudLockActive) {
+        setStatusBannerMessage('Active Commitment Lock & protection re-armed from Cloud Account');
+      } else if (restoredGoalsCount > 0) {
+        setStatusBannerMessage(`Synced ${restoredGoalsCount} goal${restoredGoalsCount === 1 ? '' : 's'} from Cloud Account`);
+      }
+
+      return {
+        restoredLock: isCloudLockActive,
+        restoredGoalsCount,
+      };
+    },
+    [mutateStore],
+  );
+
   const resetAllData = useCallback(() => {
     setStore(createDefaultStore());
   }, []);
@@ -1245,6 +1358,7 @@ export function useGambleAwareState() {
     setAppShieldEnabled,
     setSearchGuardEnabled,
     setAntiTamperEnabled,
+    setAdBlockerEnabled,
     setDepositGuardEnabled,
     toggleBankFreezeCheck,
     bankUrgeStake,
@@ -1285,6 +1399,7 @@ export function useGambleAwareState() {
     logRelapseAndReset,
     restoreFromVaultBackup,
     forceBackupSync,
+    applyCloudRecoverySnapshot,
     resetAllData,
     showBanner: setStatusBannerMessage,
     clearBanner,

@@ -136,7 +136,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           </h1>
           <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
             Sign in with the verified GambleAware administrator Google account to review synced
-            user recovery telemetry and respond to confidential support tickets.
+            user recovery records and respond to confidential support tickets.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
             {!adminEmail ? (
@@ -236,7 +236,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           <LiquidGlassCard className="p-4 sm:p-5 lg:col-span-7">
             <LiquidSectionHeader
               title="User Recovery Directory"
-              subtitle="Click any synced user to inspect detailed protection & survey telemetry"
+              subtitle="Click any synced user to inspect detailed protection & survey status"
             />
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">

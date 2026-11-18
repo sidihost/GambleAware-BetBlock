@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.blocker.BlockMatchResult
 import com.example.blocker.BlocklistMatcher
+import com.example.blocker.BrandCatalog
 import com.example.blocker.GamblingCategory
 import com.example.blocker.GamblingRegistry
 import com.example.blocker.TiltRadarEngine
@@ -19,9 +20,9 @@ import com.example.data.InstalledAppInfo
 import com.example.data.ProtectionSettingsState
 import com.example.data.ThemeMode
 import com.example.data.UrgeLogEntity
+import com.example.service.GambleAwareAccessibilityService
 import com.example.service.GambleAwareDeviceAdminReceiver
 import com.example.service.GambleAwareNotifications
-import com.example.service.GambleAwareVpnService
 import com.example.service.PrivateDnsInspector
 import com.example.service.PrivateDnsStatus
 import kotlinx.coroutines.delay
@@ -76,6 +77,24 @@ fun normalizeBlockedTarget(rawTarget: String): String {
     } else {
         trimmed
     }
+}
+
+fun formatBlockedTargetDisplay(rawTarget: String): String {
+    val trimmed = rawTarget.trim()
+    if (trimmed.isEmpty()) return "Betting Platform"
+    val resolved = BrandCatalog.resolve(trimmed)
+    if (resolved.isExactCatalogMatch) {
+        return resolved.displayName
+    }
+    if (trimmed.startsWith("com.", ignoreCase = true) || trimmed.startsWith("org.", ignoreCase = true)) {
+        val lastSeg = trimmed.substringAfterLast('.').ifBlank { trimmed }
+        return lastSeg.replaceFirstChar { it.uppercaseChar() }
+    }
+    val domainStripped = BlocklistMatcher.normalizeDomain(trimmed)
+    if (domainStripped.contains('.')) {
+        return domainStripped.substringBefore('.').replaceFirstChar { it.uppercaseChar() }
+    }
+    return resolved.displayName
 }
 
 fun buildGroupedBlockedTargets(events: List<BlockedEventEntity>): List<GroupedBlockedTarget> {
@@ -196,7 +215,7 @@ val RECOVERY_MILESTONES = listOf(
 data class MainUiState(
     val settings: ProtectionSettingsState = ProtectionSettingsState(),
     val isShieldServiceRunning: Boolean = false,
-    val isVpnPrepared: Boolean = false,
+    val isAccessibilityEnabled: Boolean = false,
     val isDeviceAdminEnabled: Boolean = false,
     val privateDnsStatus: PrivateDnsStatus = PrivateDnsStatus(false, null),
     val customBlockedDomains: List<BlockedDomainEntity> = emptyList(),
@@ -220,7 +239,7 @@ data class MainUiState(
     val currentTimeMs: Long = System.currentTimeMillis(),
 ) {
     val isFullyArmed: Boolean
-        get() = settings.isProtectionEnabled && (isShieldServiceRunning || isVpnPrepared)
+        get() = settings.isProtectionEnabled && (isShieldServiceRunning || isAccessibilityEnabled)
 
     val isTimeLockedNow: Boolean
         get() = settings.isTimeLocked(currentTimeMs)
@@ -299,8 +318,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AnchorRepository.getInstance(application)
     private val installedAppsFlow = MutableStateFlow<List<InstalledAppInfo>>(emptyList())
     private val loadingAppsFlow = MutableStateFlow(false)
-    private val vpnPreparedFlow = MutableStateFlow(
-        GambleAwareVpnService.isPrepared(application),
+    private val accessibilityEnabledFlow = MutableStateFlow(
+        GambleAwareAccessibilityService.isEnabled(application),
     )
     private val deviceAdminActiveFlow = MutableStateFlow(
         checkDeviceAdminActive(application),
@@ -322,11 +341,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val systemHealthFlow = combine(
         repository.settings,
         repository.shieldRunning,
-        vpnPreparedFlow,
+        accessibilityEnabledFlow,
         privateDnsFlow,
         deviceAdminActiveFlow,
-    ) { settings, shieldRunning, vpnPrepared, dnsStatus, deviceAdminActive ->
-        Tuple5(settings, shieldRunning, vpnPrepared, dnsStatus, deviceAdminActive)
+    ) { settings, shieldRunning, accessibilityEnabled, dnsStatus, deviceAdminActive ->
+        Tuple5(settings, shieldRunning, accessibilityEnabled, dnsStatus, deviceAdminActive)
     }
 
     private val dataFlow = combine(
@@ -381,7 +400,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val state = MainUiState(
             settings = settings,
             isShieldServiceRunning = health.second,
-            isVpnPrepared = health.third,
+            isAccessibilityEnabled = health.third,
             isDeviceAdminEnabled = health.fifth,
             privateDnsStatus = health.fourth,
             customBlockedDomains = domains.filter { !it.isAllowlisted },
@@ -430,14 +449,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshSystemServiceStatus() {
         val ctx = getApplication<Application>()
-        val vpnPrepared = GambleAwareVpnService.isPrepared(ctx)
-        vpnPreparedFlow.value = vpnPrepared
+        val accessibilityReady = GambleAwareAccessibilityService.isEnabled(ctx)
+        accessibilityEnabledFlow.value = accessibilityReady
+        repository.setShieldRunning(accessibilityReady)
         deviceAdminActiveFlow.value = checkDeviceAdminActive(ctx)
-        if (!vpnPrepared) {
-            repository.setShieldRunning(false)
-        } else if (repository.prefs.currentSnapshot().isProtectionEnabled && !repository.shieldRunning.value) {
-            GambleAwareVpnService.start(ctx)
-        }
         privateDnsFlow.value = PrivateDnsInspector.inspect(ctx)
     }
 
@@ -501,20 +516,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun enableProtection() {
         val ctx = getApplication<Application>()
         repository.prefs.setProtectionEnabled(true)
-        val vpnPrepared = GambleAwareVpnService.isPrepared(ctx)
-        vpnPreparedFlow.value = vpnPrepared
-        if (vpnPrepared) {
-            GambleAwareVpnService.start(ctx)
-            bannerFlow.value = "GambleAware DNS Shield active"
+        val accessibilityReady = GambleAwareAccessibilityService.isEnabled(ctx)
+        accessibilityEnabledFlow.value = accessibilityReady
+        repository.setShieldRunning(accessibilityReady)
+        bannerFlow.value = if (accessibilityReady) {
+            "GambleAware All-Browser & Ad Shield active (Zero-VPN)"
         } else {
-            bannerFlow.value = "Tap Enable DNS Shield to activate device-wide blocking"
+            "Turn on GambleAware Accessibility Shield for all-browser & app blocking"
         }
     }
 
     fun disableProtection() {
-        val ctx = getApplication<Application>()
         repository.prefs.setProtectionEnabled(false)
-        GambleAwareVpnService.stop(ctx)
         bannerFlow.value = "Protection paused"
     }
 
@@ -530,7 +543,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         bannerFlow.value = if (safeDays > 0) {
             val span = formatLockSpan(safeDays)
             if (first.isNotEmpty()) "Locked for $span — welcome, $first"
-            else "DNS Shield & Lock armed for $span"
+            else "All-Browser Shield & Lock armed for $span"
         } else {
             if (first.isNotEmpty()) "Preferences saved — welcome, $first"
             else "Setup saved — lock anytime you decide"
@@ -572,6 +585,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.prefs.setSearchGuardEnabled(enabled)
     }
 
+    fun setAdBlockerEnabled(enabled: Boolean) {
+        repository.prefs.setAdBlockerEnabled(enabled)
+        retestIfNeeded()
+        bannerFlow.value = if (enabled) {
+            "Gambling Ad & Popunder Blocker enabled"
+        } else {
+            "Gambling Ad Blocker paused"
+        }
+    }
+
     fun setAntiTamperEnabled(enabled: Boolean) {
         repository.prefs.setAntiTamperLockEnabled(enabled)
     }
@@ -605,15 +628,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun addCustomDomain(rawDomain: String, isAllowlisted: Boolean) {
         val normalized = BlocklistMatcher.normalizeDomain(rawDomain)
         if (normalized.isEmpty() || !normalized.contains('.')) {
-            bannerFlow.value = "Enter a valid domain such as example.com"
+            bannerFlow.value = "Enter a valid website address"
             return
         }
+        val cleanDisplay = formatBlockedTargetDisplay(normalized)
         viewModelScope.launch {
             repository.addCustomDomain(normalized, isAllowlisted)
             bannerFlow.value = if (isAllowlisted) {
-                "Allowlisted $normalized"
+                "Allowlisted $cleanDisplay"
             } else {
-                "Blocked $normalized"
+                "Blocked $cleanDisplay"
             }
             retestIfNeeded()
         }

@@ -78,6 +78,7 @@ import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
 import com.example.ui.formatAttemptCountLabel
 import com.example.ui.formatBlockedRelativeTime
+import com.example.ui.formatBlockedTargetDisplay
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
 import java.text.NumberFormat
@@ -88,8 +89,8 @@ import java.util.Locale
 fun ShieldScreen(
     state: MainUiState,
     onPrimaryShieldClick: () -> Unit,
-    onEnableDnsShield: () -> Unit,
-    onOpenVpnSettings: () -> Unit,
+    onEnableAccessibilityShield: () -> Unit,
+    onEnableDeviceAdmin: () -> Unit,
     onOpenPrivateDnsSettings: () -> Unit,
     onTestQueryChanged: (String) -> Unit,
     onNavigateToBlocklist: () -> Unit,
@@ -107,7 +108,7 @@ fun ShieldScreen(
     val isArmed = state.isFullyArmed
     val isLocked = state.isTimeLockedNow
     val keyboard = LocalSoftwareKeyboardController.current
-    val showQuickOnboarding = !state.isVpnPrepared || !state.isShieldServiceRunning || !isLocked
+    val showQuickOnboarding = !state.isAccessibilityEnabled || !state.isShieldServiceRunning || !isLocked
     val listState = rememberLazyListState()
 
     LaunchedEffect(activeTourKey, showQuickOnboarding) {
@@ -173,7 +174,7 @@ fun ShieldScreen(
                                         color = MaterialTheme.colorScheme.onBackground,
                                     )
                                     Text(
-                                        text = "On-Device DNS Shield • Site & Betting App Guard",
+                                        text = "Zero-VPN Shield • All Browsers, Ads & Apps",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -210,9 +211,9 @@ fun ShieldScreen(
 
                         Text(
                             text = when {
-                                isArmed && isLocked -> "Maximum Lock & DNS Shield Active"
-                                isArmed -> "On-Device DNS Shield Active"
-                                !state.isVpnPrepared -> "Activate GambleAware DNS Shield"
+                                isArmed && isLocked -> "Maximum Lock & All-Browser Shield Active"
+                                isArmed -> "All-Browser & Ad Shield Active"
+                                !state.isAccessibilityEnabled -> "Turn On All-Browser & Ad Shield"
                                 else -> "Protection Paused"
                             },
                             style = MaterialTheme.typography.titleLarge,
@@ -225,11 +226,11 @@ fun ShieldScreen(
                         Text(
                             text = when {
                                 isArmed ->
-                                    "Blocking SportyBet, Bet9ja, Bet365, 1xBet, Stake & 600+ gambling domains across browsers and betting apps."
-                                !state.isVpnPrepared ->
-                                    "Grant local DNS Shield permission to filter betting websites and gambling apps directly on your phone."
+                                    "Blocking SportyBet, Bet9ja, Bet365, 1xBet, Stake, betting apps & popunders across all browsers — while your own VPN stays free."
+                                !state.isAccessibilityEnabled ->
+                                    "Enable Accessibility Shield for instant while-typing & app protection with zero VPN required."
                                 else ->
-                                    "Tap below to resume real-time on-device gambling DNS interception."
+                                    "Tap below to resume real-time all-browser, ad, and betting app protection."
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -302,7 +303,7 @@ fun ShieldScreen(
                                 text = when {
                                     isArmed && isLocked -> "Protected (Locked Until Timer Ends)"
                                     isArmed -> "Pause Shield"
-                                    !state.isVpnPrepared -> "Enable DNS Shield"
+                                    !state.isAccessibilityEnabled -> "Turn On All-Browser & Ad Shield"
                                     else -> "Resume Shield"
                                 },
                                 style = MaterialTheme.typography.labelLarge,
@@ -321,31 +322,31 @@ fun ShieldScreen(
                     ) {
                         LiquidSectionHeader(
                             title = "Complete Lock & Shield Setup",
-                            subtitle = "Enable all layers so blocking stays active 24/7 on Wi-Fi & mobile data",
+                            subtitle = "Works across 20+ browsers & allows ProtonVPN, Mullvad or WARP anytime",
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         SetupStepRow(
                             step = "1",
-                            title = "Enable On-Device DNS Shield",
-                            subtitle = if (state.isVpnPrepared && state.isShieldServiceRunning) "Active" else "Required to block betting websites & app servers",
-                            done = state.isVpnPrepared && state.isShieldServiceRunning,
-                            onClick = onEnableDnsShield,
+                            title = "Turn On All-Browser & Ad Shield",
+                            subtitle = if (state.isAccessibilityEnabled && state.isShieldServiceRunning) "Active • Zero-VPN" else "Blocks betting sites as you type, popunder ads & betting apps",
+                            done = state.isAccessibilityEnabled && state.isShieldServiceRunning,
+                            onClick = onEnableAccessibilityShield,
                             testTag = "onboarding_step_shield",
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         SetupStepRow(
                             step = "2",
-                            title = "Always-On VPN (Android Settings)",
-                            subtitle = "Optional: lock DNS Shield Always-On & Block connections without VPN",
-                            done = state.isVpnPrepared,
-                            onClick = onOpenVpnSettings,
+                            title = "Arm Device Admin Uninstall Lock",
+                            subtitle = if (state.isDeviceAdminEnabled) "Active • Blocks uninstalls & Force Stop" else "Prevents removing GambleAware while locked",
+                            done = state.isDeviceAdminEnabled,
+                            onClick = onEnableDeviceAdmin,
                             testTag = "onboarding_step_admin",
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         SetupStepRow(
                             step = "3",
                             title = "Set Commitment Lock Duration",
-                            subtitle = if (isLocked) "Active (${state.lockCountdownFormatted})" else "Locks rules, categories & pause controls until timer reaches 0",
+                            subtitle = if (isLocked) "Active (${state.lockCountdownFormatted})" else "Locks rules, categories & uninstall controls until timer reaches 0",
                             done = isLocked,
                             onClick = onNavigateToLock,
                             testTag = "onboarding_step_timer",
@@ -531,7 +532,7 @@ fun ShieldScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = site.target,
+                                            text = formatBlockedTargetDisplay(site.target),
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onBackground,
@@ -753,22 +754,20 @@ fun ShieldScreen(
                 ) {
                     LiquidSectionHeader(
                         title = "Protection Stack",
-                        subtitle = "On-device DNS filtering • Zero remote logging • Wi-Fi & 4G/5G",
+                        subtitle = "Zero-VPN all-browser protection • Allows third-party VPNs anytime",
                     )
                     Spacer(modifier = Modifier.height(14.dp))
 
                     EngineStatusRow(
                         icon = Icons.Rounded.PhonelinkLock,
-                        title = "On-Device DNS Shield",
-                        subtitle = if (state.isShieldServiceRunning) {
-                            "Active • Filtering betting domains across Chrome, WebViews & apps"
-                        } else if (state.isVpnPrepared) {
-                            "Prepared • Tap to start local DNS tunnel"
+                        title = "All-Browser & Ad Shield",
+                        subtitle = if (state.isShieldServiceRunning || state.isAccessibilityEnabled) {
+                            "Active • While-typing, popunder ads & betting app blocking across 20+ browsers"
                         } else {
-                            "Tap to grant local DNS filter permission"
+                            "Tap to enable Accessibility Shield (no VPN slot used)"
                         },
-                        isReady = state.isShieldServiceRunning || state.isVpnPrepared,
-                        onClick = onEnableDnsShield,
+                        isReady = state.isShieldServiceRunning || state.isAccessibilityEnabled,
+                        onClick = onEnableAccessibilityShield,
                         testTag = "layer_accessibility_row",
                     )
 
@@ -776,10 +775,14 @@ fun ShieldScreen(
 
                     EngineStatusRow(
                         icon = Icons.Rounded.AdminPanelSettings,
-                        title = "Always-On Lock (Android VPN Settings)",
-                        subtitle = "Tap to enable Always-on VPN & Block connections without VPN",
-                        isReady = state.isVpnPrepared,
-                        onClick = onOpenVpnSettings,
+                        title = "Device Admin & Settings Guard",
+                        subtitle = if (state.isDeviceAdminEnabled) {
+                            "Armed • Blocks app uninstall, Force Stop & deactivation while locked"
+                        } else {
+                            "Tap to arm Android Device Admin uninstall protection"
+                        },
+                        isReady = state.isDeviceAdminEnabled,
+                        onClick = onEnableDeviceAdmin,
                         testTag = "layer_device_admin_row",
                     )
 
@@ -787,11 +790,11 @@ fun ShieldScreen(
 
                     EngineStatusRow(
                         icon = Icons.Rounded.Dns,
-                        title = "System Private DNS (DoT)",
+                        title = "Private DNS & VPN Coexistence",
                         subtitle = if (state.privateDnsStatus.isActive) {
-                            "Active • ${state.privateDnsStatus.serverHost ?: "System Automatic"}"
+                            "Private DNS Active (${state.privateDnsStatus.serverHost ?: "Automatic"}) • Your VPN apps work normally"
                         } else {
-                            "Optional • Secondary DNS-over-TLS backup in Network Settings"
+                            "Optional OS Private DNS • Third-party VPNs (Proton, Mullvad, WARP) supported"
                         },
                         isReady = state.privateDnsStatus.isActive,
                         onClick = onOpenPrivateDnsSettings,
@@ -887,18 +890,18 @@ fun ShieldScreen(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         QuickSampleChip(
-                            label = "sportybet",
+                            label = "SportyBet",
                             onClick = { onTestQueryChanged("sportybet") },
                             testTag = "sample_chip_sportybet",
                         )
                         QuickSampleChip(
-                            label = "bet365.com",
-                            onClick = { onTestQueryChanged("bet365.com") },
+                            label = "Bet365",
+                            onClick = { onTestQueryChanged("bet365") },
                             testTag = "sample_chip_bet365",
                         )
                         QuickSampleChip(
-                            label = "betterhelp.com",
-                            onClick = { onTestQueryChanged("betterhelp.com") },
+                            label = "BetterHelp",
+                            onClick = { onTestQueryChanged("betterhelp") },
                             testTag = "sample_chip_safe",
                         )
                     }
@@ -938,7 +941,7 @@ fun ShieldScreen(
                                     )
                                     if (result.isBlocked) {
                                         Text(
-                                            text = "${result.matchedTarget} • ${result.reason}",
+                                            text = "${formatBlockedTargetDisplay(result.matchedTarget)} • ${result.reason}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = fg.copy(alpha = 0.85f),
                                         )

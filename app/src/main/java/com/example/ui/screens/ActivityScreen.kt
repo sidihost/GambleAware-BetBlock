@@ -73,6 +73,7 @@ import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
 import com.example.ui.formatAttemptCountLabel
 import com.example.ui.formatBlockedRelativeTime
+import com.example.ui.formatBlockedTargetDisplay
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
 import java.text.NumberFormat
@@ -98,7 +99,7 @@ fun ActivityScreen(
     var selectedSource by remember { mutableStateOf("All") }
     val sourceOptions = listOf(
         "All",
-        "DNS Shield",
+        "Browser Shield",
         "Typed URL Guard",
         "Web Shield",
         "Search Guard",
@@ -164,7 +165,7 @@ fun ActivityScreen(
                                 color = MaterialTheme.colorScheme.onBackground,
                             )
                             Text(
-                                text = "Betting-free streak, savings & shield telemetry",
+                                text = "Betting-free streak, savings & shield activity",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -604,7 +605,7 @@ fun ActivityScreen(
                     val subtitleText = if (groupedCount > 0) {
                         "${state.totalBlockedCount} total attempts across $groupedCount unique site${if (groupedCount == 1) "" else "s"} & app${if (groupedCount == 1) "" else "s"}"
                     } else {
-                        "Intercepted betting websites, WebViews, DNS hosts & apps"
+                        "Intercepted betting websites, in-app WebViews, ads & apps"
                     }
                     LiquidSectionHeader(
                         title = "Blocked Sites & Apps",
@@ -694,7 +695,7 @@ fun ActivityScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "When GambleAware intercepts a gambling site, in-app WebView, DNS lookup, or betting app, it will appear here.",
+                                text = "When GambleAware intercepts a gambling site, in-app WebView, ad popunder, or betting app, it will appear here.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
@@ -825,7 +826,7 @@ private fun GroupedBlockedTargetRow(
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = site.target,
+                    text = formatBlockedTargetDisplay(site.target),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -882,7 +883,7 @@ private fun BlockedEventRow(event: BlockedEventEntity) {
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = event.target,
+                    text = formatBlockedTargetDisplay(event.target),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,

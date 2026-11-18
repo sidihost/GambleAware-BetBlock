@@ -73,18 +73,16 @@ export const LiquidStatusButton: React.FC<{
   icon: React.ReactNode;
   onClick?: () => void;
 }> = ({ label, isActive, icon, onClick }) => {
-  const classes = `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap shrink-0 transition-colors duration-150 ${
-    isActive
-      ? 'bg-[var(--active-fill)] text-[var(--active-content)] border-[var(--active-fill)]'
-      : 'bg-[var(--muted-fill)] text-[var(--ink-muted)] border-[var(--subtle-border)]'
-  }`;
-
   if (onClick) {
     return (
       <button
         type="button"
         onClick={onClick}
-        className={`${classes} cursor-pointer hover:opacity-90`}
+        className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors duration-150 hover:opacity-90 ${
+          isActive
+            ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+            : 'border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--ink-muted)]'
+        }`}
       >
         {icon}
         <span>{label}</span>
@@ -93,7 +91,11 @@ export const LiquidStatusButton: React.FC<{
   }
 
   return (
-    <span className={classes}>
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 font-mono text-[11px] font-bold tracking-wider uppercase whitespace-nowrap ${
+        isActive ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-muted)]'
+      }`}
+    >
       {icon}
       <span>{label}</span>
     </span>

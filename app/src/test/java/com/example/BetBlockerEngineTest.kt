@@ -8,20 +8,17 @@ import com.example.blocker.TiltRadarEngine
 import com.example.blocker.TiltRiskLevel
 import com.example.data.BlockedEventEntity
 import com.example.data.ProtectionSettingsState
-import com.example.service.DnsPacketCodec
 import com.example.ui.MainUiState
 import com.example.ui.buildCleanStreakShareText
 import com.example.ui.buildGroupedBlockedTargets
 import com.example.ui.formatAttemptCountLabel
 import com.example.ui.formatBlockedRelativeTime
+import com.example.ui.formatBlockedTargetDisplay
 import com.example.ui.normalizeBlockedTarget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.ByteBuffer
 
 class BetBlockerEngineTest {
 
@@ -242,59 +239,27 @@ class BetBlockerEngineTest {
     }
 
     @Test
-    fun parsesIpv4UdpDnsQueryAndBuildsNxdomainReply() {
-        val dnsQuery = byteArrayOf(
-            0x12, 0x34, // Transaction ID
-            0x01, 0x00, // Standard query with RD=1
-            0x00, 0x01, // QDCOUNT=1
-            0x00, 0x00, // ANCOUNT=0
-            0x00, 0x00, // NSCOUNT=0
-            0x00, 0x00, // ARCOUNT=0
-            // QNAME: sportybet.com
-            0x09, 's'.code.toByte(), 'p'.code.toByte(), 'o'.code.toByte(), 'r'.code.toByte(),
-            't'.code.toByte(), 'y'.code.toByte(), 'b'.code.toByte(), 'e'.code.toByte(), 't'.code.toByte(),
-            0x03, 'c'.code.toByte(), 'o'.code.toByte(), 'm'.code.toByte(),
-            0x00,
-            0x00, 0x01, // QTYPE A
-            0x00, 0x01, // QCLASS IN
-        )
-        val totalLen = 20 + 8 + dnsQuery.size
-        val pkt = ByteBuffer.allocate(totalLen).apply {
-            put(0x45.toByte())
-            put(0x00.toByte())
-            putShort(totalLen.toShort())
-            putShort(1)
-            putShort(0)
-            put(64.toByte())
-            put(17.toByte()) // UDP
-            putShort(0)
-            put(byteArrayOf(10, 111.toByte(), 222.toByte(), 1))
-            put(byteArrayOf(10, 111.toByte(), 222.toByte(), 2))
-            putShort(51234.toShort())
-            putShort(53.toShort())
-            putShort((8 + dnsQuery.size).toShort())
-            putShort(0)
-            put(dnsQuery)
-        }.array()
+    fun blocksInstantTypedPrefixesAndAdNetworksAndFormatsCleanTargets() {
+        val adEnabled = BlockFilterConfig(adBlockerEnabled = true)
+        val adDisabled = BlockFilterConfig(adBlockerEnabled = false)
 
-        val parsed = DnsPacketCodec.parseIpv4UdpDns(pkt)
-        assertNotNull(parsed)
-        assertEquals("sportybet.com", parsed!!.domainName)
-        assertEquals(51234, parsed.sourcePort)
-        assertEquals(53, parsed.destPort)
+        // 4-6 char prefixes intercepted while typing before .com
+        for (prefix in listOf("sporty", "1xbe", "bet9j", "mspor", "betki")) {
+            assertTrue(
+                "Expected instant prefix block for '$prefix'",
+                BlocklistMatcher.matchTypedBrowserInput(prefix, adEnabled).isBlocked,
+            )
+        }
 
-        val nx = DnsPacketCodec.buildNxdomainResponse(parsed)
-        assertTrue(nx.size >= 28 + 12)
-        // Destination port swapped back to source port (51234)
-        val replyDstPort = ((nx[22].toInt() and 0xFF) shl 8) or (nx[23].toInt() and 0xFF)
-        assertEquals(51234, replyDstPort)
-        // DNS QR=1 (0x80) and RCODE=3 (NXDOMAIN -> low nibble 0x03)
-        assertEquals(0x81, nx[28 + 2].toInt() and 0xFF)
-        assertEquals(3, nx[28 + 3].toInt() and 0x0F)
+        // Gambling ad / popunder networks blocked when adBlockerEnabled = true
+        assertTrue(BlocklistMatcher.matchDomainOrUrl("https://cdn.popads.net/pop.js", adEnabled).isBlocked)
+        assertTrue(BlocklistMatcher.matchDomainOrUrl("https://1xbet-promo.com/banner", adEnabled).isBlocked)
+        assertFalse(BlocklistMatcher.matchDomainOrUrl("https://cdn.popads.net/pop.js", adDisabled).isBlocked)
 
-        // Malformed or non-DNS port returns null cleanly
-        pkt[23] = 80
-        assertNull(DnsPacketCodec.parseIpv4UdpDns(pkt))
+        // Display names never expose .com or com.* clutter
+        assertEquals("SportyBet", formatBlockedTargetDisplay("sportybet.com"))
+        assertEquals("Bet9ja", formatBlockedTargetDisplay("bet9ja.com"))
+        assertEquals("Bet9ja", formatBlockedTargetDisplay("com.bet9ja.android"))
     }
 
     @Test
@@ -315,7 +280,7 @@ class BetBlockerEngineTest {
             BlockedEventEntity(
                 id = 2,
                 target = "sportybet.com",
-                source = "DNS Shield",
+                source = "Browser Shield",
                 categoryName = "Sportsbook",
                 timestamp = now - 30_000L,
             ),
@@ -335,7 +300,7 @@ class BetBlockerEngineTest {
         assertEquals("sportybet.com", siteGroup.target)
         assertEquals(2, siteGroup.attemptCount)
         assertEquals("2 blocked", formatAttemptCountLabel(siteGroup.attemptCount))
-        assertEquals("DNS Shield", siteGroup.latestSource)
+        assertEquals("Browser Shield", siteGroup.latestSource)
         assertFalse(siteGroup.isApp)
         assertEquals("Just now", formatBlockedRelativeTime(siteGroup.latestTimestamp, now))
 
@@ -396,7 +361,7 @@ class BetBlockerEngineTest {
             BlockedEventEntity(
                 id = idx.toLong(),
                 target = "sportybet.com",
-                source = "DNS Shield",
+                source = "Browser Shield",
                 categoryName = "SPORTSBOOK",
                 timestamp = now - (idx * 10_000L),
             )

@@ -236,6 +236,7 @@ export function createDefaultStore(): PersistedStore {
       browserShieldEnabled: true,
       appShieldEnabled: true,
       searchGuardEnabled: true,
+      adBlockerEnabled: true,
       antiTamperLockEnabled: true,
       lockUntilEpochMs: 0,
       pinHash: null,
@@ -291,6 +292,10 @@ export function normalizeStoreShape(parsed: Partial<PersistedStore>): PersistedS
     depositGuardEnabled:
       typeof parsed.settings?.depositGuardEnabled === 'boolean'
         ? parsed.settings.depositGuardEnabled
+        : true,
+    adBlockerEnabled:
+      typeof parsed.settings?.adBlockerEnabled === 'boolean'
+        ? parsed.settings.adBlockerEnabled
         : true,
     buddyPartnerName:
       typeof parsed.settings?.buddyPartnerName === 'string'

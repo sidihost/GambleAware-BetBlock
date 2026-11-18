@@ -1,8 +1,10 @@
 import type { User } from 'firebase/auth';
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -13,17 +15,59 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import { GamblingCategory } from '../blocker/gamblingCategory';
 import type {
+  BlockedDomainEntity,
   CloudRecoveryProfile,
   DerivedMainState,
+  RecoveryGoalEntity,
   SupportTicketRecord,
+  ThemeMode,
 } from '../data/types';
 import {
   BLUEPRINT_LIMITS,
+  sanitizeDomainForBlueprint,
+  sanitizeGoalFields,
   sanitizePreferredName,
   sanitizeSupportTicketInput,
+  toSafeFirestoreDocId,
 } from '../firebaseValidation';
 import type { EvaluatedSurveyProfile } from '../utils/recoverySurvey';
+
+export interface CloudSettingsRecord {
+  isProtectionEnabled: boolean;
+  blockSportsbooks: boolean;
+  blockCasinos: boolean;
+  blockPokerAndBingo: boolean;
+  blockCryptoBetting: boolean;
+  blockFantasyAndLottery: boolean;
+  strictKeywordFilter: boolean;
+  browserShieldEnabled: boolean;
+  appShieldEnabled: boolean;
+  searchGuardEnabled: boolean;
+  antiTamperLockEnabled: boolean;
+  lockUntilEpochMs: number;
+  pinHash: string;
+  protectionStartedAtMs: number;
+  dailyBetSpendEstimate: number;
+  themeMode: ThemeMode;
+  hasCompletedTour: boolean;
+  notificationsEnabled: boolean;
+  lastNotifiedMilestoneDay: number;
+  aiAutoBlockEnabled: boolean;
+  goalReminderEnabled: boolean;
+  isAccessibilityEnabled: boolean;
+  isDeviceAdminEnabled: boolean;
+  privateDnsActive: boolean;
+  privateDnsHost: string;
+}
+
+export interface CloudRecoverySnapshot {
+  settings: CloudSettingsRecord | null;
+  goals: RecoveryGoalEntity[];
+  domains: BlockedDomainEntity[];
+  hasActiveCloudLock: boolean;
+}
 
 async function ensureUserAnchor(user: User): Promise<void> {
   const userRef = doc(db, 'users', user.uid);
@@ -78,6 +122,14 @@ export async function syncUserRecoveryProfile(
 
     const recoveryRef = doc(db, 'recoveryProfiles', user.uid);
     const recoverySnap = await getDoc(recoveryRef);
+    const existingLockUntil = recoverySnap.exists()
+      ? Number(recoverySnap.data().lockUntilEpochMs || 0)
+      : 0;
+    const effectiveLockUntil = Math.max(
+      existingLockUntil,
+      Math.max(0, Math.round(uiState.settings.lockUntilEpochMs || 0)),
+    );
+
     const recoveryPayload = {
       ownerId: user.uid,
       email: user.email.slice(0, BLUEPRINT_LIMITS.emailMaxLength),
@@ -87,8 +139,8 @@ export async function syncUserRecoveryProfile(
       ),
       preferredName: safePreferred,
       isProtectionEnabled: Boolean(uiState.settings.isProtectionEnabled),
-      isLocked: Boolean(uiState.isTimeLockedNow),
-      lockUntilEpochMs: Math.max(0, Math.round(uiState.settings.lockUntilEpochMs || 0)),
+      isLocked: effectiveLockUntil > Date.now(),
+      lockUntilEpochMs: effectiveLockUntil,
       dailyBetSpendEstimate: Math.max(
         0,
         Math.min(
@@ -116,13 +168,266 @@ export async function syncUserRecoveryProfile(
       await updateDoc(recoveryRef, recoveryPayload);
     }
   } catch (error) {
-    // Throw structured FirestoreErrorInfo for ErrorBoundary/diagnostics when rules fail
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes('permission') || msg.includes('PERMISSION_DENIED')) {
       handleFirestoreError(error, OperationType.WRITE, `${profilePath} | ${privatePath}`);
     }
     throw error;
   }
+}
+
+export async function syncSettingsAndLockToCloud(
+  user: User,
+  uiState: DerivedMainState,
+): Promise<void> {
+  if (!user.emailVerified || !user.email) return;
+  const path = `users/${user.uid}/profile/settings`;
+
+  try {
+    await ensureUserAnchor(user);
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+    const existingSnap = await getDoc(settingsRef);
+    const existingData = existingSnap.exists() ? existingSnap.data() : null;
+
+    const existingLockUntil = Number(existingData?.lockUntilEpochMs || 0);
+    const localLockUntil = Math.max(0, Math.round(uiState.settings.lockUntilEpochMs || 0));
+    const effectiveLockUntil = Math.max(existingLockUntil, localLockUntil);
+    const existingLockActive = existingLockUntil > Date.now();
+    const existingPinHash = typeof existingData?.pinHash === 'string' ? existingData.pinHash : '';
+    const localPinHash = (uiState.settings.pinHash || '').slice(0, BLUEPRINT_LIMITS.pinHashMaxLength);
+    const effectivePinHash =
+      existingLockActive && existingPinHash ? existingPinHash : localPinHash;
+
+    const payload = {
+      ownerId: user.uid,
+      isProtectionEnabled: existingLockActive ? true : Boolean(uiState.settings.isProtectionEnabled),
+      blockSportsbooks: Boolean(uiState.settings.blockSportsbooks),
+      blockCasinos: Boolean(uiState.settings.blockCasinos),
+      blockPokerAndBingo: Boolean(uiState.settings.blockPokerAndBingo),
+      blockCryptoBetting: Boolean(uiState.settings.blockCryptoBetting),
+      blockFantasyAndLottery: Boolean(uiState.settings.blockFantasyAndLottery),
+      strictKeywordFilter: Boolean(uiState.settings.strictKeywordFilter),
+      browserShieldEnabled: Boolean(uiState.settings.browserShieldEnabled),
+      appShieldEnabled: Boolean(uiState.settings.appShieldEnabled),
+      searchGuardEnabled: Boolean(uiState.settings.searchGuardEnabled),
+      antiTamperLockEnabled: existingLockActive
+        ? true
+        : Boolean(uiState.settings.antiTamperLockEnabled),
+      lockUntilEpochMs: effectiveLockUntil,
+      pinHash: effectivePinHash,
+      protectionStartedAtMs: Math.max(0, Math.round(uiState.settings.protectionStartedAtMs || 0)),
+      dailyBetSpendEstimate: Math.max(
+        0,
+        Math.min(
+          BLUEPRINT_LIMITS.maxDailyBetSpendNgn,
+          Math.round(uiState.settings.dailyBetSpendEstimate || 0),
+        ),
+      ),
+      themeMode: uiState.settings.themeMode,
+      hasCompletedTour: Boolean(uiState.settings.hasCompletedTour),
+      notificationsEnabled: Boolean(uiState.settings.notificationsEnabled),
+      lastNotifiedMilestoneDay: Math.max(0, Math.round(uiState.settings.lastNotifiedMilestoneDay || 0)),
+      aiAutoBlockEnabled: Boolean(uiState.settings.adBlockerEnabled !== false),
+      goalReminderEnabled: Boolean(uiState.settings.goalReminderEnabled),
+      isAccessibilityEnabled: Boolean(uiState.isAccessibilityEnabled),
+      isDeviceAdminEnabled: Boolean(uiState.isDeviceAdminEnabled),
+      privateDnsActive: Boolean(uiState.privateDnsStatus.isActive),
+      privateDnsHost: (uiState.privateDnsStatus.serverHost || '').slice(
+        0,
+        BLUEPRINT_LIMITS.privateDnsHostMaxLength,
+      ),
+      updatedAt: serverTimestamp(),
+    };
+
+    if (!existingSnap.exists()) {
+      await setDoc(settingsRef, {
+        ...payload,
+        createdAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(settingsRef, payload);
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('permission') || msg.includes('PERMISSION_DENIED')) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+    throw error;
+  }
+}
+
+export async function syncGoalToCloud(user: User, goal: RecoveryGoalEntity): Promise<void> {
+  if (!user.emailVerified) return;
+  const path = `users/${user.uid}/goals/${goal.goalId}`;
+  try {
+    await ensureUserAnchor(user);
+    const clean = sanitizeGoalFields(goal);
+    const goalRef = doc(db, 'users', user.uid, 'goals', goal.goalId);
+    const existing = await getDoc(goalRef);
+    const payload = {
+      ownerId: user.uid,
+      goalId: goal.goalId,
+      title: clean.title,
+      category: clean.category,
+      targetDays: clean.targetDays,
+      targetAmountNgn: clean.targetAmountNgn,
+      whyNote: clean.whyNote,
+      isPrimary: Boolean(goal.isPrimary),
+      isCompleted: Boolean(goal.isCompleted),
+      lockDurationDays: clean.lockDurationDays,
+      createdAtMs: Math.max(1, Math.round(goal.createdAtMs || Date.now())),
+      updatedAt: serverTimestamp(),
+    };
+
+    if (!existing.exists()) {
+      await setDoc(goalRef, {
+        ...payload,
+        createdAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(goalRef, {
+        title: payload.title,
+        category: payload.category,
+        targetDays: payload.targetDays,
+        targetAmountNgn: payload.targetAmountNgn,
+        whyNote: payload.whyNote,
+        isPrimary: payload.isPrimary,
+        isCompleted: payload.isCompleted,
+        lockDurationDays: payload.lockDurationDays,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('permission') || msg.includes('PERMISSION_DENIED')) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+    throw error;
+  }
+}
+
+export async function deleteGoalFromCloud(user: User, goalId: string): Promise<void> {
+  if (!user.emailVerified) return;
+  const path = `users/${user.uid}/goals/${goalId}`;
+  try {
+    await deleteDoc(doc(db, 'users', user.uid, 'goals', goalId));
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('permission') || msg.includes('PERMISSION_DENIED')) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  }
+}
+
+export async function syncDomainRuleToCloud(
+  user: User,
+  rule: BlockedDomainEntity,
+): Promise<void> {
+  if (!user.emailVerified) return;
+  const domain = sanitizeDomainForBlueprint(rule.domain);
+  if (!BLUEPRINT_LIMITS.domainPattern.test(domain)) return;
+  const docId = toSafeFirestoreDocId(domain);
+  const path = `users/${user.uid}/domains/${docId}`;
+  try {
+    await ensureUserAnchor(user);
+    const ref = doc(db, 'users', user.uid, 'domains', docId);
+    const existing = await getDoc(ref);
+    const payload = {
+      ownerId: user.uid,
+      domain,
+      isAllowlisted: Boolean(rule.isAllowlisted),
+      categoryName: (rule.categoryName || GamblingCategory.CUSTOM).slice(
+        0,
+        BLUEPRINT_LIMITS.categoryNameMaxLength,
+      ),
+      addedAt: Math.max(0, Math.round(rule.addedAt || Date.now())),
+      updatedAt: serverTimestamp(),
+    };
+
+    if (!existing.exists()) {
+      await setDoc(ref, {
+        ...payload,
+        createdAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(ref, {
+        isAllowlisted: payload.isAllowlisted,
+        categoryName: payload.categoryName,
+        addedAt: payload.addedAt,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('permission') || msg.includes('PERMISSION_DENIED')) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  }
+}
+
+export async function deleteDomainRuleFromCloud(user: User, domain: string): Promise<void> {
+  if (!user.emailVerified) return;
+  const docId = toSafeFirestoreDocId(sanitizeDomainForBlueprint(domain));
+  try {
+    await deleteDoc(doc(db, 'users', user.uid, 'domains', docId));
+  } catch {
+    // Ignore non-fatal cloud delete errors
+  }
+}
+
+export async function fetchCloudRecoverySnapshot(user: User): Promise<CloudRecoverySnapshot> {
+  if (!user.emailVerified) {
+    return { settings: null, goals: [], domains: [], hasActiveCloudLock: false };
+  }
+
+  const [settingsSnap, goalsSnap, domainsSnap] = await Promise.all([
+    getDoc(doc(db, 'users', user.uid, 'profile', 'settings')).catch(() => null),
+    getDocs(collection(db, 'users', user.uid, 'goals')).catch(() => null),
+    getDocs(collection(db, 'users', user.uid, 'domains')).catch(() => null),
+  ]);
+
+  const settings =
+    settingsSnap && settingsSnap.exists() ? (settingsSnap.data() as CloudSettingsRecord) : null;
+
+  const goals: RecoveryGoalEntity[] = goalsSnap
+    ? goalsSnap.docs
+        .map((d) => d.data() as Partial<RecoveryGoalEntity>)
+        .filter((g): g is RecoveryGoalEntity => Boolean(g.goalId && g.title))
+        .map((g) => ({
+          goalId: g.goalId,
+          title: g.title,
+          category: g.category || 'streak',
+          targetDays: Number(g.targetDays || 30),
+          targetAmountNgn: Number(g.targetAmountNgn || 0),
+          whyNote: String(g.whyNote || ''),
+          isPrimary: Boolean(g.isPrimary),
+          isCompleted: Boolean(g.isCompleted),
+          lockDurationDays: Number(g.lockDurationDays || 0),
+          createdAtMs: Number(g.createdAtMs || Date.now()),
+        }))
+        .sort((a, b) => b.createdAtMs - a.createdAtMs)
+    : [];
+
+  const domains: BlockedDomainEntity[] = domainsSnap
+    ? domainsSnap.docs
+        .map((d) => d.data() as Partial<BlockedDomainEntity>)
+        .filter((d): d is BlockedDomainEntity => Boolean(d.domain))
+        .map((d) => ({
+          domain: d.domain,
+          isAllowlisted: Boolean(d.isAllowlisted),
+          categoryName: (d.categoryName as GamblingCategory) || GamblingCategory.CUSTOM,
+          addedAt: Number(d.addedAt || Date.now()),
+        }))
+    : [];
+
+  const hasActiveCloudLock = Boolean(settings && Number(settings.lockUntilEpochMs || 0) > Date.now());
+
+  return {
+    settings,
+    goals,
+    domains,
+    hasActiveCloudLock,
+  };
 }
 
 export async function syncRecoverySurveyToCloud(

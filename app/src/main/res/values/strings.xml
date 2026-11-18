@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">GambleAware</string>
-    <string name="vpn_shield_label">GambleAware On-Device DNS Shield</string>
-    <string name="vpn_shield_description">Filters gambling domains locally on-device using Android VpnService without reading messages, contacts, or screen text.</string>
+    <string name="accessibility_shield_label">GambleAware All-Browser &amp; Ad Shield</string>
+    <string name="accessibility_shield_description">Detects and blocks betting websites, popunder gambling ads, and betting apps across all browsers and social WebViews without using a VPN slot, and guards uninstall/admin settings while locked.</string>
     <string name="nav_shield">Shield</string>
     <string name="nav_blocklist">Blocklist</string>
     <string name="nav_activity">Progress</string>
@@ -9,4 +9,3 @@
     <string name="device_admin_label">GambleAware Uninstall Lock</string>
     <string name="device_admin_description">Prevents uninstalling or force-removing GambleAware while your Commitment Lock is active. No data leaves your device.</string>
 </resources>
-

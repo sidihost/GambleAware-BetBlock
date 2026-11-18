@@ -36,6 +36,17 @@ test('resolves exact brand when matched from installed app names', () => {
   const bet9jaApp = resolveBettingBrand('Bet9ja Mobile');
   assert.equal(bet9jaApp.isExactCatalogMatch, true);
   assert.equal(bet9jaApp.displayName, 'Bet9ja');
+
+  for (const [prefix, expectedName] of [
+    ['sporty', 'SportyBet'],
+    ['1xbe', '1xBet'],
+    ['bet9j', 'Bet9ja'],
+    ['mspor', 'MSport'],
+  ]) {
+    const resolved = resolveBettingBrand(prefix);
+    assert.equal(resolved.isExactCatalogMatch, true, `Prefix failed: ${prefix}`);
+    assert.equal(resolved.displayName, expectedName);
+  }
 });
 
 test('generates deterministic stylized monogram fallback for niche domains', () => {

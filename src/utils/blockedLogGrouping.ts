@@ -1,3 +1,4 @@
+import { resolveBettingBrand } from '../blocker/brandCatalog';
 import { BlockedEventEntity } from '../data/types';
 import { looksLikeAndroidPackageId, resolveFriendlyAppName } from './deviceAppCatalog';
 
@@ -43,6 +44,75 @@ export function normalizeBlockedTarget(rawTarget: string): string {
   }
 
   return candidate || trimmed.toLowerCase();
+}
+
+const AD_TRACKER_DISPLAY_NAMES: Record<string, string> = {
+  popads: 'PopAds Ad Network',
+  popcash: 'PopCash Ad Network',
+  propellerads: 'PropellerAds Tracker',
+  adsterra: 'Adsterra Popunder',
+  exoclick: 'ExoClick Ad Network',
+  trafficjunky: 'TrafficJunky Ad Network',
+  juicyads: 'JuicyAds Network',
+  hilltopads: 'HilltopAds Popunder',
+  clickadu: 'Clickadu Popunder',
+  admaven: 'AdMaven Popunder',
+  monetag: 'Monetag Ad Network',
+  bet365affiliates: 'Bet365 Affiliate Tracker',
+  '1xpartners': '1xBet Affiliate Tracker',
+  '1xbetpartners': '1xBet Affiliate Tracker',
+  partner1xbet: '1xBet Affiliate Tracker',
+  betwaypartners: 'Betway Affiliate Tracker',
+  stakeaffiliates: 'Stake Affiliate Tracker',
+  melbetpartners: 'MelBet Affiliate Tracker',
+  mostbetpartners: 'MostBet Affiliate Tracker',
+  incomeaccess: 'Casino Affiliate Tracker',
+  betterhelp: 'BetterHelp',
+};
+
+/**
+ * Formats any blocked domain, URL, or Android package ID into a clean human-readable name
+ * with zero raw `.com` suffixes or `com.*` package IDs exposed in the UI.
+ */
+export function formatBlockedTargetDisplay(rawTarget: string): string {
+  const trimmed = (rawTarget || '').trim();
+  if (!trimmed) return 'Betting Site';
+
+  if (looksLikeAndroidPackageId(trimmed)) {
+    return resolveFriendlyAppName(trimmed);
+  }
+
+  const normalized = normalizeBlockedTarget(trimmed);
+  if (looksLikeAndroidPackageId(normalized)) {
+    return resolveFriendlyAppName(normalized);
+  }
+
+  const resolved = resolveBettingBrand(normalized);
+  if (resolved.isExactCatalogMatch) {
+    return resolved.displayName;
+  }
+
+  const lower = normalized.toLowerCase();
+  const baseHost = lower.replace(/^(?:m|wap|mobile|pay|web|sports|casino|app|www)\./, '');
+  const stem = baseHost.includes('.') ? baseHost.split('.')[0] : baseHost.split(/[/?#\s]/)[0];
+  if (stem && AD_TRACKER_DISPLAY_NAMES[stem]) {
+    return AD_TRACKER_DISPLAY_NAMES[stem];
+  }
+
+  if (/\s/.test(trimmed) && !normalized.includes('.')) {
+    return trimmed
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  const cleanLabel = (stem || normalized).replace(/[-_]+/g, ' ').trim();
+  if (!cleanLabel) return 'Betting Site';
+  return cleanLabel
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 export function isAppBlockSource(source: string): boolean {
@@ -91,7 +161,7 @@ export function groupBlockedEvents(events: readonly BlockedEventEntity[]): Group
     }
   }
 
-  return Array.from(groups.values()).sort((a, b) => b.latestTimestamp - a.timestamp);
+  return Array.from(groups.values()).sort((a, b) => b.latestTimestamp - a.latestTimestamp);
 }
 
 export function formatAttemptCountLabel(count: number): string {

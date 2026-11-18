@@ -25,34 +25,35 @@ export function evaluateShieldLeakAudit(params: {
   const { settings, isAccessibilityEnabled, isDeviceAdminEnabled, nowMs = Date.now() } = params;
   const isTimeLocked = settings.lockUntilEpochMs > nowMs;
 
+  const adGuardOn = settings.adBlockerEnabled !== false;
   const layers: ShieldDiagnosticLayer[] = [
     {
       id: 'dns',
-      label: 'DNS & Browser Domain Shield',
+      label: 'Accessibility All-Browser Shield',
       detail:
         settings.isProtectionEnabled && settings.browserShieldEnabled && isAccessibilityEnabled
-          ? 'Blocking 820+ sportsbooks, casinos, crash sites & mirrors'
-          : 'Enable core Shield & Browser Guard to intercept betting domains',
+          ? 'Blocks while typing across Chrome, Firefox, Opera, Brave, Edge & in-app browsers — zero VPN required'
+          : 'Enable core Shield & Accessibility Browser Guard to intercept betting sites without a VPN',
       isHealthy: settings.isProtectionEnabled && settings.browserShieldEnabled && isAccessibilityEnabled,
       weight: 25,
     },
     {
       id: 'admin_uninstall',
-      label: 'Device Admin Uninstall Lock',
+      label: 'Device Admin & Settings Guard',
       detail: isDeviceAdminEnabled
-        ? 'OS Admin guard prevents impulsive uninstall until Commitment Lock clears'
-        : 'Arm Device Admin in Lock Settings to prevent impulsive app removal',
+        ? 'Blocks App Info uninstall, Force Stop, and Device Admin deactivation until your timer expires'
+        : 'Arm Device Admin in Lock Settings to stop impulsive uninstall or tampering',
       isHealthy: isDeviceAdminEnabled,
       weight: 25,
     },
     {
       id: 'search_redirect',
-      label: 'Search, Redirect & Homoglyph Guard',
+      label: 'Ad, Popunder & Redirect Guard',
       detail:
-        settings.searchGuardEnabled && settings.strictKeywordFilter
-          ? 'Unwraps social redirects (ig/t.co), homoglyph spoofs & betting queries'
-          : 'Enable Search Guard & Strict Keywords to catch redirect links',
-      isHealthy: settings.searchGuardEnabled && settings.strictKeywordFilter,
+        settings.searchGuardEnabled && settings.strictKeywordFilter && adGuardOn
+          ? 'Blocks gambling ads, popunders, affiliate links, social redirects & spoofed URLs'
+          : 'Enable Ad Blocker, Search Guard & Strict Keywords to catch promos and redirects',
+      isHealthy: settings.searchGuardEnabled && settings.strictKeywordFilter && adGuardOn,
       weight: 20,
     },
     {
@@ -60,19 +61,19 @@ export function evaluateShieldLeakAudit(params: {
       label: 'Cashier, Booking-Code & App Firewall',
       detail:
         settings.appShieldEnabled && settings.depositGuardEnabled !== false
-          ? 'Blocks 150+ betting packages, deposit portals & shared booking codes'
+          ? 'Blocks 150+ betting apps, deposit checkouts & shared booking codes'
           : 'Enable App & Deposit Firewall to stop checkout redirects',
       isHealthy: settings.appShieldEnabled && settings.depositGuardEnabled !== false,
       weight: 15,
     },
     {
       id: 'tamper_lock',
-      label: 'Commitment Timer / PIN Co-Lock',
+      label: 'Commitment Timer & Cloud Sync',
       detail:
         isTimeLocked || Boolean(settings.pinHash) || settings.antiTamperLockEnabled
           ? isTimeLocked
             ? 'Countdown Commitment Lock active — rule weakening disabled'
-            : 'Tamper Guard / PIN armed against moment-of-weakness edits'
+            : 'Tamper Guard & PIN armed against moment-of-weakness edits'
           : 'Set a PIN or Commitment Timer in Lock Settings',
       isHealthy: isTimeLocked || Boolean(settings.pinHash) || settings.antiTamperLockEnabled,
       weight: 15,

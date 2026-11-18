@@ -5,19 +5,27 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <queries>
-        <!-- Supported browsers -->
+        <!-- Supported browsers (Zero-VPN All-Browser Coverage) -->
         <package android:name="com.android.chrome" />
+        <package android:name="com.chrome.beta" />
         <package android:name="com.sec.android.app.sbrowser" />
         <package android:name="org.mozilla.firefox" />
+        <package android:name="org.mozilla.focus" />
         <package android:name="com.microsoft.emmx" />
         <package android:name="com.brave.browser" />
         <package android:name="com.opera.browser" />
         <package android:name="com.opera.mini.native" />
+        <package android:name="com.opera.gx" />
         <package android:name="com.duckduckgo.mobile.android" />
+        <package android:name="com.vivaldi.browser" />
+        <package android:name="com.kiwibrowser.browser" />
+        <package android:name="com.UCMobile.intl" />
+        <package android:name="com.transsion.phoenix" />
+        <package android:name="com.yandex.browser" />
+        <package android:name="com.mi.globalbrowser" />
+        <package android:name="com.huawei.browser" />
         <!-- Known gambling apps for Install Guard & App Shield detection -->
         <package android:name="com.sportybet.android" />
         <package android:name="com.sportybet.ng" />
@@ -73,17 +81,16 @@
             android:theme="@style/Theme.MyApplication" />
 
         <service
-            android:name=".service.GambleAwareVpnService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse"
-            android:label="@string/vpn_shield_label"
-            android:permission="android.permission.BIND_VPN_SERVICE">
+            android:name=".service.GambleAwareAccessibilityService"
+            android:exported="true"
+            android:label="@string/accessibility_shield_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
-                <action android:name="android.net.VpnService" />
+                <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Local on-device DNS filter for gambling domain blocking" />
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
         </service>
 
         <receiver

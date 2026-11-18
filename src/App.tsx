@@ -16,6 +16,7 @@ import {
   Wind,
   X,
 } from 'lucide-react';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { AppHeader, BrandGIcon } from './components/AppHeader';
 import { AppPreloader } from './components/AppPreloader';
 import { BlockedInterventionModal } from './components/BlockedInterventionModal';
@@ -29,18 +30,38 @@ import {
 import { SpotlightTourOverlay } from './components/SpotlightTourOverlay';
 import {
   AnchorRoute,
+  CloudRecoveryProfile,
   InterventionPayload,
   RecoveryGoalCategory,
+  SupportTicketRecord,
   ThemeMode,
 } from './data/types';
+import { auth, signInWithGoogle, signOutFirebase } from './firebase';
+import { isAdminEmail } from './firebaseValidation';
 import { useGambleAwareState } from './hooks/useGambleAwareState';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { ActivityScreen } from './screens/ActivityScreen';
+import { AdminDashboardScreen } from './screens/AdminDashboardScreen';
 import { BlocklistScreen } from './screens/BlocklistScreen';
 import { DownloadScreen } from './screens/DownloadScreen';
 import { LockSettingsScreen } from './screens/LockSettingsScreen';
 import { ResourcesScreen } from './screens/ResourcesScreen';
 import { ShieldScreen } from './screens/ShieldScreen';
+import {
+  createSupportTicketInCloud,
+  deleteDomainRuleFromCloud,
+  deleteGoalFromCloud,
+  fetchCloudRecoverySnapshot,
+  replyToSupportTicketAsAdmin,
+  subscribeAllRecoveryProfilesForAdmin,
+  subscribeAllTicketsForAdmin,
+  subscribeUserTickets,
+  syncDomainRuleToCloud,
+  syncGoalToCloud,
+  syncRecoverySurveyToCloud,
+  syncSettingsAndLockToCloud,
+  syncUserRecoveryProfile,
+} from './services/firestoreSync';
 import {
   AppViewMode,
   resolveInitialViewMode,
@@ -85,6 +106,7 @@ export function App() {
     setAppShieldEnabled,
     setSearchGuardEnabled,
     setAntiTamperEnabled,
+    setAdBlockerEnabled,
     setDepositGuardEnabled,
     bankUrgeStake,
     configureBuddyCoLock,
@@ -120,6 +142,7 @@ export function App() {
     logRelapseAndReset,
     restoreFromVaultBackup,
     forceBackupSync,
+    applyCloudRecoverySnapshot,
     showBanner,
     clearBanner,
   } = useGambleAwareState();
@@ -168,10 +191,152 @@ export function App() {
   } | null>(null);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [userTickets, setUserTickets] = useState<SupportTicketRecord[]>([]);
+  const [adminProfiles, setAdminProfiles] = useState<CloudRecoveryProfile[]>([]);
+  const [adminTickets, setAdminTickets] = useState<SupportTicketRecord[]>([]);
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
   const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return false;
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
+
+  const isAdmin = isAdminEmail(authUser?.email);
+
+  useEffect(() => {
+    let unsubUserTickets: (() => void) | undefined;
+    let unsubAdminTickets: (() => void) | undefined;
+    let unsubAdminProfiles: (() => void) | undefined;
+
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user);
+      setCloudError(null);
+      unsubUserTickets?.();
+      unsubAdminTickets?.();
+      unsubAdminProfiles?.();
+      unsubUserTickets = undefined;
+      unsubAdminTickets = undefined;
+      unsubAdminProfiles = undefined;
+
+      if (!user) {
+        setUserTickets([]);
+        setAdminProfiles([]);
+        setAdminTickets([]);
+        return;
+      }
+
+      unsubUserTickets = subscribeUserTickets(
+        user.uid,
+        setUserTickets,
+        (err) => setCloudError(err.message),
+      );
+
+      if (isAdminEmail(user.email)) {
+        unsubAdminTickets = subscribeAllTicketsForAdmin(
+          setAdminTickets,
+          (err) => setCloudError(err.message),
+        );
+        unsubAdminProfiles = subscribeAllRecoveryProfilesForAdmin(
+          setAdminProfiles,
+          (err) => setCloudError(err.message),
+        );
+      }
+
+      if (user.emailVerified) {
+        void fetchCloudRecoverySnapshot(user)
+          .then((snap) => {
+            applyCloudRecoverySnapshot(snap);
+          })
+          .catch(() => {});
+      }
+    });
+
+    return () => {
+      unsubAuth();
+      unsubUserTickets?.();
+      unsubAdminTickets?.();
+      unsubAdminProfiles?.();
+    };
+  }, [applyCloudRecoverySnapshot]);
+
+  // Auto-sync lock timer, PIN hash, settings, goals & recovery profile to Firestore when signed in
+  useEffect(() => {
+    if (!authUser || !authUser.emailVerified || !authUser.email) return;
+    const timer = window.setTimeout(() => {
+      setIsSyncingCloud(true);
+      void Promise.all([
+        syncUserRecoveryProfile(authUser, uiState),
+        syncSettingsAndLockToCloud(authUser, uiState),
+        ...uiState.goals.slice(0, 10).map((g) => syncGoalToCloud(authUser, g)),
+        ...[...uiState.customBlockedDomains, ...uiState.allowlistedDomains]
+          .slice(0, 20)
+          .map((d) => syncDomainRuleToCloud(authUser, d)),
+      ])
+        .then(() => {
+          setCloudError(null);
+        })
+        .catch((err) => {
+          setCloudError(err instanceof Error ? err.message : 'Cloud sync pending');
+        })
+        .finally(() => {
+          setIsSyncingCloud(false);
+        });
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [
+    authUser,
+    uiState.preferredName,
+    uiState.settings,
+    uiState.isAccessibilityEnabled,
+    uiState.isDeviceAdminEnabled,
+    uiState.privateDnsStatus,
+    uiState.goals,
+    uiState.customBlockedDomains,
+    uiState.allowlistedDomains,
+    uiState.cleanDays,
+    uiState.estimatedSavedAmount,
+    uiState.totalBlockedCount,
+    uiState.totalUrgeResistedCount,
+    uiState.relapseLogs.length,
+    uiState.latestSurvey,
+  ]);
+
+  const handleGoogleSignIn = useCallback(async () => {
+    try {
+      setCloudError(null);
+      const user = await signInWithGoogle();
+      if (user.emailVerified) {
+        setIsSyncingCloud(true);
+        const snap = await fetchCloudRecoverySnapshot(user);
+        const restored = applyCloudRecoverySnapshot(snap);
+        await syncSettingsAndLockToCloud(user, uiState);
+        await syncUserRecoveryProfile(user, uiState);
+        if (!restored.restoredLock) {
+          showBanner(`Cloud Sync active (${user.email})`);
+        }
+      } else {
+        showBanner('Verify your Google email to enable Cloud Lock Sync');
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Could not complete Google Sign-In';
+      if (!msg.includes('popup-closed')) {
+        setCloudError(msg);
+        showBanner('Google Sign-In failed — try again');
+      }
+    } finally {
+      setIsSyncingCloud(false);
+    }
+  }, [applyCloudRecoverySnapshot, showBanner, uiState]);
+
+  const handleGoogleSignOut = useCallback(async () => {
+    try {
+      await signOutFirebase();
+      showBanner('Signed out of Cloud Sync — on-device protection stays active');
+    } catch {
+      showBanner('Could not sign out right now');
+    }
+  }, [showBanner]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -215,7 +380,7 @@ export function App() {
     if (uiState.isTimeLockedNow) {
       setInterventionPayload({
         target: label,
-        source: 'Anti-Tamper Lock',
+        source: 'Commitment Lock',
         category: 'Commitment Lock',
         isAntiTamper: true,
         autoStartBreathing: false,
@@ -320,6 +485,9 @@ export function App() {
         onOpenDownloadPage={switchToLanding}
         isDarkTheme={isDarkTheme}
         onToggleTheme={toggleQuickTheme}
+        userEmail={authUser?.email ?? null}
+        isAdmin={isAdmin}
+        onSignIn={() => void handleGoogleSignIn()}
       />
 
       {uiState.statusBannerMessage ? (
@@ -369,8 +537,13 @@ export function App() {
                 onDismissGoalReminder={() => setShowGoalReminder(false)}
                 onOpenGoalModal={(prefill) => setGoalModalPrefill({ open: true, ...prefill })}
                 onSetPrimaryGoal={setPrimaryGoal}
-                onToggleGoalComplete={toggleGoalCompleted}
-                onDeleteGoal={deleteGoal}
+                onToggleGoalComplete={(goalId) => {
+                  toggleGoalCompleted(goalId);
+                }}
+                onDeleteGoal={(goalId) => {
+                  deleteGoal(goalId);
+                  if (authUser?.emailVerified) void deleteGoalFromCloud(authUser, goalId);
+                }}
                 onNavigateToRules={() => handleSelectRoute('blocklist')}
                 onNavigateToProgress={() => handleSelectRoute('activity')}
                 onNavigateToLock={() => handleSelectRoute('lock')}
@@ -429,6 +602,15 @@ export function App() {
                     setSearchGuardEnabled(true);
                   }
                 }}
+                onToggleAdBlocker={(enabled) => {
+                  if (!enabled) {
+                    runProtectedAction('disable Gambling Ad Blocker', () =>
+                      setAdBlockerEnabled(false),
+                    );
+                  } else {
+                    setAdBlockerEnabled(true);
+                  }
+                }}
                 onToggleDepositGuard={(enabled) => {
                   if (!enabled) {
                     runProtectedAction('disable Cashier & Booking-Code Firewall', () =>
@@ -441,11 +623,13 @@ export function App() {
                 onAddCustomDomain={addCustomDomain}
                 onRemoveCustomDomain={(domain, isAllowlist) => {
                   if (!isAllowlist) {
-                    runProtectedAction(`remove ${domain} from blocklist`, () =>
-                      removeCustomDomain(domain),
-                    );
+                    runProtectedAction(`remove ${domain} from blocklist`, () => {
+                      removeCustomDomain(domain);
+                      if (authUser?.emailVerified) void deleteDomainRuleFromCloud(authUser, domain);
+                    });
                   } else {
                     removeCustomDomain(domain);
+                    if (authUser?.emailVerified) void deleteDomainRuleFromCloud(authUser, domain);
                   }
                 }}
                 onAddBlockedApp={addBlockedApp}
@@ -475,27 +659,44 @@ export function App() {
                 onOpenGoalModal={(prefill) => setGoalModalPrefill({ open: true, ...prefill })}
                 onSetPrimaryGoal={setPrimaryGoal}
                 onToggleGoalComplete={toggleGoalCompleted}
-                onDeleteGoal={deleteGoal}
+                onDeleteGoal={(goalId) => {
+                  deleteGoal(goalId);
+                  if (authUser?.emailVerified) void deleteGoalFromCloud(authUser, goalId);
+                }}
               />
             ) : null}
 
             {route === 'resources' ? (
               <ResourcesScreen
                 state={uiState}
-                userEmail={null}
-                cloudError={null}
-                userTickets={[]}
-                onSignIn={() =>
-                  showBanner('All recovery guides, survey & reset tools work offline with zero sign-in')
-                }
-                onSubmitSurvey={submitSurveyAssessment}
+                userEmail={authUser?.email ?? null}
+                cloudError={cloudError}
+                userTickets={userTickets}
+                onSignIn={() => void handleGoogleSignIn()}
+                onSubmitSurvey={(answers) => {
+                  const evaluated = submitSurveyAssessment(answers);
+                  if (authUser?.emailVerified) {
+                    void syncRecoverySurveyToCloud(authUser, evaluated);
+                  }
+                  return evaluated;
+                }}
                 onApplySurveyPreset={(profile) => {
                   applySurveyRecommendationPreset(profile);
                 }}
                 onLogRelapseReset={logRelapseAndReset}
-                onCreateSupportTicket={async () => {
-                  showBanner('Request recorded locally on your device');
-                  return true;
+                onCreateSupportTicket={async (input) => {
+                  if (!authUser || !authUser.emailVerified) {
+                    showBanner('Sign in with a verified Google account to message Support');
+                    return false;
+                  }
+                  try {
+                    await createSupportTicketInCloud(authUser, input, uiState.preferredName);
+                    showBanner('Support ticket sent privately to team');
+                    return true;
+                  } catch (err) {
+                    setCloudError(err instanceof Error ? err.message : 'Failed to send ticket');
+                    return false;
+                  }
                 }}
                 onNavigateToLock={() => handleSelectRoute('lock')}
                 onNavigateToBlocklist={() => handleSelectRoute('blocklist')}
@@ -506,13 +707,18 @@ export function App() {
               <LockSettingsScreen
                 store={store}
                 state={uiState}
+                userEmail={authUser?.email ?? null}
+                cloudError={cloudError}
+                isSyncingCloud={isSyncingCloud}
+                onSignIn={() => void handleGoogleSignIn()}
+                onSignOut={() => void handleGoogleSignOut()}
                 onSetPreferredName={setPreferredName}
                 onForceSaveVault={() => void forceBackupSync()}
                 onRestoreVault={restoreFromVaultBackup}
                 onActivateTimeLock={activateTimeLock}
                 onToggleAntiTamper={(enabled) => {
                   if (!enabled) {
-                    runProtectedAction('disable Anti-Tamper lock', () =>
+                    runProtectedAction('disable Uninstall & Settings Lock', () =>
                       setAntiTamperEnabled(false),
                     );
                   } else {
@@ -524,7 +730,7 @@ export function App() {
                   if (uiState.isTimeLockedNow) {
                     setInterventionPayload({
                       target: 'Remove Accountability PIN',
-                      source: 'Anti-Tamper Lock',
+                      source: 'Commitment Lock',
                       category: 'Commitment Lock',
                       isAntiTamper: true,
                       autoStartBreathing: false,
@@ -566,6 +772,21 @@ export function App() {
                 }}
                 onToggleNotifications={setNotificationsEnabled}
                 onOpenDownloadPage={switchToLanding}
+              />
+            ) : null}
+
+            {route === 'admin' ? (
+              <AdminDashboardScreen
+                adminEmail={authUser?.email ?? null}
+                isAuthorizedAdmin={isAdmin}
+                profiles={adminProfiles}
+                tickets={adminTickets}
+                cloudError={cloudError}
+                onReplyTicket={async (ticketId, params) => {
+                  await replyToSupportTicketAsAdmin(ticketId, params);
+                }}
+                onSignIn={() => void handleGoogleSignIn()}
+                onBackToShield={() => handleSelectRoute('shield')}
               />
             ) : null}
           </div>

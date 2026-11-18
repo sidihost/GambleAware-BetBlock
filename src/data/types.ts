@@ -63,6 +63,7 @@ export interface ProtectionSettingsState {
   browserShieldEnabled: boolean;
   appShieldEnabled: boolean;
   searchGuardEnabled: boolean;
+  adBlockerEnabled: boolean;
   antiTamperLockEnabled: boolean;
   lockUntilEpochMs: number;
   pinHash: string | null;

@@ -63,9 +63,9 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
           <div className="flex items-center gap-2.5">
             <BrandGMark className="h-8 w-8 shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="inline-flex items-center rounded-full bg-[var(--soft-accent-bg)] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
+              <p className="font-mono text-[10px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
                 Quick Setup · Optional
-              </span>
+              </p>
               <h2 className="mt-0.5 font-display text-base leading-tight font-bold text-[var(--ink)] sm:text-lg">
                 Choose Your Protection Setup
               </h2>

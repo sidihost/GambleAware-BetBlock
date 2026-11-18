@@ -10,6 +10,7 @@ data class BlockFilterConfig(
     val blockFantasyAndLottery: Boolean = true,
     val strictKeywordFilter: Boolean = true,
     val searchGuardEnabled: Boolean = true,
+    val adBlockerEnabled: Boolean = true,
     val customBlockedDomains: Set<String> = emptySet(),
     val allowlistedDomains: Set<String> = emptySet(),
     val customBlockedPackages: Set<String> = emptySet(),
@@ -177,6 +178,17 @@ object BlocklistMatcher {
                 candidate.substring(dotIdx + 1)
             } else {
                 ""
+            }
+        }
+
+        if (config.adBlockerEnabled) {
+            matchesDomainHierarchy(host, GamblingRegistry.adNetworkDomains)?.let { adHost ->
+                return BlockMatchResult(
+                    isBlocked = true,
+                    matchedTarget = adHost,
+                    category = GamblingCategory.CASINO,
+                    reason = "Blocked gambling ad / affiliate tracker",
+                )
             }
         }
 
@@ -415,7 +427,20 @@ object BlocklistMatcher {
             }
         }
 
-        // 5. Distinctive >= 7 char URL prefix detection while typing single token (e.g. "sportyb" -> sportybet)
+        // 5. Instant 4-6 char unambiguous prefix & distinctive >= 7 char URL prefix detection while typing
+        if (noSpace && stripped.length >= 4 && !stripped.contains(' ')) {
+            for ((prefix, category) in GamblingRegistry.instantTypedPrefixes) {
+                if (!isCategoryEnabled(category, config)) continue
+                if (stripped.startsWith(prefix)) {
+                    return BlockMatchResult(
+                        isBlocked = true,
+                        matchedTarget = prefix.trimEnd('.'),
+                        category = category,
+                        reason = "Blocked immediately while typing $prefix",
+                    )
+                }
+            }
+        }
         if (noSpace && stripped.length >= 7 && !stripped.contains('.')) {
             for ((fullBrand, category) in distinctiveLongPrefixes) {
                 if (!isCategoryEnabled(category, config)) continue

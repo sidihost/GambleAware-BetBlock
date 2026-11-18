@@ -4,6 +4,7 @@ import {
   ResolvedBrandIdentity,
   resolveBettingBrand,
 } from '../blocker/brandCatalog';
+import { GAMBLING_CATEGORY_META } from '../blocker/gamblingCategory';
 
 export type BrandLogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -772,7 +773,7 @@ export const FeaturedBrandsWall: React.FC<{
             <div className="min-w-0 flex-1 text-left">
               <p className="truncate text-xs font-semibold text-[var(--ink)]">{brand.name}</p>
               <p className="truncate font-mono text-[10px] text-[var(--ink-muted)]">
-                {brand.primaryDomain}
+                {GAMBLING_CATEGORY_META[brand.category].displayName.split(' ')[0]} · {brand.region}
               </p>
             </div>
           </>

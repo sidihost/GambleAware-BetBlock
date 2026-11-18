@@ -41,7 +41,11 @@ import {
   RecoveryGoalCategory,
 } from '../data/types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
-import { formatAttemptCountLabel, formatBlockedTimestamp } from '../utils/blockedLogGrouping';
+import {
+  formatAttemptCountLabel,
+  formatBlockedTargetDisplay,
+  formatBlockedTimestamp,
+} from '../utils/blockedLogGrouping';
 import { formatNaira } from '../utils/currency';
 import { getTimeOfDayGreeting } from '../utils/personalization';
 
@@ -240,7 +244,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
       </div>
 
       {/* Automatic Goal Creation Reminder Banner when user has no goals */}
-      {showGoalReminder ? (
+      {showGoalReminder && state.goals.length === 0 ? (
         <GoalReminderBanner
           firstName={state.firstName}
           onCreateGoal={() => onOpenGoalModal()}
@@ -380,8 +384,8 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           {/* Check or Block a Website */}
           <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="domain_lookup">
             <LiquidSectionHeader
-              title="Check or Block a Website"
-              subtitle="Type a betting brand (e.g. sportybet) or URL — blocked immediately as you type"
+              title="Check or Block a Platform"
+              subtitle="Type a betting name (e.g. sporty, bet9j, 1xbe) — blocked as you type"
             />
             <form
               onSubmit={(e) => {
@@ -398,7 +402,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   type="text"
                   value={state.domainLookupQuery}
                   onChange={(e) => onDomainLookupChanged(e.target.value)}
-                  placeholder="Type sportybet, bet9ja, stake.c, or full URL"
+                  placeholder="Type sporty, bet9j, 1xbe, or betting site"
                   className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-9 pl-9 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
                 />
                 {state.domainLookupQuery ? (
@@ -423,14 +427,18 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             </form>
 
             <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {['sportybet', 'bet365.com', 'betterhelp.com'].map((sample) => (
+              {[
+                { label: 'SportyBet', query: 'sportybet' },
+                { label: 'Bet365', query: 'bet365' },
+                { label: 'BetterHelp', query: 'betterhelp.com' },
+              ].map((sample) => (
                 <button
-                  key={sample}
+                  key={sample.label}
                   type="button"
-                  onClick={() => onDomainLookupChanged(sample)}
+                  onClick={() => onDomainLookupChanged(sample.query)}
                   className="cursor-pointer rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-1 text-[11px] font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
                 >
-                  {sample}
+                  {sample.label}
                 </button>
               ))}
             </div>
@@ -457,7 +465,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                     </p>
                     <p className="truncate text-xs opacity-85">
                       {state.domainLookupResult.isBlocked
-                        ? `${state.domainLookupResult.matchedTarget} • ${state.domainLookupResult.reason}`
+                        ? `${formatBlockedTargetDisplay(state.domainLookupResult.matchedTarget)} • ${state.domainLookupResult.reason}`
                         : 'Tap Block Site if this is a custom betting domain.'}
                     </p>
                   </div>
@@ -468,7 +476,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                     onClick={() => onTestOrRedirectUrl(state.domainLookupQuery)}
                     className="shrink-0 cursor-pointer rounded-full border border-current/25 px-3.5 py-1.5 text-xs font-semibold hover:opacity-85"
                   >
-                    Preview Block Screen
+                    Block Now
                   </button>
                 ) : state.domainLookupQuery.includes('.') ? (
                   <button
@@ -510,7 +518,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                         <BettingBrandLogo target={site.target} size="sm" />
                         <div className="min-w-0">
                           <p className="truncate font-mono text-xs font-bold text-[var(--ink)]">
-                            {site.target}
+                            {formatBlockedTargetDisplay(site.target)}
                           </p>
                           <p className="truncate text-[11px] text-[var(--ink-muted)]">
                             {site.latestSource} · {site.categoryName} · {timeAgo}
@@ -603,7 +611,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               <div className="mt-2.5 flex flex-col gap-1.5">
                 <SetupStepRow
                   step="1"
-                  title={isIOS ? 'Turn On Safari & Site Shield' : 'Turn On DNS & Site Shield'}
+                  title={isIOS ? 'Turn On Safari & Site Shield' : 'Turn On All-Browser & Ad Shield'}
                   subtitle={
                     state.isAccessibilityEnabled
                       ? 'Active'
@@ -697,7 +705,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               <p className="truncate text-[11px] text-[var(--ink-muted)]">
                 {isIOS
                   ? 'Safari Share → Add to Home Screen + Screen Time blocker list'
-                  : 'Download Android APK for device-wide On-Device DNS Shield'}
+                  : 'Download Android APK for Zero-VPN All-Browser, Ad & Anti-Uninstall Guard'}
               </p>
             </div>
           </div>

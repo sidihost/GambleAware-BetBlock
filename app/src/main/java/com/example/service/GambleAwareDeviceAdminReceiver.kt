@@ -14,9 +14,7 @@ class GambleAwareDeviceAdminReceiver : DeviceAdminReceiver() {
         val repository = AnchorRepository.getInstance(context.applicationContext)
         repository.prefs.setAntiTamperLockEnabled(true)
         repository.prefs.setProtectionEnabled(true)
-        if (GambleAwareVpnService.isPrepared(context)) {
-            GambleAwareVpnService.start(context)
-        }
+        repository.setShieldRunning(GambleAwareAccessibilityService.isEnabled(context))
     }
 
     override fun onDisableRequested(context: Context, intent: Intent): CharSequence {

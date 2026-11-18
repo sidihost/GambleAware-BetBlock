@@ -8,11 +8,14 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { resolveBettingBrand } from '../blocker/brandCatalog';
 import { GAMBLING_CATEGORY_META, GamblingCategory } from '../blocker/gamblingCategory';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import { BettingBrandLogo, FeaturedBrandsWall } from '../components/BettingBrandLogo';
 import { LiquidGlassCard, LiquidSectionHeader, LiquidSwitch } from '../components/LiquidGlass';
 import { DerivedMainState, InstalledAppInfo } from '../data/types';
+import { formatBlockedTargetDisplay } from '../utils/blockedLogGrouping';
+import { resolveDeviceAppMeta } from '../utils/deviceAppCatalog';
 
 interface BlocklistScreenProps {
   state: DerivedMainState;
@@ -22,6 +25,7 @@ interface BlocklistScreenProps {
   onToggleAppShield: (enabled: boolean) => void;
   onToggleSearchGuard: (enabled: boolean) => void;
   onToggleDepositGuard: (enabled: boolean) => void;
+  onToggleAdBlocker: (enabled: boolean) => void;
   onAddCustomDomain: (domain: string, isAllowlist: boolean) => void;
   onRemoveCustomDomain: (domain: string, isAllowlist: boolean) => void;
   onAddBlockedApp: (app: InstalledAppInfo) => void;
@@ -45,6 +49,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
   onToggleAppShield,
   onToggleSearchGuard,
   onToggleDepositGuard,
+  onToggleAdBlocker,
   onAddCustomDomain,
   onRemoveCustomDomain,
   onAddBlockedApp,
@@ -176,6 +181,12 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             subtitle="Stops bet-slip booking links, promo codes & deposit pages while keeping safe fintechs open"
             checked={state.settings.depositGuardEnabled}
             onChange={onToggleDepositGuard}
+          />
+          <CategorySwitchRow
+            title="Gambling Ads, Popunders & Affiliates"
+            subtitle="Blocks betting ad networks, popunders & promo links — works alongside other VPNs"
+            checked={state.settings.adBlockerEnabled !== false}
+            onChange={onToggleAdBlocker}
           />
         </div>
       </LiquidGlassCard>
@@ -316,8 +327,8 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
                 <Ban className="h-4 w-4 shrink-0 text-[var(--ink)]" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-[var(--ink)]">{app.appLabel}</p>
-                  <p className="truncate font-mono text-[11px] text-[var(--ink-muted)]">
-                    {app.packageName}
+                  <p className="truncate text-[11px] text-[var(--ink-muted)]">
+                    {resolveDeviceAppMeta(app.packageName, app.appLabel).riskNote}
                   </p>
                 </div>
                 <button
@@ -338,7 +349,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       {/* Built-in Protected Websites Search */}
       <LiquidGlassCard className="p-3.5 sm:p-4">
         <LiquidSectionHeader
-          title={`Built-in Protected Websites (${state.builtInDomainCount}+)`}
+          title={`Built-in Protected Platforms (${state.builtInDomainCount}+)`}
           subtitle="Search sportsbooks, casinos, poker, and crypto sites already blocked for you"
         />
         <div className="relative mt-2.5">
@@ -347,7 +358,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             type="text"
             value={registrySearch}
             onChange={(e) => setRegistrySearch(e.target.value)}
-            placeholder="Search built-in blocked websites"
+            placeholder="Search built-in blocked platforms"
             className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-3 pl-9 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
           />
         </div>
@@ -356,7 +367,9 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             <div key={domain} className="flex items-center justify-between gap-3 py-2">
               <div className="flex min-w-0 items-center gap-2.5">
                 <BettingBrandLogo target={domain} size="sm" />
-                <span className="truncate font-mono text-xs text-[var(--ink)] sm:text-sm">{domain}</span>
+                <span className="truncate text-xs font-semibold text-[var(--ink)] sm:text-sm">
+                  {resolveBettingBrand(domain).displayName}
+                </span>
               </div>
               <span className="shrink-0 font-mono text-[11px] text-[var(--ink-muted)]">
                 {GAMBLING_CATEGORY_META[category].displayName.split(' ')[0]}
@@ -485,11 +498,13 @@ const DomainRuleRow: React.FC<{
     ) : (
       <Ban className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
     )}
-    <span className="min-w-0 flex-1 truncate text-sm text-[var(--ink)]">{domain}</span>
+    <span className="min-w-0 flex-1 truncate text-sm text-[var(--ink)]">
+      {formatBlockedTargetDisplay(domain)}
+    </span>
     <button
       type="button"
       onClick={onDelete}
-      aria-label={`Delete ${domain}`}
+      aria-label={`Delete ${formatBlockedTargetDisplay(domain)}`}
       className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]"
     >
       <Trash2 className="h-4 w-4" />

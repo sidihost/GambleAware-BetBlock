@@ -84,7 +84,7 @@ fun LockSettingsScreen(
     onToggleAntiTamper: (Boolean) -> Unit,
     onSetPin: (String) -> Unit,
     onRemovePin: () -> Unit,
-    onOpenVpnSettings: () -> Unit,
+    onOpenAccessibilitySettings: () -> Unit,
     onOpenPrivateDnsSettings: () -> Unit,
     onSetDailySpend: (Int) -> Unit,
     onSelectTheme: (ThemeMode) -> Unit,
@@ -411,7 +411,7 @@ fun LockSettingsScreen(
                 }
             }
 
-            // Always-On DNS Shield Lock Guide (Android VPN Settings)
+            // Zero-VPN All-Browser Shield & Tamper Protection
             item {
                 LiquidGlassCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -434,15 +434,15 @@ fun LockSettingsScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = "Always-On DNS Shield",
+                                    text = "All-Browser & Anti-Tamper Shield",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onBackground,
                                 )
                                 Text(
-                                    text = if (state.isVpnPrepared) {
-                                        "Prepared • Open Android VPN Settings to lock Always-on VPN"
+                                    text = if (state.isAccessibilityEnabled) {
+                                        "Active (Zero VPN) • Guarding all browsers, ads & Settings. ProtonVPN, Mullvad & WARP run freely; Cloud Lock re-arms after phone wipe."
                                     } else {
-                                        "Enable Always-on VPN & Block connections without VPN in Android Settings"
+                                        "Enable Accessibility Shield to block betting sites while typing, popunder ads & App Info uninstalls without a VPN."
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -451,7 +451,7 @@ fun LockSettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         OutlinedButton(
-                            onClick = onOpenVpnSettings,
+                            onClick = onOpenAccessibilitySettings,
                             shape = RoundedCornerShape(50),
                             border = BorderStroke(1.dp, liquid.subtleBorder),
                             colors = ButtonDefaults.outlinedButtonColors(
@@ -459,7 +459,7 @@ fun LockSettingsScreen(
                             ),
                             modifier = Modifier.testTag("toggle_device_admin_button"),
                         ) {
-                            Text("VPN Settings")
+                            Text(if (state.isAccessibilityEnabled) "Settings" else "Enable")
                         }
                     }
                 }

@@ -519,12 +519,16 @@ export function resolveBettingBrand(rawTarget: string): ResolvedBrandIdentity {
     }
   }
 
-  // Also check app/keyword substring (e.g. "SportyBet App", "Bet9ja Mobile", "Stake Casino")
+  // Also check app/keyword substring or 4+ char instant prefix (e.g. "sporty" -> SportyBet, "1xbe" -> 1xBet)
   const alphaLower = rawTarget.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
   if (alphaLower) {
     for (const brand of BETTING_BRAND_CATALOG) {
       const stem = brand.primaryDomain.split('.')[0].replace(/[^a-z0-9]/g, '');
-      if (alphaLower.includes(brand.id) || (stem.length >= 4 && alphaLower.includes(stem))) {
+      if (
+        alphaLower.includes(brand.id) ||
+        (stem.length >= 4 && alphaLower.includes(stem)) ||
+        (alphaLower.length >= 4 && (brand.id.startsWith(alphaLower) || stem.startsWith(alphaLower)))
+      ) {
         return {
           brand,
           displayName: brand.name,
