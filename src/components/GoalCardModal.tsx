@@ -289,11 +289,21 @@ export const GoalReminderBanner: React.FC<{
           <Target className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-sm font-bold text-[var(--ink)]">
-            {firstName
-              ? `${firstName}, set your personal recovery goal`
-              : 'Set your personal recovery goal'}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-display text-sm font-bold text-[var(--ink)]">
+              {firstName
+                ? `${firstName}, set your personal recovery goal`
+                : 'Set your personal recovery goal'}
+            </p>
+            <button
+              type="button"
+              onClick={onDismiss}
+              aria-label="Dismiss goal reminder"
+              className="-mt-1 -mr-1 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] sm:hidden"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
           <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
             Writing a concrete Naira or clean-day target keeps you focused whenever urges arise.
           </p>
@@ -320,7 +330,7 @@ export const GoalReminderBanner: React.FC<{
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss goal reminder"
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--muted-fill)]"
+          className="hidden h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] sm:flex"
         >
           <X className="h-4 w-4" />
         </button>

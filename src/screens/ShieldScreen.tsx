@@ -571,7 +571,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <LiquidGlassCard className="p-4 sm:p-5" tourKey="sos_calm_bar">
               <LiquidSectionHeader
-                title="Calm &amp; Support Tools"
+                title="Calm & Support Tools"
                 subtitle="Quick help whenever an urge hits"
               />
               <div className="mt-3 grid grid-cols-2 gap-2">

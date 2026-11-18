@@ -6,7 +6,9 @@ import {
   Copy,
   Download,
   GlobeLock,
+  Laptop,
   LockKeyhole,
+  Share,
   ShieldCheck,
   SlidersHorizontal,
   Smartphone,
@@ -15,12 +17,18 @@ import {
 } from 'lucide-react';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import { LiquidGlassCard, LiquidShieldOrb } from '../components/LiquidGlass';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 import { formatNaira } from '../utils/currency';
 import {
   buildLockCountdownQuad,
   formatLockDurationLong,
   LOCK_DURATION_PRESETS,
 } from '../utils/lockDurations';
+import {
+  detectClientPlatform,
+  formatIosBlocklistText,
+  TOP_BETTING_DOMAINS_FOR_IOS,
+} from '../utils/platformCompatibility';
 
 type AndroidPreviewTab = 'shield' | 'rules' | 'progress' | 'lock';
 
@@ -37,13 +45,24 @@ const PREVIEW_TABS: Array<{
 
 const SPEND_PRESETS = [1000, 2500, 5000, 10000] as const;
 
-export const DownloadScreen: React.FC = () => {
+interface DownloadScreenProps {
+  onOpenWebApp?: () => void;
+}
+
+export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) => {
+  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [activeTab, setActiveTab] = useState<AndroidPreviewTab>('shield');
   const [autoAdvance, setAutoAdvance] = useState(true);
   const [isPausedByHover, setIsPausedByHover] = useState(false);
   const [dailySpendNgn, setDailySpendNgn] = useState<number>(5000);
   const [previewLockDays, setPreviewLockDays] = useState<number>(180);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedIosDomains, setCopiedIosDomains] = useState(false);
+
+  const clientPlatform =
+    typeof navigator !== 'undefined'
+      ? detectClientPlatform(navigator.userAgent, navigator.maxTouchPoints || 0)
+      : 'desktop';
 
   const builtInDomainCount = GamblingRegistry.domainToCategory.size;
   const builtInAppCount = GamblingRegistry.knownGamblingAppPackages.size;
@@ -183,48 +202,82 @@ export const DownloadScreen: React.FC = () => {
     }
   };
 
+  const handleCopyIosBlocklist = async () => {
+    try {
+      await navigator.clipboard.writeText(formatIosBlocklistText());
+      setCopiedIosDomains(true);
+      window.setTimeout(() => setCopiedIosDomains(false), 2400);
+    } catch {
+      setCopiedIosDomains(false);
+    }
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 pt-8 pb-20 md:px-6 md:pt-12 md:pb-24">
       {/* Hero Split Section */}
       <section className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-10">
         <div className="flex flex-col items-start lg:col-span-6">
-          <h1 className="font-display text-[clamp(2.2rem,4vw,3.45rem)] leading-[1.06] font-bold tracking-tight text-balance text-[var(--ink)]">
+          <h1 className="font-display text-[clamp(2.1rem,4vw,3.45rem)] leading-[1.06] font-bold tracking-tight text-balance text-[var(--ink)]">
             A gambling blocker you can&rsquo;t switch off midway.
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--ink-muted)]">
             GambleAware blocks {builtInDomainCount}+ sportsbooks, casinos, and {builtInAppCount}+
-            betting apps on Android. Lock uninstalls and app settings for 24 hours up to 2 years —
-            free, offline, and without taking your VPN slot.
+            betting apps on Android, and runs on iPhone, iPad, Mac &amp; Windows as an offline-ready
+            Web App with iOS Screen Time site blocking.
           </p>
 
-          <div className="mt-7 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <div className="mt-7 flex w-full flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
             <a
               href="/downloads/GambleAware-Nigeria.apk"
               download="GambleAware.apk"
-              className="inline-flex h-12 items-center justify-center gap-2.5 rounded-full bg-[var(--active-fill)] px-6 text-sm font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
             >
               <Download className="h-4 w-4 shrink-0" />
               <span>Download Android App</span>
             </a>
 
+            {onOpenWebApp ? (
+              <button
+                type="button"
+                onClick={onOpenWebApp}
+                className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--muted-fill)] px-4.5 text-sm font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:border-[var(--active-fill)]"
+              >
+                <Smartphone className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                <span>Open iPhone / Web App</span>
+              </button>
+            ) : null}
+
             <button
               type="button"
               onClick={() => void handleCopyAppUrl()}
-              className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)]"
+              className="inline-flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-sm font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)]"
             >
               {copiedUrl ? (
                 <Check className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
               ) : (
                 <Copy className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
               )}
-              <span>{copiedUrl ? 'Link Copied' : 'Copy Download Link'}</span>
+              <span>{copiedUrl ? 'Copied' : 'Copy Link'}</span>
             </button>
           </div>
 
+          {isIOS || clientPlatform === 'ios' ? (
+            <div className="mt-4 w-full max-w-xl rounded-2xl border border-[var(--glass-border)] bg-[var(--muted-fill)] px-4 py-3 text-xs leading-relaxed text-[var(--ink)]">
+              <span className="font-semibold text-[var(--accent-ink)]">iPhone detected:</span>{' '}
+              APKs are for Android only — tap{' '}
+              <span className="font-semibold">Open iPhone / Web App</span> above or use Safari{' '}
+              <span className="font-semibold">Share → Add to Home Screen</span> + our{' '}
+              <a href="#platforms" className="font-semibold underline underline-offset-2">
+                iPhone Screen Time Blocker Guide
+              </a>{' '}
+              below.
+            </div>
+          ) : null}
+
           <p className="mt-4 text-xs text-[var(--ink-muted)]">
-            Android 7.0+ <span aria-hidden="true">·</span> Free with zero sign-up{' '}
-            <span aria-hidden="true">·</span> Keeps data on your device
+            Android 7.0+ APK <span aria-hidden="true">·</span> iPhone &amp; Desktop Web App{' '}
+            <span aria-hidden="true">·</span> Free with zero sign-up
           </p>
 
           {/* Clean Architectural Spec Strip */}
@@ -788,7 +841,188 @@ export const DownloadScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* Clean Editorial 01/02/03 Install Guide + Gamban Comparison */}
+      {/* Compatible Everywhere: Android, iPhone & Desktop */}
+      <section
+        id="platforms"
+        className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-12"
+      >
+        <div className="max-w-2xl">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-3xl">
+            Works on Android, iPhone, iPad &amp; Desktop.
+          </h2>
+          <p className="mt-2.5 text-sm leading-relaxed text-[var(--ink-muted)]">
+            Use the native Android APK for full phone-wide Accessibility + Device Admin blocking, or
+            install the GambleAware Web App on iPhone, Mac &amp; Windows with zero App Store
+            wait.
+          </p>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* Android Card */}
+          <LiquidGlassCard className="flex flex-col justify-between p-6">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-[var(--accent-ink)]">
+                  ANDROID 7.0+
+                </span>
+                <Smartphone className="h-4 w-4 text-[var(--accent-ink)]" />
+              </div>
+              <h3 className="mt-3 font-display text-lg font-semibold text-[var(--ink)]">
+                Native Android Blocker (APK)
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+                Blocks {builtInDomainCount}+ betting websites, Chrome/Instagram/TikTok links, and{' '}
+                {builtInAppCount}+ betting apps automatically — with Device Admin Uninstall Lock up
+                to 2 years and zero VPN usage.
+              </p>
+              <ul className="mt-3 space-y-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">• Real-time URL &amp; App Shield:</span>{' '}
+                  Stops browser visits, search queries, and gambling app launches on-device.
+                </li>
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">• Uninstall Lock (24h – 2y):</span>{' '}
+                  Device Admin keeps protection locked during urges without any subscription.
+                </li>
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">• Zero Internet Permission:</span>{' '}
+                  Everything runs offline locally inside your phone.
+                </li>
+              </ul>
+            </div>
+            <a
+              href="/downloads/GambleAware-Nigeria.apk"
+              download="GambleAware.apk"
+              className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+            >
+              <Download className="h-4 w-4 shrink-0" />
+              <span>Download GambleAware.apk</span>
+            </a>
+          </LiquidGlassCard>
+
+          {/* iPhone & iPad Card */}
+          <LiquidGlassCard className="flex flex-col justify-between p-6">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-[var(--accent-ink)]">
+                  IPHONE &amp; IPAD (IOS)
+                </span>
+                <Share className="h-4 w-4 text-[var(--accent-ink)]" />
+              </div>
+              <h3 className="mt-3 font-display text-lg font-semibold text-[var(--ink)]">
+                iPhone Web App + Screen Time Block
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+                Because Apple does not allow APK files, iPhone uses a two-part setup that works
+                together natively:
+              </p>
+              <ol className="mt-3 space-y-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">1. Add G App to Home Screen:</span>{' '}
+                  Open in Safari, tap <span className="font-semibold text-[var(--ink)]">Share</span>{' '}
+                  → <span className="font-semibold text-[var(--ink)]">Add to Home Screen</span> for
+                  your offline streak, ₦ savings, goals &amp; 60s Calm Reset.
+                </li>
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">2. Block sites on iPhone:</span>{' '}
+                  Go to <span className="font-semibold text-[var(--ink)]">Settings → Screen Time
+                  → Content &amp; Privacy Restrictions → Web Content → Limit Adult Websites → Never
+                  Allow</span>, paste the betting domains below, and lock with a Screen Time
+                  passcode.
+                </li>
+              </ol>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2">
+              {onOpenWebApp ? (
+                <button
+                  type="button"
+                  onClick={onOpenWebApp}
+                  className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                >
+                  <Smartphone className="h-4 w-4 shrink-0" />
+                  <span>Open iPhone Web App</span>
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => void handleCopyIosBlocklist()}
+                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+              >
+                {copiedIosDomains ? (
+                  <Check className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
+                )}
+                <span>
+                  {copiedIosDomains
+                    ? `Copied ${TOP_BETTING_DOMAINS_FOR_IOS.length} Betting Sites`
+                    : `Copy ${TOP_BETTING_DOMAINS_FOR_IOS.length} Top Betting Sites for iPhone`}
+                </span>
+              </button>
+            </div>
+          </LiquidGlassCard>
+
+          {/* Desktop & Everywhere PWA Card */}
+          <LiquidGlassCard className="flex flex-col justify-between p-6">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-[var(--accent-ink)]">
+                  MAC · WINDOWS · CHROME
+                </span>
+                <Laptop className="h-4 w-4 text-[var(--accent-ink)]" />
+              </div>
+              <h3 className="mt-3 font-display text-lg font-semibold text-[var(--ink)]">
+                Desktop &amp; Cross-Device Sync
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+                Install GambleAware in Chrome, Edge, or Safari on any laptop or tablet. Your clean
+                streak, goals, and rules stay backed up locally and can be moved between Android,
+                iPhone, and Desktop anytime using your <span className="font-mono font-semibold text-[var(--ink)]">GA1</span>{' '}
+                Recovery Vault Key.
+              </p>
+              <ul className="mt-3 space-y-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">• Offline PWA Install:</span>{' '}
+                  Works cleanly in standalone window mode with the G emblem on Mac &amp; Windows.
+                </li>
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">• Full Toolset Included:</span>{' '}
+                  Domain checker, ₦ savings projection, Urge Journal, and 60s Calm Reset.
+                </li>
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">• Cross-Device Transfer:</span>{' '}
+                  Export or restore your GA1 vault key in seconds with zero cloud account.
+                </li>
+              </ul>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2">
+              {isInstallable && !isInstalled ? (
+                <button
+                  type="button"
+                  onClick={() => void install()}
+                  className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                >
+                  <Download className="h-4 w-4 shrink-0" />
+                  <span>Install Web App</span>
+                </button>
+              ) : onOpenWebApp ? (
+                <button
+                  type="button"
+                  onClick={onOpenWebApp}
+                  className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--muted-fill)] text-xs font-semibold text-[var(--ink)] hover:border-[var(--active-fill)]"
+                >
+                  <Laptop className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                  <span>Launch Desktop Web App</span>
+                </button>
+              ) : null}
+            </div>
+          </LiquidGlassCard>
+        </div>
+      </section>
+
+      {/* Clean Editorial 01/02/03 Install Guide + Play Protect + Gamban Comparison */}
       <section className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <LiquidGlassCard className="p-6 lg:col-span-5">
           <div id="install-guide" className="scroll-mt-20">
@@ -796,7 +1030,7 @@ export const DownloadScreen: React.FC = () => {
               How to install on Android
             </h2>
             <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-              Takes under two minutes. No registration required.
+              Takes under two minutes. Zero registration and zero Internet permission requested.
             </p>
 
             <ol className="mt-5 divide-y divide-[var(--subtle-border)]/70">
@@ -815,10 +1049,37 @@ export const DownloadScreen: React.FC = () => {
               ))}
             </ol>
 
+            {/* Transparent Play Protect & Restricted Settings Guide */}
+            <div className="mt-5 rounded-2xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-4">
+              <p className="text-xs font-semibold text-[var(--ink)]">
+                Why does Play Protect check direct APKs?
+              </p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+                Android automatically scans any APK downloaded outside the Google Play Store when it
+                uses Accessibility or Device Admin to block betting apps. GambleAware requests{' '}
+                <span className="font-semibold text-[var(--ink)]">zero Internet permission</span>{' '}
+                in its manifest so nothing can ever leave your phone.
+              </p>
+              <ul className="mt-2 space-y-1 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">• If Play Protect pauses install:</span>{' '}
+                  Tap <span className="font-semibold text-[var(--ink)]">More details → Install anyway</span>.
+                </li>
+                <li>
+                  <span className="font-semibold text-[var(--ink)]">• On Android 13–15 Accessibility:</span>{' '}
+                  If the toggle says Restricted Setting, open{' '}
+                  <span className="font-semibold text-[var(--ink)]">
+                    Settings → Apps → GambleAware → ⋮ (top right) → Allow restricted settings
+                  </span>
+                  .
+                </li>
+              </ul>
+            </div>
+
             <a
               href="/downloads/GambleAware-Nigeria.apk"
               download="GambleAware.apk"
-              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
             >
               <Download className="h-4 w-4 shrink-0" />
               <span>Download Android App</span>

@@ -152,7 +152,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
         />
         <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/45">
           <CategorySwitchRow
-            title="Websites &amp; Social App Links"
+            title="Websites & Social App Links"
             subtitle="Stops betting websites inside Chrome, Safari, Instagram, TikTok, and Telegram"
             checked={state.settings.browserShieldEnabled}
             onChange={onToggleBrowserShield}
@@ -165,7 +165,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
           />
           <CategorySwitchRow
             title="Betting Searches"
-            subtitle="Blocks betting searches while keeping recovery &amp; support websites open"
+            subtitle="Blocks betting searches while keeping recovery & support websites open"
             checked={state.settings.searchGuardEnabled}
             onChange={onToggleSearchGuard}
           />

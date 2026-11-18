@@ -6,16 +6,38 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <queries>
-        <intent>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent>
+        <!-- Supported browsers for in-app / Web Shield inspection -->
+        <package android:name="com.android.chrome" />
+        <package android:name="com.sec.android.app.sbrowser" />
+        <package android:name="org.mozilla.firefox" />
+        <package android:name="com.microsoft.emmx" />
+        <package android:name="com.brave.browser" />
+        <package android:name="com.opera.browser" />
+        <package android:name="com.opera.mini.native" />
+        <package android:name="com.duckduckgo.mobile.android" />
+        <!-- Known gambling apps for App Shield detection -->
+        <package android:name="com.sportybet.android" />
+        <package android:name="com.sportybet.ng" />
+        <package android:name="com.bet9ja.android" />
+        <package android:name="com.betking.android" />
+        <package android:name="com.kingmakers.betking" />
+        <package android:name="com.msport.android" />
+        <package android:name="com.bangbet.android" />
+        <package android:name="com.betpawa.android" />
+        <package android:name="org.paripesa.client" />
+        <package android:name="org.xbet.client" />
+        <package android:name="com.melbet.client" />
+        <package android:name="com.parimatch.android" />
+        <package android:name="com.bet365.sport" />
+        <package android:name="com.betway.sports" />
+        <package android:name="com.draftkings.sportsbook" />
+        <package android:name="com.fanduel.android.sportsbook" />
+        <package android:name="com.betmgm.sportsbook" />
+        <package android:name="com.stake.android" />
     </queries>
 
     <application
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

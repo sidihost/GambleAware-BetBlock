@@ -47,7 +47,7 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             this,
             receiver,
             filter,
-            ContextCompat.RECEIVER_EXPORTED,
+            ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         packageInstallReceiver = receiver
     }
@@ -307,11 +307,6 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             return true
         }
 
-        // Play Store listing uninstall page
-        if (pkg == "com.android.vending" && joined.contains("gambleaware") && joined.contains("uninstall")) {
-            return true
-        }
-
         val mentionsApp = joined.contains("gambleaware") || joined.contains("imoogle")
         val mentionsPrivateDns = joined.contains("private dns")
         if (!mentionsApp && !mentionsPrivateDns) return false
@@ -456,7 +451,6 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             "com.android.settings",
             "com.android.packageinstaller",
             "com.google.android.packageinstaller",
-            "com.android.vending",
             "com.miui.securitycenter",
             "com.samsung.android.lool",
             "com.coloros.safecenter",

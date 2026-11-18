@@ -444,7 +444,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             <div className="mt-5">
               <LiquidSectionHeader
                 title="Appearance Theme"
-                subtitle="Crisp White default or Black &amp; Pink liquid glass finish"
+                subtitle="Crisp White default or Black & Pink liquid glass finish"
               />
               <div className="mt-2.5 grid grid-cols-3 gap-2">
                 {(Object.values(ThemeMode) as ThemeMode[]).map((mode) => {
