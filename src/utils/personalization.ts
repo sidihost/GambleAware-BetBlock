@@ -124,7 +124,12 @@ export function detectGamblingLoginOrSite(
   const match = BlocklistMatcher.matchBrowserAddressText(trimmed, config);
   const normalizedHost = BlocklistMatcher.normalizeDomain(trimmed);
   const hasLoginCue = LOGIN_PATH_OR_QUERY_KEYWORDS.some((kw) => lower.includes(kw));
-  const directMatch = match.isBlocked ? match : BlocklistMatcher.matchDomainOrUrl(trimmed, config);
+  const typedMatch = match.isBlocked
+    ? match
+    : BlocklistMatcher.matchDomainOrUrl(trimmed, config);
+  const directMatch = typedMatch.isBlocked
+    ? typedMatch
+    : BlocklistMatcher.matchTypedBrowserInput(trimmed, config);
 
   return {
     isGamblingLogin: directMatch.isBlocked && hasLoginCue,

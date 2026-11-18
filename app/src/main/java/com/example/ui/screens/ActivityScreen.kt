@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PhonelinkLock
 import androidx.compose.material.icons.rounded.PublicOff
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -86,7 +87,15 @@ fun ActivityScreen(
     val liquid = LocalLiquidColors.current
     var selectedChartMode by remember { mutableIntStateOf(0) } // 0 = Days & Savings, 1 = 7-Day Blocks
     var selectedSource by remember { mutableStateOf("All") }
-    val sourceOptions = listOf("All", "Web Shield", "In-App WebView", "App Shield", "Install Guard")
+    val sourceOptions = listOf(
+        "All",
+        "Typed URL Guard",
+        "Web Shield",
+        "Search Guard",
+        "In-App WebView",
+        "App Shield",
+        "Install Guard",
+    )
     val listState = rememberLazyListState()
 
     LaunchedEffect(activeTourKey) {
@@ -148,6 +157,9 @@ fun ActivityScreen(
                                 onClick = onClearHistory,
                                 shape = RoundedCornerShape(50),
                                 border = BorderStroke(1.dp, liquid.subtleBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onBackground,
+                                ),
                                 modifier = Modifier.testTag("clear_activity_button"),
                             ) {
                                 Icon(
@@ -442,6 +454,10 @@ fun ActivityScreen(
                                 .height(48.dp)
                                 .testTag("progress_log_urge_button"),
                             shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = liquid.activeFill,
+                                contentColor = liquid.activeContent,
+                            ),
                             elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
                         ) {
                             Icon(
@@ -459,6 +475,9 @@ fun ActivityScreen(
                                 .height(48.dp),
                             shape = RoundedCornerShape(50),
                             border = BorderStroke(1.dp, liquid.subtleBorder),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onBackground,
+                            ),
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Air,
@@ -681,7 +700,8 @@ private fun BlockedEventRow(event: BlockedEventEntity) {
         SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(event.timestamp))
     }
     val icon = when (event.source) {
-        "Web Shield" -> Icons.Rounded.Language
+        "Web Shield", "Typed URL Guard" -> Icons.Rounded.Language
+        "Search Guard" -> Icons.Rounded.Search
         "In-App WebView" -> Icons.Rounded.PublicOff
         "App Shield" -> Icons.Rounded.PhonelinkLock
         "Install Guard" -> Icons.Rounded.DownloadDone
@@ -721,7 +741,7 @@ private fun BlockedEventRow(event: BlockedEventEntity) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "${event.source} • $timeText",
+                    text = "${event.source} • ${event.categoryName} • $timeText",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

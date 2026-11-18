@@ -315,12 +315,14 @@ fun SpotlightTourOverlay(
             ) {
                 TextButton(
                     onClick = onDismissTour,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = liquid.accentInk,
+                    ),
                     modifier = Modifier.testTag("tour_skip_button"),
                 ) {
                     Text(
                         text = "Skip",
                         style = MaterialTheme.typography.labelLarge,
-                        color = ink,
                     )
                 }
             }
@@ -474,6 +476,10 @@ fun SpotlightTourOverlay(
                         .height(48.dp)
                         .testTag("tour_enable_shield_button"),
                     shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = liquid.activeFill,
+                        contentColor = liquid.activeContent,
+                    ),
                     elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
                 ) {
                     Text("Enable Web & App Shield")
@@ -491,6 +497,9 @@ fun SpotlightTourOverlay(
                             .testTag("tour_back_button"),
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, liquid.subtleBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                        ),
                     ) {
                         Text("Back")
                     }
@@ -502,6 +511,9 @@ fun SpotlightTourOverlay(
                             .testTag("tour_finish_button"),
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, liquid.subtleBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                        ),
                     ) {
                         Text("Finish")
                     }
@@ -520,6 +532,9 @@ fun SpotlightTourOverlay(
                                 .testTag("tour_back_button"),
                             shape = RoundedCornerShape(50),
                             border = BorderStroke(1.dp, liquid.subtleBorder),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onBackground,
+                            ),
                         ) {
                             Text("Back")
                         }
@@ -531,6 +546,10 @@ fun SpotlightTourOverlay(
                             .height(48.dp)
                             .testTag("tour_next_button"),
                         shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = liquid.activeFill,
+                            contentColor = liquid.activeContent,
+                        ),
                         elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
                     ) {
                         Text("Next")

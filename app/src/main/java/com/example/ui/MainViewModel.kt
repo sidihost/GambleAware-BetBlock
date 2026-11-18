@@ -451,7 +451,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (query.isBlank()) {
             testResultFlow.value = null
         } else {
-            testResultFlow.value = BlocklistMatcher.matchDomainOrUrl(
+            testResultFlow.value = BlocklistMatcher.matchTypedBrowserInput(
                 query,
                 repository.getCurrentFilterConfig(),
             )
@@ -461,7 +461,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun retestIfNeeded() {
         val q = testQueryFlow.value
         if (q.isNotBlank()) {
-            testResultFlow.value = BlocklistMatcher.matchDomainOrUrl(
+            testResultFlow.value = BlocklistMatcher.matchTypedBrowserInput(
                 q,
                 repository.getCurrentFilterConfig(),
             )

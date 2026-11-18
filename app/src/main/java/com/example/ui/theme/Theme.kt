@@ -79,7 +79,15 @@ private val LightColorScheme = lightColorScheme(
     onSurface = ObsidianBlack,
     surfaceVariant = LightGlassSecondary,
     onSurfaceVariant = LightSecondaryInk,
+    surfaceDim = LightPrimaryContainer,
+    surfaceBright = LightSurface,
+    surfaceContainerLowest = LightSurface,
+    surfaceContainerLow = LightSurface,
+    surfaceContainer = LightSurface,
+    surfaceContainerHigh = LightSurface,
+    surfaceContainerHighest = LightPrimaryContainer,
     outline = LightSubtleBorder,
+    outlineVariant = LightSubtleBorder,
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -101,7 +109,15 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = PureWhite,
     surfaceVariant = DarkGlassSecondary,
     onSurfaceVariant = DarkSecondaryInk,
+    surfaceDim = DarkCanvas,
+    surfaceBright = DarkSurface,
+    surfaceContainerLowest = DarkCanvas,
+    surfaceContainerLow = DarkSurface,
+    surfaceContainer = DarkSurface,
+    surfaceContainerHigh = DarkSurface,
+    surfaceContainerHighest = DarkPrimaryContainer,
     outline = DarkSubtleBorder,
+    outlineVariant = DarkSubtleBorder,
 )
 
 @Composable

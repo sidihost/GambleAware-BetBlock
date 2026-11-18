@@ -209,7 +209,7 @@ export function useGambleAwareState() {
 
   const domainLookupResult: BlockMatchResult | null = useMemo(() => {
     if (!domainLookupQuery.trim()) return null;
-    return BlocklistMatcher.matchDomainOrUrl(domainLookupQuery, filterConfig);
+    return BlocklistMatcher.matchTypedBrowserInput(domainLookupQuery, filterConfig);
   }, [domainLookupQuery, filterConfig]);
 
   const firstName = useMemo(

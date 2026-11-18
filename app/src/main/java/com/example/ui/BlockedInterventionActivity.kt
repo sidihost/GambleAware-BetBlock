@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.MainActivity
@@ -239,6 +240,13 @@ private fun InterventionScreen(
 
                     Spacer(modifier = Modifier.height(18.dp))
 
+                    val badgeLabel = when {
+                        isAntiTamper -> "UNINSTALL BLOCKED"
+                        source.contains("App", ignoreCase = true) ||
+                            source.contains("Install", ignoreCase = true) -> "BETTING APP BLOCKED"
+                        else -> "BETTING SITE BLOCKED"
+                    }
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -250,16 +258,35 @@ private fun InterventionScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(liquid.activeFill)
+                                    .padding(horizontal = 9.dp, vertical = 3.dp),
+                            ) {
+                                Text(
+                                    text = badgeLabel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = liquid.activeContent,
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "$source • $category",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                text = target,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = target,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                text = "Blocked by $source • $category",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
@@ -268,7 +295,7 @@ private fun InterventionScreen(
                                 text = "$cleanDays d",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = liquid.accentInk,
                             )
                             Text(
                                 text = "Streak",
@@ -333,7 +360,7 @@ private fun InterventionScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
                             ) {
-                                val ink = MaterialTheme.colorScheme.onBackground
+                                val ringAccent = liquid.activeFill
                                 Box(
                                     modifier = Modifier.size(104.dp),
                                     contentAlignment = Alignment.Center,
@@ -342,21 +369,21 @@ private fun InterventionScreen(
                                         val center = Offset(size.width / 2f, size.height / 2f)
                                         val maxR = size.minDimension / 2f
                                         drawCircle(
-                                            color = ink.copy(alpha = 0.14f),
+                                            color = ringAccent.copy(alpha = 0.22f),
                                             radius = maxR * 0.94f,
                                             center = center,
                                             style = Stroke(width = 1.dp.toPx()),
                                         )
                                         drawCircle(
-                                            color = ink.copy(alpha = 0.12f),
+                                            color = ringAccent.copy(alpha = 0.16f),
                                             radius = maxR * ringScale,
                                             center = center,
                                         )
                                         drawCircle(
-                                            color = ink,
+                                            color = ringAccent,
                                             radius = maxR * ringScale,
                                             center = center,
-                                            style = Stroke(width = 1.75.dp.toPx()),
+                                            style = Stroke(width = 1.85.dp.toPx()),
                                         )
                                     }
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -385,6 +412,10 @@ private fun InterventionScreen(
                             .height(52.dp)
                             .testTag("intervention_return_home"),
                         shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = liquid.activeFill,
+                            contentColor = liquid.activeContent,
+                        ),
                         elevation = ButtonDefaults.buttonElevation(
                             defaultElevation = 0.dp,
                             pressedElevation = 0.dp,
@@ -403,6 +434,9 @@ private fun InterventionScreen(
                             .testTag("intervention_open_gambleaware"),
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, liquid.subtleBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                        ),
                     ) {
                         Text("Open GambleAware")
                     }

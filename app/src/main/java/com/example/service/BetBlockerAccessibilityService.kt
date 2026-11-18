@@ -104,22 +104,48 @@ class BetBlockerAccessibilityService : AccessibilityService() {
         // 3. Universal Browser, Search, Custom Tab & In-App WebView Shield
         if (!settings.browserShieldEnabled || isSkippedUtilityPackage(pkg)) return
 
+        val isKnownBrowser = pkg in KNOWN_BROWSER_PACKAGES
+        val isSearchHost = pkg in SEARCH_HOST_PACKAGES
+
+        // 3a. Immediate keystroke-level blocking while user types in browser/search input
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
+            val eventTyped = event.text?.joinToString(" ")?.trim().orEmpty()
+            val sourceNode = event.source
+            val sourceTyped = sourceNode?.text?.toString()?.trim().orEmpty()
+            val canInspectTyping = isKnownBrowser || isSearchHost || isLikelyAddressOrSearchNode(sourceNode)
+            if (canInspectTyping) {
+                for (typed in listOf(sourceTyped, eventTyped)) {
+                    if (typed.length < 4 || isInternalOrPlaceholderBrowserText(typed)) continue
+                    val typedMatch = BlocklistMatcher.matchTypedBrowserInput(typed, config)
+                    if (typedMatch.isBlocked) {
+                        triggerIntervention(
+                            target = typedMatch.matchedTarget,
+                            source = if (isKnownBrowser) "Typed URL Guard" else "Search Guard",
+                            category = typedMatch.category,
+                            isAntiTamper = false,
+                            useBackFirst = true,
+                        )
+                        return
+                    }
+                }
+            }
+        }
+
         val now = System.currentTimeMillis()
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             now - lastTriggerAtMs < 900L
         ) {
             return
         }
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED && now - lastScanAtMs < 130L) {
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED && now - lastScanAtMs < 110L) {
             return
         }
         lastScanAtMs = now
 
         val root = rootInActiveWindow ?: return
 
-        val isKnownBrowser = pkg in KNOWN_BROWSER_PACKAGES
         var knownBrowserUrl: String? = null
-        if (isKnownBrowser) {
+        if (isKnownBrowser || isSearchHost) {
             knownBrowserUrl = extractKnownBrowserUrl(root, pkg)
             if (isInternalOrPlaceholderBrowserText(knownBrowserUrl)) {
                 // Chrome New Tab Page, Settings, Bookmarks, Tab Switcher or omnibox placeholder:
@@ -127,11 +153,11 @@ class BetBlockerAccessibilityService : AccessibilityService() {
                 return
             }
             if (!knownBrowserUrl.isNullOrBlank()) {
-                val urlMatch = BlocklistMatcher.matchBrowserAddressText(knownBrowserUrl, config)
+                val urlMatch = BlocklistMatcher.matchTypedBrowserInput(knownBrowserUrl, config)
                 if (urlMatch.isBlocked) {
                     triggerIntervention(
                         target = urlMatch.matchedTarget,
-                        source = "Web Shield",
+                        source = if (isKnownBrowser) "Web Shield" else "Search Guard",
                         category = urlMatch.category,
                         isAntiTamper = false,
                         useBackFirst = true,
@@ -145,7 +171,7 @@ class BetBlockerAccessibilityService : AccessibilityService() {
         if (inspection.addressCandidates.isNotEmpty()) {
             for (candidate in inspection.addressCandidates) {
                 if (isInternalOrPlaceholderBrowserText(candidate)) continue
-                val match = BlocklistMatcher.matchBrowserAddressText(candidate, config)
+                val match = BlocklistMatcher.matchTypedBrowserInput(candidate, config)
                 if (match.isBlocked) {
                     triggerIntervention(
                         target = match.matchedTarget,
@@ -160,8 +186,9 @@ class BetBlockerAccessibilityService : AccessibilityService() {
         }
 
         // Only scan rendered page content when an actual WebView is present OR a known browser
-        // has a settled non-internal external URL loaded (never scan Chrome NTP Discover cards).
-        val hasLoadedBrowserPage = isKnownBrowser && !knownBrowserUrl.isNullOrBlank()
+        // has a settled external URL loaded (never scan Chrome NTP Discover cards while idle or typing).
+        val hasLoadedBrowserPage = isKnownBrowser && !knownBrowserUrl.isNullOrBlank() &&
+            (knownBrowserUrl.contains('.') || knownBrowserUrl.startsWith("http", ignoreCase = true))
         if (inspection.hasWebView || hasLoadedBrowserPage) {
             val contentMatch = BlocklistMatcher.matchWebViewContent(
                 visibleTexts = inspection.visibleTexts,
@@ -199,6 +226,18 @@ class BetBlockerAccessibilityService : AccessibilityService() {
         return resolved.ifEmpty { null }
     }
 
+    private fun isLikelyAddressOrSearchNode(node: AccessibilityNodeInfo?): Boolean {
+        if (node == null) return false
+        val className = node.className?.toString().orEmpty()
+        val viewId = node.viewIdResourceName?.lowercase().orEmpty()
+        return className.contains("EditText") ||
+            viewId.contains("url") ||
+            viewId.contains("address") ||
+            viewId.contains("omnibox") ||
+            viewId.contains("location_bar") ||
+            viewId.contains("search")
+    }
+
     private fun extractKnownBrowserUrl(root: AccessibilityNodeInfo, pkg: String): String? {
         val candidateIds = BROWSER_URL_BAR_IDS[pkg] ?: DEFAULT_URL_BAR_IDS
         for (viewId in candidateIds) {
@@ -208,10 +247,8 @@ class BetBlockerAccessibilityService : AccessibilityService() {
                     val text = node.text?.toString()?.trim()
                     if (text.isNullOrBlank()) continue
                     if (isInternalOrPlaceholderBrowserText(text)) return text
-                    // Do not interrupt the user mid-keystroke while typing in a focused omnibox
-                    // unless a clear domain/URL has already been formed.
-                    if (node.isFocused && !text.contains('.')) continue
-                    if (text.contains('.') || text.startsWith("http")) {
+                    // Return both settled URLs and actively typed omnibox text immediately
+                    if (node.isFocused || text.contains('.') || text.startsWith("http", ignoreCase = true)) {
                         return text
                     }
                 }
@@ -252,16 +289,16 @@ class BetBlockerAccessibilityService : AccessibilityService() {
                 if (visibleTexts.size < 48) {
                     visibleTexts.add(text)
                 }
-                val isSearchPlaceholder = viewId.contains("search_box_text") ||
-                    isInternalOrPlaceholderBrowserText(text)
+                val isSearchPlaceholder = isInternalOrPlaceholderBrowserText(text)
                 val looksLikeUrlField = !isSearchPlaceholder && (
                     className.contains("EditText") ||
                         viewId.contains("url") ||
                         viewId.contains("address") ||
                         viewId.contains("omnibox") ||
-                        viewId.contains("location_bar")
+                        viewId.contains("location_bar") ||
+                        viewId.contains("search_box")
                     )
-                if (looksLikeUrlField && text.contains('.') && addressCandidates.size < 8) {
+                if (looksLikeUrlField && text.length >= 4 && addressCandidates.size < 8) {
                     addressCandidates.add(text)
                 }
             } else if (contentDesc.isNotEmpty() && visibleTexts.size < 48) {
@@ -464,6 +501,12 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             "com.iqoo.secure",
         )
 
+        private val SEARCH_HOST_PACKAGES = setOf(
+            "com.google.android.googlequicksearchbox",
+            "com.bing.android",
+            "com.yahoo.mobile.client.android.search",
+        )
+
         private val KNOWN_BROWSER_PACKAGES = setOf(
             "com.android.chrome",
             "com.chrome.beta",
@@ -510,6 +553,10 @@ class BetBlockerAccessibilityService : AccessibilityService() {
             ),
             "com.vivaldi.browser" to listOf("com.vivaldi.browser:id/url_bar"),
             "com.kiwibrowser.browser" to listOf("com.kiwibrowser.browser:id/url_bar"),
+            "com.google.android.googlequicksearchbox" to listOf(
+                "com.google.android.googlequicksearchbox:id/googleapp_search_box",
+                "com.google.android.googlequicksearchbox:id/search_plate",
+            ),
         )
 
         fun isEnabledInSystem(context: Context): Boolean {

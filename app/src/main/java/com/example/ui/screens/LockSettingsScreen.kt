@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -305,6 +306,10 @@ fun LockSettingsScreen(
                             .height(50.dp)
                             .testTag("activate_time_lock_button"),
                         shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = liquid.activeFill,
+                            contentColor = liquid.activeContent,
+                        ),
                         elevation = ButtonDefaults.buttonElevation(
                             defaultElevation = 0.dp,
                             pressedElevation = 0.dp,
@@ -369,6 +374,9 @@ fun LockSettingsScreen(
                             onClick = onToggleDeviceAdmin,
                             shape = RoundedCornerShape(50),
                             border = BorderStroke(1.dp, liquid.subtleBorder),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onBackground,
+                            ),
                             modifier = Modifier.testTag("toggle_device_admin_button"),
                         ) {
                             Text(
@@ -426,6 +434,9 @@ fun LockSettingsScreen(
                                 onClick = onRemovePin,
                                 shape = RoundedCornerShape(50),
                                 border = BorderStroke(1.dp, liquid.subtleBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onBackground,
+                                ),
                                 modifier = Modifier.testTag("remove_pin_button"),
                             ) {
                                 Text("Remove")
@@ -435,6 +446,9 @@ fun LockSettingsScreen(
                                 onClick = { showSetPinDialog = true },
                                 shape = RoundedCornerShape(50),
                                 border = BorderStroke(1.dp, liquid.subtleBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onBackground,
+                                ),
                                 modifier = Modifier.testTag("set_pin_button"),
                             ) {
                                 Text("Set PIN")
@@ -502,6 +516,9 @@ fun LockSettingsScreen(
                             .testTag("send_test_notification_button"),
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, liquid.subtleBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                        ),
                     ) {
                         Text("Send Test Alert")
                     }
@@ -637,6 +654,9 @@ fun LockSettingsScreen(
                             .testTag("reset_streak_button"),
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, liquid.subtleBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                        ),
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Refresh,
@@ -656,6 +676,9 @@ fun LockSettingsScreen(
                             .testTag("replay_tour_button"),
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, liquid.subtleBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                        ),
                     ) {
                         Text("Replay Guided Tour")
                     }
@@ -691,10 +714,20 @@ fun LockSettingsScreen(
     if (showConfirmLockDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmLockDialog = false },
-            title = { Text("Activate ${formatLockAdjective(pendingLockDays)} Lock?") },
+            shape = RoundedCornerShape(26.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            title = {
+                Text(
+                    text = "Activate ${formatLockAdjective(pendingLockDays)} Lock?",
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
             text = {
                 Text(
-                    "While Commitment Lock is active, GambleAware will not allow uninstalling the app, pausing protection, turning off categories, or deleting blocked rules until the timer completes.",
+                    text = "While Commitment Lock is active, GambleAware will not allow uninstalling the app, pausing protection, turning off categories, or deleting blocked rules until the timer completes.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },
             confirmButton = {
@@ -703,13 +736,23 @@ fun LockSettingsScreen(
                         onActivateTimeLock(pendingLockDays, includeAntiTamper)
                         showConfirmLockDialog = false
                     },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = liquid.activeFill,
+                        contentColor = liquid.activeContent,
+                    ),
                     modifier = Modifier.testTag("confirm_activate_time_lock"),
                 ) {
                     Text("Lock Now")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showConfirmLockDialog = false }) {
+                TextButton(
+                    onClick = { showConfirmLockDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = liquid.accentInk,
+                    ),
+                ) {
                     Text("Cancel")
                 }
             },
@@ -721,20 +764,44 @@ fun LockSettingsScreen(
         var confirmPinInput by remember { mutableStateOf("") }
         var pinError by remember { mutableStateOf<String?>(null) }
 
+        val pinFieldColors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = liquid.activeFill,
+            unfocusedBorderColor = liquid.subtleBorder,
+            focusedLabelColor = liquid.accentInk,
+            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            cursorColor = liquid.activeFill,
+            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+            focusedContainerColor = liquid.mutedFill,
+            unfocusedContainerColor = liquid.mutedFill,
+        )
+
         AlertDialog(
             onDismissRequest = { showSetPinDialog = false },
-            title = { Text("Set 4-Digit Accountability PIN") },
+            shape = RoundedCornerShape(26.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            title = {
+                Text(
+                    text = "Set 4-Digit Accountability PIN",
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         text = "Enter a 4-digit PIN required to pause protection or weaken blocklist rules.",
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     OutlinedTextField(
                         value = pinInput,
                         onValueChange = { if (it.length <= 4 && it.all(Char::isDigit)) pinInput = it },
                         label = { Text("4-Digit PIN") },
                         singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = pinFieldColors,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         modifier = Modifier.testTag("new_pin_input"),
@@ -744,6 +811,8 @@ fun LockSettingsScreen(
                         onValueChange = { if (it.length <= 4 && it.all(Char::isDigit)) confirmPinInput = it },
                         label = { Text("Confirm PIN") },
                         singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = pinFieldColors,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         modifier = Modifier.testTag("confirm_pin_input"),
@@ -752,7 +821,7 @@ fun LockSettingsScreen(
                         Text(
                             text = pinError!!,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
+                            color = liquid.accentInk,
                         )
                     }
                 }
@@ -769,13 +838,23 @@ fun LockSettingsScreen(
                             }
                         }
                     },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = liquid.activeFill,
+                        contentColor = liquid.activeContent,
+                    ),
                     modifier = Modifier.testTag("save_pin_button"),
                 ) {
                     Text("Save PIN")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showSetPinDialog = false }) {
+                TextButton(
+                    onClick = { showSetPinDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = liquid.accentInk,
+                    ),
+                ) {
                     Text("Cancel")
                 }
             },

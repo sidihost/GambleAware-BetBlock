@@ -113,15 +113,23 @@ export const BlockedInterventionModal: React.FC<{
               {/* Intercept summary */}
               <div className="mt-5 flex w-full items-center justify-between rounded-[18px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-4 py-3.5 text-left">
                 <div className="min-w-0 flex-1 pr-3">
-                  <p className="text-xs font-medium text-[var(--ink-muted)]">
-                    {payload.source} • {payload.category}
-                  </p>
-                  <p className="mt-0.5 truncate text-sm font-semibold text-[var(--ink)]">
+                  <span className="inline-flex items-center rounded-full bg-[var(--active-fill)] px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-[var(--active-content)] uppercase">
+                    {payload.isAntiTamper
+                      ? 'Uninstall Blocked'
+                      : payload.source.toLowerCase().includes('app') ||
+                          payload.source.toLowerCase().includes('install')
+                        ? 'Betting App Blocked'
+                        : 'Betting Site Blocked'}
+                  </span>
+                  <p className="mt-1.5 truncate text-base font-bold text-[var(--ink)]">
                     {payload.target}
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-[var(--ink-muted)]">
+                    Blocked by {payload.source} • {payload.category}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="font-mono text-lg font-bold tabular-nums text-[var(--ink)]">
+                  <p className="font-mono text-lg font-bold tabular-nums text-[var(--accent-ink)]">
                     {cleanDays} d
                   </p>
                   <p className="text-[11px] text-[var(--ink-muted)]">Streak</p>

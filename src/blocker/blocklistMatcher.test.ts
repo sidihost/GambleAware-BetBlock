@@ -37,3 +37,46 @@ test('allows safe recovery and health resources', () => {
     assert.equal(res.isBlocked, false, `Expected ${domain} to remain safe`);
   }
 });
+
+test('blocks betting sites immediately while typing before pressing Enter or typing .com', () => {
+  const customConfig: BlockFilterConfig = {
+    ...defaultConfig,
+    customBlockedDomains: new Set(['mycustombet.io']),
+    allowlistedDomains: new Set(['allowbet.com']),
+  };
+
+  for (const typed of [
+    'sportybet',
+    'sportyb',
+    'bet9ja',
+    '1xbet',
+    'betking',
+    'msport',
+    'bet365',
+    'stake.c',
+    'sportybet.n',
+    'stake casino',
+    'mycustombet',
+  ]) {
+    const res = BlocklistMatcher.matchTypedBrowserInput(typed, customConfig);
+    assert.equal(res.isBlocked, true, `Expected immediate while-typing block for "${typed}"`);
+  }
+
+  for (const safe of [
+    'betterhelp',
+    'bethesda',
+    'alphabet',
+    'diabetes',
+    'stakeholder',
+    'allowbet',
+    'gamblers anonymous',
+    'how to quit betting',
+    'chrome://newtab',
+    'Search or type web address',
+    'bet',
+    'sta',
+  ]) {
+    const res = BlocklistMatcher.matchTypedBrowserInput(safe, customConfig);
+    assert.equal(res.isBlocked, false, `Expected safe input NOT blocked while typing: "${safe}"`);
+  }
+});

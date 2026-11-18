@@ -544,7 +544,10 @@ export function App() {
         <FirstRunSetupModal
           initialName={uiState.preferredName}
           initialDailySpend={uiState.settings.dailyBetSpendEstimate}
-          onActivateAdminAndShield={enableDeviceAdmin}
+          isShieldEnabled={uiState.isAccessibilityEnabled}
+          isDeviceAdminEnabled={uiState.isDeviceAdminEnabled}
+          onEnableShield={activateAccessibilityShield}
+          onEnableDeviceAdmin={enableDeviceAdmin}
           onCompleteLockedSetup={completeInitialSetup}
         />
       ) : null}

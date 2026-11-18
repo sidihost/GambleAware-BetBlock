@@ -29,6 +29,109 @@ const RECOVERY_TERMS = [
 ];
 const SEARCH_QUERY_PARAM_REGEX = /[?&](?:q|p|query|text)=([^&#]+)/;
 
+const INTERNAL_SCHEME_PREFIXES = [
+  'chrome://', 'chrome-native://', 'about:', 'edge://', 'brave://',
+  'opera://', 'vivaldi://', 'duckduckgo://', 'firefox://',
+  'file://', 'content://', 'data:', 'blob:', 'javascript:',
+];
+
+const AMBIGUOUS_BRAND_STEMS = new Set([
+  'stake', 'blaze', 'shuffle', 'wild', 'flush', 'chips', 'howl', 'boom', 'rush',
+  'coral', 'chance', 'fortuna', 'mirax', 'leon', 'pulsz', 'dabble', 'sleeper',
+  'draft', 'lottery', 'lotto', 'bingo', 'casino', 'poker', 'slots', 'jackpot',
+  'winner', 'golden', 'lucky', 'action', 'covers', 'mirror', 'super', 'magic',
+  'royal', 'ruby', 'party', 'global', 'high5', 'trust', 'prime', 'crash', 'points',
+  'vegas', 'spin', 'play', 'bet', 'sport', 'sports', 'games', 'match', 'score',
+  'spread', 'circus', 'virgin', 'midnite', 'monopoly', 'galas', 'heart', 'foxy',
+  'glossy', 'rosy', 'dotty', 'wink', 'pub', 'tab', 'hardrock', 'fanatics',
+]);
+
+const DISTINCTIVE_LONG_PREFIXES: Array<[string, GamblingCategory]> = [
+  ['sportybet', GamblingCategory.SPORTSBOOK],
+  ['betbonanza', GamblingCategory.SPORTSBOOK],
+  ['winnersgoldenbet', GamblingCategory.SPORTSBOOK],
+  ['hollywoodbets', GamblingCategory.SPORTSBOOK],
+  ['williamhill', GamblingCategory.SPORTSBOOK],
+  ['paddypower', GamblingCategory.SPORTSBOOK],
+  ['ladbrokes', GamblingCategory.SPORTSBOOK],
+  ['mozzartbet', GamblingCategory.SPORTSBOOK],
+  ['premierbet', GamblingCategory.SPORTSBOOK],
+  ['sportpesa', GamblingCategory.SPORTSBOOK],
+  ['merrybet', GamblingCategory.SPORTSBOOK],
+  ['nairabet', GamblingCategory.SPORTSBOOK],
+  ['accessbet', GamblingCategory.SPORTSBOOK],
+  ['surebet247', GamblingCategory.SPORTSBOOK],
+  ['betwinner', GamblingCategory.SPORTSBOOK],
+  ['draftkings', GamblingCategory.SPORTSBOOK],
+  ['pokerstars', GamblingCategory.POKER_BINGO],
+  ['partypoker', GamblingCategory.POKER_BINGO],
+  ['prizepicks', GamblingCategory.FANTASY_LOTTERY],
+  ['underdogfantasy', GamblingCategory.FANTASY_LOTTERY],
+  ['parlayplay', GamblingCategory.FANTASY_LOTTERY],
+  ['lottoland', GamblingCategory.FANTASY_LOTTERY],
+  ['babaijebu', GamblingCategory.FANTASY_LOTTERY],
+  ['chumbacasino', GamblingCategory.CASINO],
+  ['luckylandslots', GamblingCategory.CASINO],
+  ['jackpotcitycasino', GamblingCategory.CASINO],
+];
+
+const TYPED_BETTING_INTENT_PHRASES = [
+  'stake casino', 'stake bet', 'stake login',
+  'online casino', 'live casino', 'crypto casino',
+  'place bet', 'betting site', 'betting odds',
+  'sports betting', 'sportsbook', 'aviator game',
+];
+
+let cachedUnambiguousTypedStems: Array<[string, GamblingCategory]> | null = null;
+
+function getUnambiguousTypedStems(): Array<[string, GamblingCategory]> {
+  if (cachedUnambiguousTypedStems) return cachedUnambiguousTypedStems;
+  const map = new Map<string, GamblingCategory>();
+  const safeList = Array.from(GamblingRegistry.safeDomains);
+
+  for (const [domain, category] of GamblingRegistry.domainToCategory.entries()) {
+    const stem = domain.split('.')[0];
+    if (
+      stem.length >= 5 &&
+      !AMBIGUOUS_BRAND_STEMS.has(stem) &&
+      !safeList.some((s) => s.includes(stem)) &&
+      !map.has(stem)
+    ) {
+      map.set(stem, category);
+    }
+  }
+  for (const brand of GamblingRegistry.gamblingBrandTokens) {
+    if (
+      brand.includes(' ') &&
+      brand.length >= 6 &&
+      !safeList.some((s) => s.includes(brand)) &&
+      !map.has(brand)
+    ) {
+      map.set(brand, GamblingCategory.SPORTSBOOK);
+    }
+  }
+  cachedUnambiguousTypedStems = Array.from(map.entries()).sort((a, b) => b[0].length - a[0].length);
+  return cachedUnambiguousTypedStems;
+}
+
+function containsWholeTokenOrDirectStem(lower: string, strippedUrl: string, stem: string): boolean {
+  if (strippedUrl === stem || strippedUrl.startsWith(`${stem}.`)) return true;
+  const idx = lower.indexOf(stem);
+  if (idx < 0) return false;
+  const beforeOk = idx === 0 || !/[a-z0-9]/.test(lower[idx - 1]);
+  const endIdx = idx + stem.length;
+  const afterOk = endIdx === lower.length || !/[a-z0-9]/.test(lower[endIdx]);
+  return beforeOk && afterOk;
+}
+
+function stripProtocolAndWww(lower: string): string {
+  let s = lower;
+  if (s.startsWith('https://')) s = s.slice(8);
+  else if (s.startsWith('http://')) s = s.slice(7);
+  if (s.startsWith('www.')) s = s.slice(4);
+  return s;
+}
+
 function isCategoryEnabled(category: GamblingCategory, config: BlockFilterConfig): boolean {
   switch (category) {
     case GamblingCategory.SPORTSBOOK:
@@ -61,6 +164,7 @@ export const BlocklistMatcher = {
   normalizeDomain(rawInput: string): string {
     let s = rawInput.trim().toLowerCase();
     if (!s) return '';
+    if (INTERNAL_SCHEME_PREFIXES.some((prefix) => s.startsWith(prefix))) return '';
     const schemeIndex = s.indexOf('://');
     if (schemeIndex >= 0) s = s.substring(schemeIndex + 3);
     const slashIndex = s.indexOf('/');
@@ -121,6 +225,11 @@ export const BlocklistMatcher = {
   },
 
   matchDomainOrUrl(rawDomainOrUrl: string, config: BlockFilterConfig): BlockMatchResult {
+    const rawLower = rawDomainOrUrl.trim().toLowerCase();
+    if (INTERNAL_SCHEME_PREFIXES.some((prefix) => rawLower.startsWith(prefix))) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
     if (config.searchGuardEnabled) {
       const searchMatch = this.matchSearchQueryInUrl(rawDomainOrUrl);
       if (searchMatch.isBlocked) return searchMatch;
@@ -187,16 +296,147 @@ export const BlocklistMatcher = {
     if (trimmed.length < 4) {
       return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
     }
+    const lower = trimmed.toLowerCase();
+    if (INTERNAL_SCHEME_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
 
     if (!trimmed.includes(' ')) {
       const direct = this.matchDomainOrUrl(trimmed, config);
       if (direct.isBlocked) return direct;
     }
 
-    const tokenMatch = DOMAIN_TOKEN_REGEX.exec(trimmed.toLowerCase());
+    const tokenMatch = DOMAIN_TOKEN_REGEX.exec(lower);
     if (tokenMatch) {
       const domainResult = this.matchDomainOrUrl(tokenMatch[0], config);
       if (domainResult.isBlocked) return domainResult;
+    }
+
+    return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+  },
+
+  matchTypedBrowserInput(rawInput: string, config: BlockFilterConfig): BlockMatchResult {
+    const trimmed = rawInput.trim();
+    if (trimmed.length < 4) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const lower = trimmed.toLowerCase();
+    if (INTERNAL_SCHEME_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+    if (RECOVERY_TERMS.some((term) => lower.includes(term))) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const stripped = stripProtocolAndWww(lower);
+    const safeList = Array.from(GamblingRegistry.safeDomains);
+    if (
+      safeList.some((safe) => {
+        const safeStem = safe.split('.')[0];
+        return stripped.startsWith(safe) || (safeStem.length >= 5 && stripped.startsWith(safeStem));
+      })
+    ) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const allowList = Array.from(config.allowlistedDomains);
+    if (
+      allowList.some((allowed) => {
+        const allowStem = allowed.split('.')[0];
+        return stripped.startsWith(allowed) || (allowStem.length >= 5 && stripped.startsWith(allowStem));
+      })
+    ) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const standardMatch = this.matchBrowserAddressText(trimmed, config);
+    if (standardMatch.isBlocked) return standardMatch;
+
+    const noSpace = !lower.includes(' ');
+    if (noSpace && stripped.includes('.')) {
+      const beforeSlash = stripped.split('/')[0].split('?')[0].split('#')[0];
+      const dotIdx = beforeSlash.indexOf('.');
+      const typedStem = dotIdx >= 0 ? beforeSlash.slice(0, dotIdx) : beforeSlash;
+      const typedTldStart = dotIdx >= 0 ? beforeSlash.slice(dotIdx + 1) : '';
+      if (typedTldStart.length > 0) {
+        for (const custom of config.customBlockedDomains) {
+          const customStem = custom.split('.')[0];
+          if (typedStem === customStem || beforeSlash === custom) {
+            return {
+              isBlocked: true,
+              matchedTarget: custom,
+              category: GamblingCategory.CUSTOM,
+              reason: `Blocked immediately while typing ${custom}`,
+            };
+          }
+        }
+        for (const [domain, category] of GamblingRegistry.domainToCategory.entries()) {
+          if (!isCategoryEnabled(category, config)) continue;
+          const dDot = domain.indexOf('.');
+          const domStem = dDot >= 0 ? domain.slice(0, dDot) : domain;
+          const domTld = dDot >= 0 ? domain.slice(dDot + 1) : '';
+          if (typedStem === domStem && domTld.startsWith(typedTldStart)) {
+            return {
+              isBlocked: true,
+              matchedTarget: domain,
+              category,
+              reason: `Blocked immediately while typing ${domain}`,
+            };
+          }
+        }
+      }
+    }
+
+    for (const custom of config.customBlockedDomains) {
+      const stem = custom.split('.')[0];
+      if (stem.length >= 5 && containsWholeTokenOrDirectStem(lower, stripped, stem)) {
+        return {
+          isBlocked: true,
+          matchedTarget: custom,
+          category: GamblingCategory.CUSTOM,
+          reason: 'Blocked custom site while typing',
+        };
+      }
+    }
+
+    for (const [stem, category] of getUnambiguousTypedStems()) {
+      if (!isCategoryEnabled(category, config)) continue;
+      if (containsWholeTokenOrDirectStem(lower, stripped, stem)) {
+        return {
+          isBlocked: true,
+          matchedTarget: stem,
+          category,
+          reason: `Blocked "${stem}" immediately while typing`,
+        };
+      }
+    }
+
+    if (noSpace && stripped.length >= 7 && !stripped.includes('.')) {
+      for (const [fullBrand, category] of DISTINCTIVE_LONG_PREFIXES) {
+        if (!isCategoryEnabled(category, config)) continue;
+        if (fullBrand.startsWith(stripped)) {
+          return {
+            isBlocked: true,
+            matchedTarget: fullBrand,
+            category,
+            reason: `Blocked "${fullBrand}" immediately while typing`,
+          };
+        }
+      }
+    }
+
+    if (config.searchGuardEnabled) {
+      for (const intent of TYPED_BETTING_INTENT_PHRASES) {
+        if (lower.includes(intent)) {
+          return {
+            isBlocked: true,
+            matchedTarget: intent,
+            category: GamblingCategory.SPORTSBOOK,
+            reason: 'Blocked betting search while typing',
+          };
+        }
+      }
     }
 
     return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };

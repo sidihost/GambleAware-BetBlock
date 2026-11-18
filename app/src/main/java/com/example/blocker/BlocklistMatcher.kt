@@ -177,6 +177,72 @@ object BlocklistMatcher {
         return BlockMatchResult(isBlocked = false)
     }
 
+    private val ambiguousBrandStems: Set<String> = setOf(
+        "stake", "blaze", "shuffle", "wild", "flush", "chips", "howl", "boom", "rush",
+        "coral", "chance", "fortuna", "mirax", "leon", "pulsz", "dabble", "sleeper",
+        "draft", "lottery", "lotto", "bingo", "casino", "poker", "slots", "jackpot",
+        "winner", "golden", "lucky", "action", "covers", "mirror", "super", "magic",
+        "royal", "ruby", "party", "global", "high5", "trust", "prime", "crash", "points",
+        "vegas", "spin", "play", "bet", "sport", "sports", "games", "match", "score",
+        "spread", "circus", "virgin", "midnite", "monopoly", "galas", "heart", "foxy",
+        "glossy", "rosy", "dotty", "wink", "pub", "tab", "hardrock", "fanatics",
+    )
+
+    private val distinctiveLongPrefixes: List<Pair<String, GamblingCategory>> by lazy {
+        listOf(
+            "sportybet" to GamblingCategory.SPORTSBOOK,
+            "betbonanza" to GamblingCategory.SPORTSBOOK,
+            "winnersgoldenbet" to GamblingCategory.SPORTSBOOK,
+            "hollywoodbets" to GamblingCategory.SPORTSBOOK,
+            "williamhill" to GamblingCategory.SPORTSBOOK,
+            "paddypower" to GamblingCategory.SPORTSBOOK,
+            "ladbrokes" to GamblingCategory.SPORTSBOOK,
+            "mozzartbet" to GamblingCategory.SPORTSBOOK,
+            "premierbet" to GamblingCategory.SPORTSBOOK,
+            "sportpesa" to GamblingCategory.SPORTSBOOK,
+            "merrybet" to GamblingCategory.SPORTSBOOK,
+            "nairabet" to GamblingCategory.SPORTSBOOK,
+            "accessbet" to GamblingCategory.SPORTSBOOK,
+            "surebet247" to GamblingCategory.SPORTSBOOK,
+            "betwinner" to GamblingCategory.SPORTSBOOK,
+            "draftkings" to GamblingCategory.SPORTSBOOK,
+            "pokerstars" to GamblingCategory.POKER_BINGO,
+            "partypoker" to GamblingCategory.POKER_BINGO,
+            "prizepicks" to GamblingCategory.FANTASY_LOTTERY,
+            "underdogfantasy" to GamblingCategory.FANTASY_LOTTERY,
+            "parlayplay" to GamblingCategory.FANTASY_LOTTERY,
+            "lottoland" to GamblingCategory.FANTASY_LOTTERY,
+            "babaijebu" to GamblingCategory.FANTASY_LOTTERY,
+            "chumbacasino" to GamblingCategory.CASINO,
+            "luckylandslots" to GamblingCategory.CASINO,
+            "jackpotcitycasino" to GamblingCategory.CASINO,
+        )
+    }
+
+    private val unambiguousTypedStems: List<Pair<String, GamblingCategory>> by lazy {
+        val out = LinkedHashMap<String, GamblingCategory>()
+        for ((domain, category) in GamblingRegistry.domainToCategory) {
+            val stem = domain.substringBefore('.')
+            if (stem.length >= 5 &&
+                stem !in ambiguousBrandStems &&
+                GamblingRegistry.safeDomains.none { it.contains(stem) }
+            ) {
+                out.putIfAbsent(stem, category)
+            }
+        }
+        // Explicitly preserve multi-word brand tokens (e.g. "sporty bet", "paddy power")
+        for (brand in GamblingRegistry.gamblingBrandTokens) {
+            if (brand.contains(' ') && brand.length >= 6 &&
+                GamblingRegistry.safeDomains.none { it.contains(brand) }
+            ) {
+                out.putIfAbsent(brand, GamblingCategory.SPORTSBOOK)
+            }
+        }
+        out.entries
+            .sortedByDescending { it.key.length }
+            .map { it.key to it.value }
+    }
+
     fun matchBrowserAddressText(addressText: String, config: BlockFilterConfig): BlockMatchResult {
         val trimmed = addressText.trim()
         if (trimmed.length < 4) return BlockMatchResult(isBlocked = false)
@@ -198,6 +264,153 @@ object BlocklistMatcher {
 
         return BlockMatchResult(isBlocked = false)
     }
+
+    /**
+     * Evaluates browser address bar / search bar text *while* the user is still typing
+     * (even before pressing Enter or typing ".com").
+     * Strictly skips recovery/help queries, internal browser pages, and safe domains.
+     */
+    fun matchTypedBrowserInput(rawInput: String, config: BlockFilterConfig): BlockMatchResult {
+        val trimmed = rawInput.trim()
+        if (trimmed.length < 4) return BlockMatchResult(isBlocked = false)
+
+        val lower = trimmed.lowercase()
+        if (internalSchemePrefixes.any { lower.startsWith(it) }) {
+            return BlockMatchResult(isBlocked = false)
+        }
+        if (recoveryTerms.any { lower.contains(it) }) {
+            return BlockMatchResult(isBlocked = false)
+        }
+
+        // Never interrupt while user is typing known safe or allowlisted sites
+        val stripped = lower.removePrefix("https://").removePrefix("http://").removePrefix("www.")
+        if (GamblingRegistry.safeDomains.any { safe ->
+                val safeStem = safe.substringBefore('.')
+                stripped.startsWith(safe) || (safeStem.length >= 5 && stripped.startsWith(safeStem))
+            }
+        ) {
+            return BlockMatchResult(isBlocked = false)
+        }
+        if (config.allowlistedDomains.any { allowed ->
+                val allowStem = allowed.substringBefore('.')
+                stripped.startsWith(allowed) || (allowStem.length >= 5 && stripped.startsWith(allowStem))
+            }
+        ) {
+            return BlockMatchResult(isBlocked = false)
+        }
+
+        // 1. Standard domain/URL & search query check
+        val standardMatch = matchBrowserAddressText(trimmed, config)
+        if (standardMatch.isBlocked) return standardMatch
+
+        // 2. Partial domain typing with dot (e.g. "sportybet.c", "bet9ja.n", "stake.c", "bc.g")
+        val noSpace = !lower.contains(' ')
+        if (noSpace && stripped.contains('.')) {
+            val beforeSlash = stripped.substringBefore('/').substringBefore('?').substringBefore('#')
+            val typedStem = beforeSlash.substringBefore('.')
+            val typedTldStart = beforeSlash.substringAfter('.', "")
+            if (typedTldStart.isNotEmpty()) {
+                for (custom in config.customBlockedDomains) {
+                    val customStem = custom.substringBefore('.')
+                    if (typedStem == customStem || beforeSlash == custom) {
+                        return BlockMatchResult(
+                            isBlocked = true,
+                            matchedTarget = custom,
+                            category = GamblingCategory.CUSTOM,
+                            reason = "Blocked immediately while typing $custom",
+                        )
+                    }
+                }
+                for ((domain, category) in GamblingRegistry.domainToCategory) {
+                    if (!isCategoryEnabled(category, config)) continue
+                    val domStem = domain.substringBefore('.')
+                    val domTld = domain.substringAfter('.', "")
+                    if (typedStem == domStem && domTld.startsWith(typedTldStart)) {
+                        return BlockMatchResult(
+                            isBlocked = true,
+                            matchedTarget = domain,
+                            category = category,
+                            reason = "Blocked immediately while typing $domain",
+                        )
+                    }
+                }
+            }
+        }
+
+        // 3. Custom blocked domain stems typed directly (e.g. "mybookie")
+        for (custom in config.customBlockedDomains) {
+            val stem = custom.substringBefore('.')
+            if (stem.length >= 5 && containsWholeTokenOrDirectStem(lower, stripped, stem)) {
+                return BlockMatchResult(
+                    isBlocked = true,
+                    matchedTarget = custom,
+                    category = GamblingCategory.CUSTOM,
+                    reason = "Blocked custom site while typing",
+                )
+            }
+        }
+
+        // 4. Unambiguous gambling brand/domain stems typed before ".com" (e.g. "sportybet", "bet9ja", "1xbet")
+        for ((stem, category) in unambiguousTypedStems) {
+            if (!isCategoryEnabled(category, config)) continue
+            if (containsWholeTokenOrDirectStem(lower, stripped, stem)) {
+                return BlockMatchResult(
+                    isBlocked = true,
+                    matchedTarget = stem,
+                    category = category,
+                    reason = "Blocked \"$stem\" immediately while typing",
+                )
+            }
+        }
+
+        // 5. Distinctive >= 7 char URL prefix detection while typing single token (e.g. "sportyb" -> sportybet)
+        if (noSpace && stripped.length >= 7 && !stripped.contains('.')) {
+            for ((fullBrand, category) in distinctiveLongPrefixes) {
+                if (!isCategoryEnabled(category, config)) continue
+                if (fullBrand.startsWith(stripped)) {
+                    return BlockMatchResult(
+                        isBlocked = true,
+                        matchedTarget = fullBrand,
+                        category = category,
+                        reason = "Blocked \"$fullBrand\" immediately while typing",
+                    )
+                }
+            }
+        }
+
+        // 6. Multi-word betting intent while typing in browser omnibox/search bar
+        if (config.searchGuardEnabled) {
+            for (intent in TYPED_BETTING_INTENT_PHRASES) {
+                if (lower.contains(intent)) {
+                    return BlockMatchResult(
+                        isBlocked = true,
+                        matchedTarget = intent,
+                        category = GamblingCategory.SPORTSBOOK,
+                        reason = "Blocked betting search while typing",
+                    )
+                }
+            }
+        }
+
+        return BlockMatchResult(isBlocked = false)
+    }
+
+    private fun containsWholeTokenOrDirectStem(lower: String, strippedUrl: String, stem: String): Boolean {
+        if (strippedUrl == stem || strippedUrl.startsWith("$stem.")) return true
+        val idx = lower.indexOf(stem)
+        if (idx < 0) return false
+        val beforeOk = idx == 0 || !lower[idx - 1].isLetterOrDigit()
+        val endIdx = idx + stem.length
+        val afterOk = endIdx == lower.length || !lower[endIdx].isLetterOrDigit()
+        return beforeOk && afterOk
+    }
+
+    private val TYPED_BETTING_INTENT_PHRASES = listOf(
+        "stake casino", "stake bet", "stake login",
+        "online casino", "live casino", "crypto casino",
+        "place bet", "betting site", "betting odds",
+        "sports betting", "sportsbook", "aviator game",
+    )
 
     fun matchWebViewContent(
         visibleTexts: List<String>,

@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import {
-  ArrowRight,
   CheckCircle2,
+  Circle,
   LockKeyhole,
-  ShieldAlert,
   ShieldCheck,
-  UserCheck,
 } from 'lucide-react';
 import { DAILY_SPEND_OPTIONS_NGN, formatNaira } from '../utils/currency';
 import { formatLockDurationAdjective, LOCK_DURATION_PRESETS } from '../utils/lockDurations';
@@ -14,7 +12,10 @@ import { BrandAnchorMark } from './AppHeader';
 interface FirstRunSetupModalProps {
   initialName: string;
   initialDailySpend: number;
-  onActivateAdminAndShield: () => void;
+  isShieldEnabled: boolean;
+  isDeviceAdminEnabled: boolean;
+  onEnableShield: () => void;
+  onEnableDeviceAdmin: () => void;
   onCompleteLockedSetup: (params: {
     preferredName: string;
     lockDays: number;
@@ -25,32 +26,27 @@ interface FirstRunSetupModalProps {
 export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
   initialName,
   initialDailySpend,
-  onActivateAdminAndShield,
+  isShieldEnabled,
+  isDeviceAdminEnabled,
+  onEnableShield,
+  onEnableDeviceAdmin,
   onCompleteLockedSetup,
 }) => {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [name, setName] = useState(initialName);
-  const [nameError, setNameError] = useState<string | null>(null);
   const [lockDays, setLockDays] = useState(7);
   const [dailySpendNgn, setDailySpendNgn] = useState(initialDailySpend || 5000);
+  const [stepError, setStepError] = useState<string | null>(null);
 
-  const handleStep1Submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleaned = name.trim();
-    if (!cleaned) {
-      setNameError('Enter your first name, or choose "Continue without name" below.');
+  const canFinish = isShieldEnabled && isDeviceAdminEnabled;
+
+  const handleFinalize = () => {
+    if (!isShieldEnabled || !isDeviceAdminEnabled) {
+      setStepError(
+        'Please activate Step 1 (Web & App Shield) and Step 2 (Uninstall Lock) above to continue.',
+      );
       return;
     }
-    setNameError(null);
-    setStep(2);
-  };
-
-  const handleArmAdminLock = () => {
-    onActivateAdminAndShield();
-    setStep(3);
-  };
-
-  const handleFinalizeLockIn = () => {
+    setStepError(null);
     onCompleteLockedSetup({
       preferredName: name.trim(),
       lockDays,
@@ -62,199 +58,167 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="GambleAware First-Install Lock-In Setup"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+      aria-label="Complete Mandatory 3-Step Protection Setup"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
     >
-      <div className="max-h-[92dvh] w-full max-w-[480px] overflow-y-auto rounded-[28px] border border-[var(--glass-border)] bg-[var(--surface)] p-5 text-[var(--ink)] shadow-2xl sm:p-6">
-        {/* Header Crest + Progress Dots */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <BrandAnchorMark className="h-9 w-9 shrink-0" />
-            <div>
-              <p className="font-mono text-[10px] font-semibold tracking-widest text-[var(--accent-ink)] uppercase">
-                Step {step} of 3 · Guided Lock-In
-              </p>
-              <p className="font-display text-sm font-bold text-[var(--ink)]">GambleAware Setup</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5" aria-hidden="true">
-            {[1, 2, 3].map((idx) => (
-              <span
-                key={idx}
-                className={`h-1.5 rounded-full transition-all duration-200 ${
-                  idx === step
-                    ? 'w-6 bg-[var(--active-fill)]'
-                    : idx < step
-                      ? 'w-2.5 bg-[var(--accent-ink)]'
-                      : 'w-2.5 bg-[var(--subtle-border)]'
-                }`}
-              />
-            ))}
+      <div className="max-h-[92dvh] w-full max-w-[520px] overflow-y-auto rounded-[28px] border border-[var(--glass-border)] bg-[var(--surface)] p-5 text-[var(--ink)] shadow-2xl sm:p-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <BrandAnchorMark className="h-10 w-10 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center rounded-full bg-[var(--active-fill)] px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-[var(--active-content)] uppercase">
+              Mandatory First-Launch Setup
+            </span>
+            <h2 className="mt-1 font-display text-xl leading-tight font-bold text-[var(--ink)] sm:text-2xl">
+              Complete Lock &amp; Shield Setup
+            </h2>
           </div>
         </div>
 
-        {/* STEP 1: Name Prompt */}
-        {step === 1 ? (
-          <form onSubmit={handleStep1Submit} className="mt-5">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--muted-fill)] px-3 py-1 text-[11px] font-semibold text-[var(--accent-ink)]">
-              <UserCheck className="h-3.5 w-3.5" />
-              <span>Zero Account · Stored Offline on Device</span>
-            </div>
+        <p className="mt-2.5 text-xs leading-relaxed text-[var(--ink-muted)]">
+          Enable all 3 layers right now so GambleAware immediately blocks betting sites while you
+          type and prevents impulsive uninstalls until your timer ends.
+        </p>
 
-            <h2 className="mt-3 font-display text-2xl leading-tight font-bold text-[var(--ink)]">
-              Who are we protecting today?
-            </h2>
-            <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-              Enter your first name so your clean streak, Naira savings, and block screen stay
-              personal to you. Next, we will automatically lock in Admin &amp; Uninstall Protection.
-            </p>
+        {/* Optional Personalization */}
+        <div className="mt-4">
+          <label
+            htmlFor="setup-first-name"
+            className="mb-1 block text-xs font-semibold text-[var(--ink)]"
+          >
+            Your First Name <span className="font-normal text-[var(--ink-muted)]">(Optional)</span>
+          </label>
+          <input
+            id="setup-first-name"
+            type="text"
+            maxLength={40}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter first name (e.g. Tunde)"
+            className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+          />
+        </div>
 
-            <label
-              htmlFor="setup-first-name"
-              className="mt-4 mb-1.5 block text-xs font-semibold text-[var(--ink)]"
+        {/* Mandatory 3 Steps */}
+        <div className="mt-4 space-y-2.5">
+          {/* Step 1: Enable Web & App Shield */}
+          <button
+            type="button"
+            onClick={() => {
+              setStepError(null);
+              onEnableShield();
+            }}
+            data-testid="mandatory-step-1"
+            className={`flex w-full cursor-pointer items-center gap-3 rounded-[16px] border p-3.5 text-left transition-colors ${
+              isShieldEnabled
+                ? 'border-[var(--active-fill)]/40 bg-[var(--muted-fill)]'
+                : 'border-[var(--subtle-border)] bg-[var(--canvas)] hover:bg-[var(--muted-fill)]'
+            }`}
+          >
+            <span
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
+                isShieldEnabled
+                  ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                  : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)]'
+              }`}
             >
-              Your First Name
-            </label>
-            <input
-              id="setup-first-name"
-              type="text"
-              maxLength={40}
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (nameError) setNameError(null);
-              }}
-              placeholder="Enter your first name (e.g. Tunde)"
-              autoFocus
-              className="h-12 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-4 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
-            />
-            {nameError ? (
-              <p className="mt-2 text-xs font-medium text-[var(--accent-ink)]">{nameError}</p>
-            ) : null}
-
-            <button
-              type="submit"
-              className="mt-5 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
-            >
-              <span>Continue to Admin Lock</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setName('');
-                setNameError(null);
-                setStep(2);
-              }}
-              className="mt-2.5 flex h-10 w-full cursor-pointer items-center justify-center rounded-full text-xs font-medium text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]"
-            >
-              Continue without name
-            </button>
-          </form>
-        ) : null}
-
-        {/* STEP 2: Automatic Admin & Shield Arming */}
-        {step === 2 ? (
-          <div className="mt-5">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--muted-fill)] px-3 py-1 text-[11px] font-semibold text-[var(--accent-ink)]">
-              <ShieldAlert className="h-3.5 w-3.5" />
-              <span>Required Before Entering App</span>
+              1
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[var(--ink)]">Enable Web &amp; App Shield</p>
+              <p className="text-xs text-[var(--ink-muted)]">
+                {isShieldEnabled
+                  ? 'Active • Instant typing & website shield ready'
+                  : 'Required — tap to activate real-time site & typing guard'}
+              </p>
             </div>
+            {isShieldEnabled ? (
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+            ) : (
+              <Circle className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
+            )}
+          </button>
 
-            <h2 className="mt-3 font-display text-2xl leading-tight font-bold text-[var(--ink)]">
-              {name.trim()
-                ? `${name.trim().split(/\s+/)[0]}, arm your Admin Lock`
-                : 'Arm Admin & Delete Protection'}
-            </h2>
-            <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-              GambleAware enables Uninstall &amp; Admin protection right now by default so an urge
-              later cannot undo your setup or delete the blocker.
-            </p>
-
-            <div className="mt-4 space-y-2.5">
-              {[
-                {
-                  title: 'Device Admin Delete Lock',
-                  desc: 'Prevents impulsive uninstallation on Android while your timer is active.',
-                },
-                {
-                  title: '639+ Betting Sites & 130+ Apps Blocked',
-                  desc: 'Sportsbooks, casinos, login pages, search queries, and social in-app links.',
-                },
-                {
-                  title: 'Anti-Tamper Settings Guard',
-                  desc: 'Blocks backing out or weakening rules once your lock is active.',
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-start gap-2.5 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3"
-                >
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
-                  <div>
-                    <p className="text-xs font-semibold text-[var(--ink)]">{item.title}</p>
-                    <p className="mt-0.5 text-[11px] leading-snug text-[var(--ink-muted)]">
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleArmAdminLock}
-              className="mt-5 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+          {/* Step 2: Enable Uninstall Lock (Device Admin) */}
+          <button
+            type="button"
+            onClick={() => {
+              setStepError(null);
+              onEnableDeviceAdmin();
+            }}
+            data-testid="mandatory-step-2"
+            className={`flex w-full cursor-pointer items-center gap-3 rounded-[16px] border p-3.5 text-left transition-colors ${
+              isDeviceAdminEnabled
+                ? 'border-[var(--active-fill)]/40 bg-[var(--muted-fill)]'
+                : 'border-[var(--subtle-border)] bg-[var(--canvas)] hover:bg-[var(--muted-fill)]'
+            }`}
+          >
+            <span
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
+                isDeviceAdminEnabled
+                  ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                  : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)]'
+              }`}
             >
-              <ShieldCheck className="h-4 w-4" />
-              <span>Activate Admin &amp; Shield Lock</span>
-            </button>
-          </div>
-        ) : null}
-
-        {/* STEP 3: Default Lock Duration — No Turning Back */}
-        {step === 3 ? (
-          <div className="mt-5">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--muted-fill)] px-3 py-1 text-[11px] font-semibold text-[var(--accent-ink)]">
-              <LockKeyhole className="h-3.5 w-3.5" />
-              <span>Admin Lock Armed · Final Step</span>
+              2
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[var(--ink)]">
+                Enable Uninstall Lock (Device Admin)
+              </p>
+              <p className="text-xs text-[var(--ink-muted)]">
+                {isDeviceAdminEnabled
+                  ? 'Active • Prevents impulsive deletion of GambleAware'
+                  : 'Required — tap to arm Anti-Uninstall & Admin protection'}
+              </p>
             </div>
+            {isDeviceAdminEnabled ? (
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+            ) : (
+              <Circle className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
+            )}
+          </button>
 
-            <h2 className="mt-3 font-display text-2xl leading-tight font-bold text-[var(--ink)]">
-              Lock it in so you cannot go back
-            </h2>
-            <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-              Choose your initial lock timer. Once confirmed, Admin &amp; Uninstall Lock cannot be
-              switched off until this countdown hits zero.
-            </p>
-
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold text-[var(--ink)]">Default Lock Duration</p>
-              <div className="grid grid-cols-2 gap-2">
-                {LOCK_DURATION_PRESETS.map((opt) => {
-                  const selected = lockDays === opt.days;
-                  return (
-                    <button
-                      key={opt.days}
-                      type="button"
-                      onClick={() => setLockDays(opt.days)}
-                      className={`h-11 cursor-pointer rounded-[14px] border px-3 text-xs font-semibold transition-colors ${
-                        selected
-                          ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                          : 'border-[var(--subtle-border)] bg-[var(--canvas)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
-                      }`}
-                    >
-                      {opt.days === 7 ? '7 Days (Default)' : opt.label}
-                    </button>
-                  );
-                })}
+          {/* Step 3: Set Commitment Lock Duration */}
+          <div className="rounded-[16px] border border-[var(--active-fill)]/40 bg-[var(--muted-fill)] p-3.5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--active-fill)] text-xs font-bold text-[var(--active-content)]">
+                3
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-[var(--ink)]">
+                  Set Commitment Lock Duration
+                </p>
+                <p className="text-xs text-[var(--ink-muted)]">
+                  Locks uninstall &amp; tamper controls until timer reaches 0
+                </p>
               </div>
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
             </div>
 
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold text-[var(--ink)]">
-                Daily Betting Spend Saved (₦)
+            <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              {LOCK_DURATION_PRESETS.map((opt) => {
+                const selected = lockDays === opt.days;
+                return (
+                  <button
+                    key={opt.days}
+                    type="button"
+                    onClick={() => setLockDays(opt.days)}
+                    className={`h-9 cursor-pointer rounded-[12px] border px-2.5 text-xs font-semibold transition-colors ${
+                      selected
+                        ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                        : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
+                    }`}
+                  >
+                    {opt.days === 7 ? '7 Days (Default)' : opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3">
+              <p className="mb-1.5 text-[11px] font-semibold text-[var(--ink-muted)]">
+                Daily Betting Spend Baseline (₦)
               </p>
               <div className="grid grid-cols-4 gap-1.5">
                 {DAILY_SPEND_OPTIONS_NGN.slice(0, 4).map((amt) => {
@@ -264,10 +228,10 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
                       key={amt}
                       type="button"
                       onClick={() => setDailySpendNgn(amt)}
-                      className={`h-10 cursor-pointer rounded-[12px] border font-mono text-xs font-semibold transition-colors ${
+                      className={`h-8 cursor-pointer rounded-[10px] border font-mono text-[11px] font-semibold transition-colors ${
                         selected
                           ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
-                          : 'border-[var(--subtle-border)] bg-[var(--canvas)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
+                          : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
                       }`}
                     >
                       {formatNaira(amt)}
@@ -276,18 +240,32 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
                 })}
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={handleFinalizeLockIn}
-              className="mt-5 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
-            >
-              <LockKeyhole className="h-4 w-4" />
-              <span>Lock In {formatLockDurationAdjective(lockDays)} Protection Now</span>
-            </button>
           </div>
+        </div>
+
+        {stepError ? (
+          <p className="mt-3 text-xs font-semibold text-[var(--accent-ink)]">{stepError}</p>
         ) : null}
+
+        <button
+          type="button"
+          onClick={handleFinalize}
+          data-testid="mandatory-complete-button"
+          className={`mt-4 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full text-sm font-semibold transition-opacity ${
+            canFinish
+              ? 'bg-[var(--active-fill)] text-[var(--active-content)] hover:opacity-90'
+              : 'border border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--ink-muted)]'
+          }`}
+        >
+          {canFinish ? <LockKeyhole className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+          <span>
+            {canFinish
+              ? `Activate ${formatLockDurationAdjective(lockDays)} Lock & Enter`
+              : 'Complete Steps 1 & 2 Above First'}
+          </span>
+        </button>
       </div>
     </div>
   );
 };
+

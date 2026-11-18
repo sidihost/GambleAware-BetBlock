@@ -42,11 +42,12 @@ interface ActivityScreenProps {
 
 const SOURCE_FILTERS: Array<{ value: string; label: string }> = [
   { value: 'All', label: 'All' },
+  { value: 'Typed URL Guard', label: 'Typed Sites' },
   { value: 'Web Shield', label: 'Websites' },
+  { value: 'Search Guard', label: 'Searches' },
   { value: 'In-App WebView', label: 'Social Links' },
   { value: 'App Shield', label: 'Phone Apps' },
   { value: 'Install Guard', label: 'App Installs' },
-  { value: 'AI Agent', label: 'GambleAware AI' },
 ];
 
 export const ActivityScreen: React.FC<ActivityScreenProps> = ({

@@ -424,7 +424,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           <LiquidGlassCard className="p-4 sm:p-5" tourKey="domain_lookup">
             <LiquidSectionHeader
               title="Check or Block a Website"
-              subtitle="Enter a betting website or sign-in link to check or test your block screen"
+              subtitle="Type a betting brand (e.g. sportybet) or URL — blocked immediately as you type"
             />
             <form
               onSubmit={(e) => {
@@ -436,12 +436,12 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               className="mt-3 flex flex-col gap-2 sm:flex-row"
             >
               <div className="relative flex-1">
-                <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--ink-muted)]" />
+                <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--accent-ink)]" />
                 <input
                   type="text"
                   value={state.domainLookupQuery}
                   onChange={(e) => onDomainLookupChanged(e.target.value)}
-                  placeholder="Enter a website or link to check"
+                  placeholder="Type sportybet, bet9ja, stake.c, or full URL"
                   className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--surface)]/70 pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
                 />
                 {state.domainLookupQuery ? (
@@ -465,6 +465,19 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               </button>
             </form>
 
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {['sportybet', 'bet365.com', 'betterhelp.com'].map((sample) => (
+                <button
+                  key={sample}
+                  type="button"
+                  onClick={() => onDomainLookupChanged(sample)}
+                  className="cursor-pointer rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-1 text-[11px] font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                >
+                  {sample}
+                </button>
+              ))}
+            </div>
+
             {state.domainLookupResult ? (
               <div
                 className={`mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-[var(--subtle-border)] p-3.5 ${
@@ -482,13 +495,13 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   <div className="min-w-0">
                     <p className="text-sm font-semibold">
                       {state.domainLookupResult.isBlocked
-                        ? `Blocked (${GAMBLING_CATEGORY_META[state.domainLookupResult.category].displayName})`
-                        : 'Not Blocked Yet'}
+                        ? `Blocked Immediately (${GAMBLING_CATEGORY_META[state.domainLookupResult.category].displayName})`
+                        : 'Allowed (Safe / Non-Gambling)'}
                     </p>
                     <p className="truncate text-xs opacity-85">
                       {state.domainLookupResult.isBlocked
-                        ? `${state.domainLookupResult.matchedTarget} • Redirects safely when opened`
-                        : 'Tap Block Site to stop this website from opening.'}
+                        ? `${state.domainLookupResult.matchedTarget} • ${state.domainLookupResult.reason}`
+                        : 'Tap Block Site if this is a custom betting domain.'}
                     </p>
                   </div>
                 </div>
@@ -514,6 +527,91 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 ) : null}
               </div>
             ) : null}
+          </LiquidGlassCard>
+
+          {/* Blocked Betting Sites & Apps Summary Card */}
+          <LiquidGlassCard className="p-4 sm:p-5">
+            <LiquidSectionHeader
+              title="Blocked Betting Sites & Apps"
+              subtitle={
+                state.recentEvents.length > 0
+                  ? `${state.totalBlockedCount} blocked attempts • Latest intercepted sites shown below`
+                  : `${state.builtInDomainCount}+ betting websites & 130+ betting apps blocked automatically`
+              }
+            />
+
+            {state.recentEvents.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {state.recentEvents.slice(0, 5).map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex items-center justify-between gap-2.5 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-2.5"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--active-fill)] text-[var(--active-content)]">
+                        <Ban className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold text-[var(--ink)]">{event.target}</p>
+                        <p className="truncate text-[11px] text-[var(--ink-muted)]">
+                          {event.source} • {event.categoryName} •{' '}
+                          {new Date(event.timestamp).toLocaleTimeString([], {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-[var(--active-fill)]/15 px-2.5 py-0.5 text-[10px] font-bold text-[var(--accent-ink)]">
+                      Blocked
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mt-3">
+              <p className="text-[10px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
+                Default Blocked Betting Sites ({state.builtInDomainCount}+)
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {[
+                  'sportybet.com',
+                  'bet9ja.com',
+                  'betking.com',
+                  '1xbet.com',
+                  'bet365.com',
+                  'stake.com',
+                ].map((domain) => (
+                  <span
+                    key={domain}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink)]"
+                  >
+                    <Ban className="h-3 w-3 text-[var(--accent-ink)]" />
+                    <span>{domain}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {state.recentEvents.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={onNavigateToProgress}
+                  className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                >
+                  View Full Log ({state.totalBlockedCount})
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={onNavigateToRules}
+                className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+              >
+                Browse Blocklist
+              </button>
+            </div>
           </LiquidGlassCard>
 
           {/* Smart High-Risk Schedule Guard */}

@@ -14,6 +14,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,24 +28,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -50,6 +62,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -67,13 +80,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -86,6 +101,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.service.AnchorDeviceAdminReceiver
 import com.example.service.GambleAwareNotifications
 import com.example.ui.BlockedInterventionActivity
+import com.example.ui.MainUiState
 import com.example.ui.MainViewModel
 import com.example.ui.components.LiquidFloatingNavBar
 import com.example.ui.components.LiquidGlassBackdrop
@@ -289,49 +305,80 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
     }
 
     AnchorTheme(themeMode = state.settings.themeMode) {
+        val liquid = LocalLiquidColors.current
         CompositionLocalProvider(LocalTourTargets provides tourRegistry) {
             LiquidGlassBackdrop(isProtected = state.isFullyArmed) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .statusBarsPadding(),
-                    ) {
-                        val navBarReserve = 96.dp
-
-                        NavHost(
-                            navController = navController,
-                            startDestination = AnchorRoutes.SHIELD,
-                            modifier = Modifier.fillMaxSize(),
+                if (!state.settings.hasCompletedInitialSetup) {
+                    MandatoryThreeStepSetupScreen(
+                        state = state,
+                        onOpenAccessibilitySettings = { showAccessibilityDisclosure = true },
+                        onRequestDeviceAdmin = {
+                            deviceAdminLauncher.launch(
+                                AnchorDeviceAdminReceiver.buildEnableAdminIntent(context),
+                            )
+                        },
+                        onCompleteSetup = { name, days ->
+                            viewModel.completeInitialSetup(name, days)
+                        },
+                    )
+                } else {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding(),
                         ) {
-                            composable(AnchorRoutes.SHIELD) {
-                                ShieldScreen(
-                                    state = state,
-                                    onPrimaryShieldClick = {
-                                        when {
-                                            !state.isAccessibilityEnabled -> showAccessibilityDisclosure = true
-                                            state.settings.isProtectionEnabled -> guardRestrictedAction {
-                                                viewModel.disableProtection()
+                            val navBarReserve = 96.dp
+
+                            NavHost(
+                                navController = navController,
+                                startDestination = AnchorRoutes.SHIELD,
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                composable(AnchorRoutes.SHIELD) {
+                                    ShieldScreen(
+                                        state = state,
+                                        onPrimaryShieldClick = {
+                                            when {
+                                                !state.isAccessibilityEnabled -> showAccessibilityDisclosure = true
+                                                state.settings.isProtectionEnabled -> guardRestrictedAction {
+                                                    viewModel.disableProtection()
+                                                }
+                                                else -> viewModel.enableProtection()
                                             }
-                                            else -> viewModel.enableProtection()
-                                        }
-                                    },
-                                    onEnableAccessibility = { showAccessibilityDisclosure = true },
-                                    onRequestDeviceAdmin = { requestDeviceAdminToggle() },
-                                    onOpenPrivateDnsSettings = { openNetworkDnsSettings() },
-                                    onTestQueryChanged = { viewModel.updateTestQuery(it) },
-                                    onNavigateToLock = {
-                                        navController.navigate(AnchorRoutes.LOCK) {
-                                            launchSingleTop = true
-                                        }
-                                    },
-                                    onLaunchCalmReset = { launchSosCalmReset() },
-                                    onOpenUrgeJournal = { showUrgeJournalSheet = true },
-                                    onOpenSafeSupport = { showSafeSupportSheet = true },
-                                    activeTourKey = activeTourKey,
-                                    bottomContentPadding = navBarReserve,
-                                )
-                            }
+                                        },
+                                        onEnableAccessibility = { showAccessibilityDisclosure = true },
+                                        onRequestDeviceAdmin = { requestDeviceAdminToggle() },
+                                        onOpenPrivateDnsSettings = { openNetworkDnsSettings() },
+                                        onTestQueryChanged = { viewModel.updateTestQuery(it) },
+                                        onNavigateToBlocklist = {
+                                            navController.navigate(AnchorRoutes.BLOCKLIST) {
+                                                popUpTo(AnchorRoutes.SHIELD) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        },
+                                        onNavigateToActivity = {
+                                            navController.navigate(AnchorRoutes.ACTIVITY) {
+                                                popUpTo(AnchorRoutes.SHIELD) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        },
+                                        onNavigateToLock = {
+                                            navController.navigate(AnchorRoutes.LOCK) {
+                                                popUpTo(AnchorRoutes.SHIELD) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        },
+                                        onLaunchCalmReset = { launchSosCalmReset() },
+                                        onOpenUrgeJournal = { showUrgeJournalSheet = true },
+                                        onOpenSafeSupport = { showSafeSupportSheet = true },
+                                        activeTourKey = activeTourKey,
+                                        bottomContentPadding = navBarReserve,
+                                    )
+                                }
 
                             composable(AnchorRoutes.BLOCKLIST) {
                                 BlocklistScreen(
@@ -467,7 +514,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                     Icon(
                                         imageVector = Icons.Rounded.Info,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        tint = liquid.accentInk,
                                         modifier = Modifier.size(18.dp),
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -519,455 +566,738 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                     }
                 }
             }
+
+            if (showUrgeJournalSheet) {
+                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                val triggerOptions = listOf("Matchday", "Boredom", "Stress", "Promo Ad", "Late Night", "Payday")
+                var selectedTrigger by remember { mutableStateOf(triggerOptions.first()) }
+                var urgeNote by remember { mutableStateOf("") }
+
+                ModalBottomSheet(
+                    onDismissRequest = { showUrgeJournalSheet = false },
+                    sheetState = sheetState,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    tonalElevation = 0.dp,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .padding(bottom = 28.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = null,
+                                tint = liquid.accentInk,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Log a Resisted Urge",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Every craving you notice and let pass strengthens your recovery.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            text = "What triggered the urge?",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            triggerOptions.forEach { trigger ->
+                                val selected = selectedTrigger == trigger
+                                LiquidGlassCard(
+                                    cornerRadius = 50.dp,
+                                    fillColor = if (selected) liquid.activeFill else liquid.mutedFill,
+                                    borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
+                                    contentPadding = 0.dp,
+                                    onClick = { selectedTrigger = trigger },
+                                    modifier = Modifier.testTag("urge_trigger_$trigger"),
+                                ) {
+                                    Text(
+                                        text = trigger,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = if (selected) liquid.activeContent else liquid.mutedContent,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(14.dp))
+                        OutlinedTextField(
+                            value = urgeNote,
+                            onValueChange = { urgeNote = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("urge_note_input"),
+                            placeholder = { Text("Optional note (e.g. walked away during halftime)") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = liquid.activeFill,
+                                unfocusedBorderColor = liquid.subtleBorder,
+                                focusedLabelColor = liquid.accentInk,
+                                cursorColor = liquid.activeFill,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                viewModel.logUrgeResisted(selectedTrigger, urgeNote)
+                                showUrgeJournalSheet = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .testTag("save_urge_victory_button"),
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = liquid.activeFill,
+                                contentColor = liquid.activeContent,
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                        ) {
+                            Text("Save Resisted Victory")
+                        }
+                    }
+                }
+            }
+
+            if (showSafeSupportSheet) {
+                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                val supportLinks = listOf(
+                    Triple("Mentally Aware Nigeria (MANI)", "Confidential Nigerian support & counselling", "https://mentallyaware.org"),
+                    Triple("NLRC Responsible Gaming", "National Lottery Regulatory Commission Nigeria", "https://nlrc-gov.ng"),
+                    Triple("LSLGA Responsible Gaming", "Lagos State Lotteries & Gaming Authority", "https://lslga.lg.gov.ng"),
+                    Triple("GambleAware Support", "Confidential guidance to stay betting-free", "https://www.begambleaware.org"),
+                    Triple("Gamblers Anonymous", "Peer support groups & meetings worldwide", "https://www.gamblersanonymous.org"),
+                )
+
+                ModalBottomSheet(
+                    onDismissRequest = { showSafeSupportSheet = false },
+                    sheetState = sheetState,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    tonalElevation = 0.dp,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .padding(bottom = 28.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Rounded.FavoriteBorder,
+                                contentDescription = null,
+                                tint = liquid.accentInk,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Confidential Recovery Support",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        Text(
+                            text = "These trusted recovery websites are always allowlisted by GambleAware's safe-support guard.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        supportLinks.forEach { (title, subtitle, url) ->
+                            LiquidGlassCard(
+                                cornerRadius = 18.dp,
+                                fillColor = liquid.mutedFill,
+                                borderColor = liquid.subtleBorder,
+                                contentPadding = 14.dp,
+                                onClick = {
+                                    runCatching {
+                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                    }
+                                },
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = title,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = liquid.mutedContent,
+                                        )
+                                        Text(
+                                            text = subtitle,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                                        contentDescription = "Open $title",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = liquid.accentInk,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (showAccessibilityDisclosure) {
+                AlertDialog(
+                    onDismissRequest = { showAccessibilityDisclosure = false },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    shape = RoundedCornerShape(26.dp),
+                    title = {
+                        Text(
+                            text = "Enable GambleAware Shield",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = "GambleAware (by Imoogle Technology) uses Android Accessibility Service strictly on your device to:\n\n" +
+                                "1. Block gambling websites, search queries, Custom Tabs, and in-app WebViews immediately as you type.\n" +
+                                "2. Detect and close installed betting apps immediately.\n" +
+                                "3. Enforce your Commitment Lock & prevent uninstalling GambleAware until your timer ends.\n\n" +
+                                "No VPN is used, and zero personal data or browsing history leaves your phone.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showAccessibilityDisclosure = false
+                                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            },
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = liquid.activeFill,
+                                contentColor = liquid.activeContent,
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                            modifier = Modifier.testTag("confirm_open_accessibility_settings"),
+                        ) {
+                            Text("Open Settings")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showAccessibilityDisclosure = false },
+                            colors = ButtonDefaults.textButtonColors(contentColor = liquid.accentInk),
+                        ) {
+                            Text("Later")
+                        }
+                    },
+                )
+            }
+
+            if (showTimeLockedNotice) {
+                AlertDialog(
+                    onDismissRequest = { showTimeLockedNotice = false },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    shape = RoundedCornerShape(26.dp),
+                    title = {
+                        Text(
+                            text = "Commitment Lock Active",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = "This control is protected by your GambleAware Commitment Lock (${state.lockCountdownFormatted} remaining). Uninstalling, pausing protection, or weakening blocklists stays locked until the timer completes.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { showTimeLockedNotice = false },
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = liquid.activeFill,
+                                contentColor = liquid.activeContent,
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                        ) {
+                            Text("Understood")
+                        }
+                    },
+                )
+            }
+
+            if (pendingPinAction != null) {
+                var pinAttempt by remember { mutableStateOf("") }
+                var pinError by remember { mutableStateOf<String?>(null) }
+
+                AlertDialog(
+                    onDismissRequest = { pendingPinAction = null },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    shape = RoundedCornerShape(26.dp),
+                    title = {
+                        Text(
+                            text = "Enter Accountability PIN",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    },
+                    text = {
+                        Column {
+                            Text(
+                                text = "Enter your 4-digit Accountability PIN to authorize this change.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            OutlinedTextField(
+                                value = pinAttempt,
+                                onValueChange = {
+                                    if (it.length <= 4 && it.all(Char::isDigit)) {
+                                        pinAttempt = it
+                                        pinError = null
+                                    }
+                                },
+                                label = { Text("4-Digit PIN") },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = liquid.activeFill,
+                                    unfocusedBorderColor = liquid.subtleBorder,
+                                    focusedLabelColor = liquid.accentInk,
+                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    cursorColor = liquid.activeFill,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp)
+                                    .testTag("verify_pin_input"),
+                            )
+                            if (pinError != null) {
+                                Text(
+                                    text = pinError!!,
+                                    color = liquid.accentInk,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(top = 6.dp),
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                if (viewModel.verifyPin(pinAttempt)) {
+                                    val action = pendingPinAction
+                                    pendingPinAction = null
+                                    action?.invoke(pinAttempt)
+                                } else {
+                                    pinError = "Incorrect PIN"
+                                }
+                            },
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = liquid.activeFill,
+                                contentColor = liquid.activeContent,
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                            modifier = Modifier.testTag("confirm_pin_action"),
+                        ) {
+                            Text("Unlock")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { pendingPinAction = null },
+                            colors = ButtonDefaults.textButtonColors(contentColor = liquid.accentInk),
+                        ) {
+                            Text("Cancel")
+                        }
+                    },
+                )
+            }
         }
     }
+}
 
-    if (showUrgeJournalSheet) {
-        val liquid = LocalLiquidColors.current
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        val triggerOptions = listOf("Matchday", "Boredom", "Stress", "Promo Ad", "Late Night", "Payday")
-        var selectedTrigger by remember { mutableStateOf(triggerOptions.first()) }
-        var urgeNote by remember { mutableStateOf("") }
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MandatoryThreeStepSetupScreen(
+    state: MainUiState,
+    onOpenAccessibilitySettings: () -> Unit,
+    onRequestDeviceAdmin: () -> Unit,
+    onCompleteSetup: (name: String, lockDays: Int) -> Unit,
+) {
+    val liquid = LocalLiquidColors.current
+    var setupName by remember { mutableStateOf(state.settings.preferredName) }
+    var setupLockDays by remember { mutableIntStateOf(7) }
+    val scrollState = rememberScrollState()
 
-        ModalBottomSheet(
-            onDismissRequest = { showUrgeJournalSheet = false },
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
-            tonalElevation = 0.dp,
+    val step1Done = state.isAccessibilityEnabled
+    val step2Done = state.isDeviceAdminEnabled
+    val step3Ready = step1Done && step2Done
+
+    val durationAdjective = when (setupLockDays) {
+        1 -> "24-Hour"
+        180 -> "6-Month"
+        365 -> "1-Year"
+        730 -> "2-Year"
+        else -> "${setupLockDays}-Day"
+    }
+
+    val durationLabel = when (setupLockDays) {
+        1 -> "24 Hours"
+        180 -> "6 Months"
+        365 -> "1 Year"
+        730 -> "2 Years"
+        else -> "$setupLockDays Days"
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .safeDrawingPadding()
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        LiquidGlassCard(
+            modifier = Modifier
+                .widthIn(max = 520.dp)
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+                .testTag("mandatory_setup_gate"),
+            cornerRadius = 28.dp,
+            contentPadding = 22.dp,
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 28.dp),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(liquid.activeFill),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Icon(
-                        imageVector = Icons.Rounded.CheckCircle,
+                        imageVector = Icons.Rounded.VerifiedUser,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Log a Resisted Urge",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        tint = liquid.activeContent,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Every craving you notice and let pass strengthens your recovery.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                Text(
-                    text = "What triggered the urge?",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "MANDATORY SETUP • 3 STEPS",
+                        style = MaterialTheme.typography.labelSmall,
+                        letterSpacing = 1.sp,
+                        color = liquid.accentInk,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "Complete Lock & Shield Setup",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Enable all 3 layers immediately so betting sites are blocked while typing and GambleAware cannot be uninstalled until your timer ends.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            OutlinedTextField(
+                value = setupName,
+                onValueChange = { setupName = it.take(40) },
+                label = { Text("First Name (Optional)") },
+                placeholder = { Text("Personalize your shield greeting") },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = liquid.activeFill,
+                    unfocusedBorderColor = liquid.subtleBorder,
+                    focusedLabelColor = liquid.accentInk,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    cursorColor = liquid.activeFill,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("initial_setup_name_input"),
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Mandatory Step 1
+            MandatorySetupStepCard(
+                step = "1",
+                title = "Enable Web & App Shield",
+                subtitle = if (step1Done) {
+                    "Active • Blocks betting sites while typing, WebViews & apps"
+                } else {
+                    "Required first: tap to enable GambleAware in Accessibility Settings"
+                },
+                done = step1Done,
+                onClick = onOpenAccessibilitySettings,
+                testTag = "onboarding_step_shield",
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Mandatory Step 2
+            MandatorySetupStepCard(
+                step = "2",
+                title = "Enable Uninstall Lock (Device Admin)",
+                subtitle = if (step2Done) {
+                    "Active • Prevents direct uninstall of GambleAware"
+                } else {
+                    "Required: tap to enable Android Device Admin protection"
+                },
+                done = step2Done,
+                onClick = onRequestDeviceAdmin,
+                testTag = "onboarding_step_admin",
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Mandatory Step 3
+            LiquidGlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("onboarding_step_timer"),
+                cornerRadius = 18.dp,
+                fillColor = if (step3Ready) liquid.mutedFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                borderColor = if (step3Ready) liquid.activeFill else liquid.subtleBorder,
+                contentPadding = 14.dp,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(if (step3Ready) liquid.activeFill else MaterialTheme.colorScheme.surface)
+                            .border(1.dp, if (step3Ready) liquid.activeFill else liquid.subtleBorder, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "3",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (step3Ready) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Set Commitment Lock Duration",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Text(
+                            text = "Selected: $durationLabel • Locks uninstall & tamper controls until timer reaches 0",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Icon(
+                        imageVector = if (step3Ready) Icons.Rounded.CheckCircle else Icons.Rounded.Timer,
+                        contentDescription = null,
+                        tint = if (step3Ready) liquid.activeFill else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    triggerOptions.forEach { trigger ->
-                        val selected = selectedTrigger == trigger
+                    listOf(
+                        1 to "24 Hours",
+                        7 to "7 Days",
+                        30 to "30 Days",
+                        90 to "90 Days",
+                        180 to "6 Months",
+                        365 to "1 Year",
+                        730 to "2 Years",
+                    ).forEach { (days, label) ->
+                        val selected = setupLockDays == days
                         LiquidGlassCard(
                             cornerRadius = 50.dp,
-                            fillColor = if (selected) liquid.activeFill else liquid.mutedFill,
+                            fillColor = if (selected) liquid.activeFill else MaterialTheme.colorScheme.surface,
                             borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
                             contentPadding = 0.dp,
-                            onClick = { selectedTrigger = trigger },
-                            modifier = Modifier.testTag("urge_trigger_$trigger"),
+                            onClick = { setupLockDays = days },
                         ) {
                             Text(
-                                text = trigger,
+                                text = label,
                                 style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                                 color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                             )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(14.dp))
-                OutlinedTextField(
-                    value = urgeNote,
-                    onValueChange = { urgeNote = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("urge_note_input"),
-                    placeholder = { Text("Optional note (e.g. walked away during halftime)") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = liquid.subtleBorder,
-                    ),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        viewModel.logUrgeResisted(selectedTrigger, urgeNote)
-                        showUrgeJournalSheet = false
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    when {
+                        !step1Done -> onOpenAccessibilitySettings()
+                        !step2Done -> onRequestDeviceAdmin()
+                        else -> onCompleteSetup(setupName, setupLockDays)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .testTag("initial_setup_confirm_button"),
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = liquid.activeFill,
+                    contentColor = liquid.activeContent,
+                ),
+                elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+            ) {
+                Icon(
+                    imageVector = when {
+                        !step1Done -> Icons.Rounded.Shield
+                        !step2Done -> Icons.Rounded.AdminPanelSettings
+                        else -> Icons.Rounded.Lock
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .testTag("save_urge_victory_button"),
-                    shape = RoundedCornerShape(50),
-                    elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
-                ) {
-                    Text("Save Resisted Victory")
-                }
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = when {
+                        !step1Done -> "Step 1 of 3: Enable Web & App Shield"
+                        !step2Done -> "Step 2 of 3: Enable Uninstall Lock"
+                        else -> "Lock In $durationAdjective Protection & Enter"
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
+}
 
-    if (showSafeSupportSheet) {
-        val liquid = LocalLiquidColors.current
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        val supportLinks = listOf(
-            Triple("Mentally Aware Nigeria (MANI)", "Confidential Nigerian support & counselling", "https://mentallyaware.org"),
-            Triple("NLRC Responsible Gaming", "National Lottery Regulatory Commission Nigeria", "https://nlrc-gov.ng"),
-            Triple("LSLGA Responsible Gaming", "Lagos State Lotteries & Gaming Authority", "https://lslga.lg.gov.ng"),
-            Triple("GambleAware Support", "Confidential guidance to stay betting-free", "https://www.begambleaware.org"),
-            Triple("Gamblers Anonymous", "Peer support groups & meetings worldwide", "https://www.gamblersanonymous.org"),
-        )
-
-        ModalBottomSheet(
-            onDismissRequest = { showSafeSupportSheet = false },
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
-            tonalElevation = 0.dp,
+@Composable
+private fun MandatorySetupStepCard(
+    step: String,
+    title: String,
+    subtitle: String,
+    done: Boolean,
+    onClick: () -> Unit,
+    testTag: String,
+) {
+    val liquid = LocalLiquidColors.current
+    LiquidGlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(testTag),
+        cornerRadius = 18.dp,
+        fillColor = if (done) liquid.mutedFill else MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+        borderColor = if (done) liquid.activeFill else liquid.subtleBorder,
+        contentPadding = 14.dp,
+        onClick = onClick,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(if (done) liquid.activeFill else MaterialTheme.colorScheme.surface)
+                    .border(1.dp, if (done) liquid.activeFill else liquid.subtleBorder, CircleShape),
+                contentAlignment = Alignment.Center,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Rounded.FavoriteBorder,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Confidential Recovery Support",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
                 Text(
-                    text = "These trusted recovery websites are always allowlisted by GambleAware's safe-support guard.",
+                    text = step,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (done) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                supportLinks.forEach { (title, subtitle, url) ->
-                    LiquidGlassCard(
-                        cornerRadius = 18.dp,
-                        fillColor = liquid.mutedFill,
-                        borderColor = liquid.subtleBorder,
-                        contentPadding = 14.dp,
-                        onClick = {
-                            runCatching {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                            }
-                        },
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = title,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                                Text(
-                                    text = subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
-                                contentDescription = "Open $title",
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-                    }
-                }
             }
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = if (done) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                contentDescription = if (done) "Completed" else "Pending",
+                tint = if (done) liquid.activeFill else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
         }
-    }
-
-    if (showAccessibilityDisclosure) {
-        AlertDialog(
-            onDismissRequest = { showAccessibilityDisclosure = false },
-            title = { Text("Enable GambleAware Shield") },
-            text = {
-                Text(
-                    "GambleAware (by Imoogle Technology) uses Android Accessibility Service strictly on your device to:\n\n" +
-                        "1. Block gambling websites, search queries, Custom Tabs, and in-app WebViews across browsers.\n" +
-                        "2. Detect and close installed betting apps immediately.\n" +
-                        "3. Enforce your Commitment Lock & prevent uninstalling GambleAware until your timer ends.\n\n" +
-                        "No VPN is used, and zero personal data or browsing history leaves your phone.",
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showAccessibilityDisclosure = false
-                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    },
-                    modifier = Modifier.testTag("confirm_open_accessibility_settings"),
-                ) {
-                    Text("Open Settings")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAccessibilityDisclosure = false }) {
-                    Text("Later")
-                }
-            },
-        )
-    }
-
-    if (showTimeLockedNotice) {
-        AlertDialog(
-            onDismissRequest = { showTimeLockedNotice = false },
-            title = { Text("Commitment Lock Active") },
-            text = {
-                Text(
-                    "This control is protected by your GambleAware Commitment Lock (${state.lockCountdownFormatted} remaining). Uninstalling, pausing protection, or weakening blocklists stays locked until the timer completes.",
-                )
-            },
-            confirmButton = {
-                Button(onClick = { showTimeLockedNotice = false }) {
-                    Text("Understood")
-                }
-            },
-        )
-    }
-
-    // Mandatory Undismissable First-Install Flow:
-    // 1. Name prompt -> 2. Automatic Device Admin prompt -> 3. Accessibility Shield -> 4. Default Lock-In
-    if (!state.settings.hasCompletedInitialSetup) {
-        var setupName by remember { mutableStateOf(state.settings.preferredName) }
-        var setupStep by remember { mutableIntStateOf(1) }
-        var setupLockDays by remember { mutableIntStateOf(7) }
-
-        LaunchedEffect(state.isDeviceAdminEnabled, state.isAccessibilityEnabled, setupStep) {
-            if (setupStep == 2 && state.isDeviceAdminEnabled) {
-                setupStep = if (state.isAccessibilityEnabled) 4 else 3
-            } else if (setupStep == 3 && state.isAccessibilityEnabled) {
-                setupStep = 4
-            }
-        }
-
-        val currentStep = when {
-            setupStep == 1 -> 1
-            !state.isDeviceAdminEnabled -> 2
-            !state.isAccessibilityEnabled -> 3
-            else -> 4
-        }
-
-        AlertDialog(
-            onDismissRequest = { /* Mandatory setup cannot be bypassed */ },
-            properties = DialogProperties(
-                dismissOnBackPress = false,
-                dismissOnClickOutside = false,
-            ),
-            title = {
-                Text(
-                    when (currentStep) {
-                        1 -> "Who Are We Protecting?"
-                        2 -> "Enable Uninstall & Admin Lock"
-                        3 -> "Turn On Blocker Service"
-                        else -> "Lock Protection In"
-                    },
-                )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    when (currentStep) {
-                        1 -> {
-                            Text(
-                                "Enter your first name so your home screen stays personal. Next, GambleAware prompts for Android Device Admin so uninstalling or pausing protection cannot be done impulsively.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            OutlinedTextField(
-                                value = setupName,
-                                onValueChange = { setupName = it.take(40) },
-                                label = { Text("First Name (Optional)") },
-                                singleLine = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .testTag("initial_setup_name_input"),
-                            )
-                        }
-                        2 -> {
-                            Text(
-                                "Required before using GambleAware: turn on Android Device Admin so nobody can quickly uninstall the blocker.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                        3 -> {
-                            Text(
-                                "Now enable GambleAware inside Accessibility Settings so it blocks betting websites, search queries, and installed betting apps across your whole phone.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                        else -> {
-                            Text(
-                                "Pick your default Commitment Lock duration. Once locked, neither Device Admin nor blocking can be turned off until the timer ends.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                listOf(
-                                    1 to "24 Hours",
-                                    7 to "7 Days",
-                                    30 to "30 Days",
-                                    90 to "90 Days",
-                                    180 to "6 Months",
-                                    365 to "1 Year",
-                                    730 to "2 Years",
-                                ).forEach { (days, label) ->
-                                    val selected = setupLockDays == days
-                                    val liquid = LocalLiquidColors.current
-                                    LiquidGlassCard(
-                                        cornerRadius = 50.dp,
-                                        fillColor = if (selected) liquid.activeFill else liquid.mutedFill,
-                                        borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
-                                        contentPadding = 0.dp,
-                                        onClick = { setupLockDays = days },
-                                    ) {
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                val setupButtonAdj = when (setupLockDays) {
-                    1 -> "24-Hour"
-                    180 -> "6-Month"
-                    365 -> "1-Year"
-                    730 -> "2-Year"
-                    else -> "${setupLockDays}-Day"
-                }
-                Button(
-                    onClick = {
-                        when (currentStep) {
-                            1 -> {
-                                viewModel.setPreferredName(setupName)
-                                setupStep = 2
-                                if (!state.isDeviceAdminEnabled) {
-                                    deviceAdminLauncher.launch(AnchorDeviceAdminReceiver.buildEnableAdminIntent(context))
-                                } else if (!state.isAccessibilityEnabled) {
-                                    context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                                }
-                            }
-                            2 -> {
-                                deviceAdminLauncher.launch(AnchorDeviceAdminReceiver.buildEnableAdminIntent(context))
-                            }
-                            3 -> {
-                                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                            }
-                            else -> {
-                                viewModel.completeInitialSetup(setupName, setupLockDays)
-                            }
-                        }
-                    },
-                    modifier = Modifier.testTag("initial_setup_confirm_button"),
-                ) {
-                    Text(
-                        when (currentStep) {
-                            1 -> "Continue & Arm Admin Lock"
-                            2 -> "Activate Device Admin"
-                            3 -> "Open Accessibility Settings"
-                            else -> "Lock In $setupButtonAdj Shield"
-                        },
-                    )
-                }
-            },
-        )
-    }
-
-    if (pendingPinAction != null) {
-        var pinAttempt by remember { mutableStateOf("") }
-        var pinError by remember { mutableStateOf<String?>(null) }
-
-        AlertDialog(
-            onDismissRequest = { pendingPinAction = null },
-            title = { Text("Enter Accountability PIN") },
-            text = {
-                Column {
-                    Text(
-                        text = "Enter your 4-digit Accountability PIN to authorize this change.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    OutlinedTextField(
-                        value = pinAttempt,
-                        onValueChange = { if (it.length <= 4 && it.all(Char::isDigit)) pinAttempt = it },
-                        label = { Text("4-Digit PIN") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp)
-                            .testTag("verify_pin_input"),
-                    )
-                    if (pinError != null) {
-                        Text(
-                            text = pinError!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 6.dp),
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (viewModel.verifyPin(pinAttempt)) {
-                            val action = pendingPinAction
-                            pendingPinAction = null
-                            action?.invoke(pinAttempt)
-                        } else {
-                            pinError = "Incorrect PIN"
-                        }
-                    },
-                    modifier = Modifier.testTag("confirm_pin_action"),
-                ) {
-                    Text("Unlock")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingPinAction = null }) {
-                    Text("Cancel")
-                }
-            },
-        )
     }
 }

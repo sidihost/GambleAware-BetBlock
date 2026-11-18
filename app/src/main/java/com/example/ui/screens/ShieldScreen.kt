@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.ui.MainUiState
 import com.example.ui.components.LiquidGlassCard
@@ -73,6 +74,8 @@ import com.example.ui.components.tourTarget
 import com.example.ui.theme.LocalLiquidColors
 import com.example.ui.theme.MonoFontFamily
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -84,6 +87,8 @@ fun ShieldScreen(
     onRequestDeviceAdmin: () -> Unit,
     onOpenPrivateDnsSettings: () -> Unit,
     onTestQueryChanged: (String) -> Unit,
+    onNavigateToBlocklist: () -> Unit,
+    onNavigateToActivity: () -> Unit,
     onNavigateToLock: () -> Unit,
     onLaunchCalmReset: () -> Unit,
     onOpenUrgeJournal: () -> Unit,
@@ -103,11 +108,11 @@ fun ShieldScreen(
         when (activeTourKey) {
             TourTargetKeys.SHIELD_ORB -> listState.animateScrollToItem(0)
             TourTargetKeys.SOS_CALM_BAR -> {
-                val sosIdx = if (showQuickOnboarding) 3 else 2
+                val sosIdx = if (showQuickOnboarding) 4 else 3
                 listState.animateScrollToItem(sosIdx)
             }
             TourTargetKeys.FILTER_TESTER -> {
-                val testerIdx = if (showQuickOnboarding) 5 else 4
+                val testerIdx = if (showQuickOnboarding) 6 else 5
                 listState.animateScrollToItem(testerIdx)
             }
         }
@@ -365,7 +370,172 @@ fun ShieldScreen(
                 }
             }
 
-            // Item 2/3: SOS Recovery Toolkit (60s Calm Reset, Log Urge, Safe Support)
+            // Item 2/3: Blocked Betting Sites & Apps Summary Card
+            item {
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 18.dp,
+                ) {
+                    LiquidSectionHeader(
+                        title = "Blocked Betting Sites & Apps",
+                        subtitle = if (state.recentEvents.isNotEmpty()) {
+                            "${state.totalBlockedCount} blocked attempts • Latest intercepted betting sites shown below"
+                        } else {
+                            "${state.builtInDomainCount}+ betting websites & 130+ betting apps blocked automatically"
+                        },
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (state.recentEvents.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            state.recentEvents.take(5).forEach { event ->
+                                val timeText = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
+                                    .format(Date(event.timestamp))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(liquid.mutedFill)
+                                        .border(1.dp, liquid.subtleBorder, RoundedCornerShape(16.dp))
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(liquid.activeFill),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Block,
+                                            contentDescription = null,
+                                            tint = liquid.activeContent,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = event.target,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Text(
+                                            text = "${event.source} • ${event.categoryName} • $timeText",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(50))
+                                            .background(liquid.activeFill.copy(alpha = 0.14f))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    ) {
+                                        Text(
+                                            text = "Blocked",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = liquid.accentInk,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    Text(
+                        text = "DEFAULT BLOCKED BETTING SITES (${state.builtInDomainCount}+)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val sampleBlockedSites = listOf(
+                        "sportybet.com",
+                        "bet9ja.com",
+                        "betking.com",
+                        "1xbet.com",
+                        "bet365.com",
+                        "stake.com",
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        sampleBlockedSites.forEach { domain ->
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(liquid.mutedFill)
+                                    .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50))
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Block,
+                                    contentDescription = null,
+                                    tint = liquid.accentInk,
+                                    modifier = Modifier.size(13.dp),
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = domain,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        if (state.recentEvents.isNotEmpty()) {
+                            OutlinedButton(
+                                onClick = onNavigateToActivity,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                                    .testTag("view_blocked_log_button"),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onBackground,
+                                ),
+                            ) {
+                                Text("View Log (${state.totalBlockedCount})", maxLines = 1)
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = onNavigateToBlocklist,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp)
+                                .testTag("browse_blocklist_button"),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, liquid.subtleBorder),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onBackground,
+                            ),
+                        ) {
+                            Text("Browse Blocklist", maxLines = 1)
+                        }
+                    }
+                }
+            }
+
+            // Item 3/4: SOS Recovery Toolkit (60s Calm Reset, Log Urge, Safe Support)
             item {
                 LiquidGlassCard(
                     modifier = Modifier
@@ -389,6 +559,10 @@ fun ShieldScreen(
                                 .height(48.dp)
                                 .testTag("sos_calm_reset_button"),
                             shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = liquid.activeFill,
+                                contentColor = liquid.activeContent,
+                            ),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 0.dp,
                                 pressedElevation = 0.dp,
@@ -410,6 +584,9 @@ fun ShieldScreen(
                                 .testTag("log_urge_button"),
                             shape = RoundedCornerShape(50),
                             border = BorderStroke(1.dp, liquid.subtleBorder),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onBackground,
+                            ),
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.EditNote,
@@ -429,10 +606,14 @@ fun ShieldScreen(
                             .testTag("safe_support_button"),
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, liquid.subtleBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                        ),
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.FavoriteBorder,
                             contentDescription = null,
+                            tint = liquid.accentInk,
                             modifier = Modifier.size(17.dp),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -532,7 +713,7 @@ fun ShieldScreen(
                 ) {
                     LiquidSectionHeader(
                         title = "Verify Filter Live",
-                        subtitle = "Test SportyBet, Bet9ja, Stake, or any URL against active rules",
+                        subtitle = "Type a betting brand (e.g. sportybet) or URL — blocked immediately as you type",
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -542,9 +723,13 @@ fun ShieldScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("live_domain_test_input"),
-                        placeholder = { Text("Try sportybet.com, bet9ja.com, or stake.com") },
+                        placeholder = { Text("Type sportybet, bet9ja, stake.c, or full URL") },
                         leadingIcon = {
-                            Icon(Icons.Rounded.Search, contentDescription = null)
+                            Icon(
+                                Icons.Rounded.Search,
+                                contentDescription = null,
+                                tint = liquid.accentInk,
+                            )
                         },
                         trailingIcon = {
                             if (state.testQueryInput.isNotEmpty()) {
@@ -552,7 +737,11 @@ fun ShieldScreen(
                                     onClick = { onTestQueryChanged("") },
                                     modifier = Modifier.testTag("clear_test_input"),
                                 ) {
-                                    Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                    Icon(
+                                        Icons.Rounded.Close,
+                                        contentDescription = "Clear",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
                         },
@@ -561,8 +750,13 @@ fun ShieldScreen(
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { keyboard?.hide() }),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            focusedBorderColor = liquid.activeFill,
                             unfocusedBorderColor = liquid.subtleBorder,
+                            cursorColor = liquid.activeFill,
+                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
                             unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
                         ),
@@ -572,8 +766,8 @@ fun ShieldScreen(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         QuickSampleChip(
-                            label = "sportybet.com",
-                            onClick = { onTestQueryChanged("sportybet.com") },
+                            label = "sportybet",
+                            onClick = { onTestQueryChanged("sportybet") },
                             testTag = "sample_chip_sportybet",
                         )
                         QuickSampleChip(
@@ -716,7 +910,7 @@ private fun SetupStepRow(
             Icon(
                 imageVector = if (done) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                 contentDescription = null,
-                tint = if (done) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (done) liquid.activeFill else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(19.dp),
             )
         }
@@ -818,7 +1012,7 @@ private fun EngineStatusRow(
                     Icons.AutoMirrored.Rounded.KeyboardArrowRight
                 },
                 contentDescription = null,
-                tint = if (isReady) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (isReady) liquid.activeFill else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
         }

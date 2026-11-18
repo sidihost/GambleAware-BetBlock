@@ -176,4 +176,53 @@ class BetBlockerEngineTest {
             BlocklistMatcher.matchDomainOrUrl("https://www.sportybet.com/ng/m/login", defaultConfig).isBlocked,
         )
     }
+
+    @Test
+    fun blocksBettingSitesImmediatelyWhileTypingWithoutDotCom() {
+        val defaultConfig = BlockFilterConfig(
+            customBlockedDomains = setOf("mycustombet.io"),
+            allowlistedDomains = setOf("allowbet.com"),
+        )
+
+        val blockedWhileTyping = listOf(
+            "sportybet",
+            "sportyb",
+            "bet9ja",
+            "1xbet",
+            "betking",
+            "msport",
+            "bet365",
+            "stake.c",
+            "sportybet.n",
+            "stake casino",
+            "mycustombet",
+        )
+        for (typed in blockedWhileTyping) {
+            assertTrue(
+                "Expected immediate while-typing block for \"$typed\"",
+                BlocklistMatcher.matchTypedBrowserInput(typed, defaultConfig).isBlocked,
+            )
+        }
+
+        val allowedWhileTyping = listOf(
+            "betterhelp",
+            "bethesda",
+            "alphabet",
+            "diabetes",
+            "stakeholder",
+            "allowbet",
+            "gamblers anonymous",
+            "how to quit betting",
+            "chrome://newtab",
+            "Search or type web address",
+            "bet",
+            "sta",
+        )
+        for (safe in allowedWhileTyping) {
+            assertFalse(
+                "Expected safe input NOT to be blocked while typing: \"$safe\"",
+                BlocklistMatcher.matchTypedBrowserInput(safe, defaultConfig).isBlocked,
+            )
+        }
+    }
 }

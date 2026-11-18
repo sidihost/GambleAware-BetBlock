@@ -287,8 +287,15 @@ fun BlocklistScreen(
                             singleLine = true,
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedBorderColor = liquid.activeFill,
                                 unfocusedBorderColor = liquid.subtleBorder,
+                                cursorColor = liquid.activeFill,
+                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
                             ),
                         )
                         Button(
@@ -302,6 +309,10 @@ fun BlocklistScreen(
                                 .height(54.dp)
                                 .testTag("add_custom_domain_button"),
                             shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = liquid.activeFill,
+                                contentColor = liquid.activeContent,
+                            ),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 0.dp,
                                 pressedElevation = 0.dp,
@@ -378,11 +389,15 @@ fun BlocklistScreen(
                             },
                             shape = RoundedCornerShape(50),
                             border = BorderStroke(1.dp, liquid.subtleBorder),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onBackground,
+                            ),
                             modifier = Modifier.testTag("open_app_picker_button"),
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Apps,
                                 contentDescription = null,
+                                tint = liquid.accentInk,
                                 modifier = Modifier.size(17.dp),
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -413,7 +428,7 @@ fun BlocklistScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.Block,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    tint = liquid.accentInk,
                                     modifier = Modifier.size(18.dp),
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -421,6 +436,7 @@ fun BlocklistScreen(
                                     Text(
                                         text = app.appLabel,
                                         style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                     )
                                     Text(
                                         text = app.packageName,
@@ -436,6 +452,7 @@ fun BlocklistScreen(
                                     Icon(
                                         imageVector = Icons.Rounded.DeleteOutline,
                                         contentDescription = "Remove ${app.appLabel}",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
@@ -462,12 +479,25 @@ fun BlocklistScreen(
                             .fillMaxWidth()
                             .testTag("registry_search_input"),
                         placeholder = { Text("Search registry (e.g. draftkings, poker)") },
-                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.Search,
+                                contentDescription = null,
+                                tint = liquid.accentInk,
+                            )
+                        },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            focusedBorderColor = liquid.activeFill,
                             unfocusedBorderColor = liquid.subtleBorder,
+                            cursorColor = liquid.activeFill,
+                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
                         ),
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -486,13 +516,14 @@ fun BlocklistScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.Language,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    tint = liquid.accentInk,
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = domain,
                                     style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -524,6 +555,7 @@ fun BlocklistScreen(
             onDismissRequest = { showAppPickerSheet = false },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
         ) {
             Column(
@@ -535,6 +567,7 @@ fun BlocklistScreen(
                 Text(
                     text = "Select App to Block",
                     style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
@@ -542,9 +575,26 @@ fun BlocklistScreen(
                     onValueChange = { appFilter = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Filter installed apps") },
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Rounded.Search,
+                            contentDescription = null,
+                            tint = liquid.accentInk,
+                        )
+                    },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = liquid.activeFill,
+                        unfocusedBorderColor = liquid.subtleBorder,
+                        cursorColor = liquid.activeFill,
+                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContainerColor = liquid.mutedFill,
+                        unfocusedContainerColor = liquid.mutedFill,
+                    ),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 if (state.isLoadingApps) {
@@ -554,7 +604,7 @@ fun BlocklistScreen(
                             .height(180.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = liquid.activeFill)
                     }
                 } else {
                     LazyColumn(
@@ -588,6 +638,7 @@ fun BlocklistScreen(
                                         Text(
                                             text = app.label,
                                             style = MaterialTheme.typography.titleSmall,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                         )
                                         Text(
                                             text = app.packageName,
@@ -598,7 +649,7 @@ fun BlocklistScreen(
                                     Icon(
                                         imageVector = if (alreadyBlocked) Icons.Rounded.CheckCircle else Icons.Rounded.Add,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        tint = if (alreadyBlocked) liquid.activeFill else liquid.accentInk,
                                     )
                                 }
                             }
@@ -699,13 +750,14 @@ private fun DomainRuleRow(
         Icon(
             imageVector = if (isAllowlist) Icons.Rounded.CheckCircle else Icons.Rounded.Block,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = liquid.accentInk,
             modifier = Modifier.size(18.dp),
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = domain,
             style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -714,6 +766,7 @@ private fun DomainRuleRow(
             Icon(
                 imageVector = Icons.Rounded.DeleteOutline,
                 contentDescription = "Delete $domain",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
