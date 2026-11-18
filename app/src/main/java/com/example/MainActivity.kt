@@ -990,6 +990,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                     },
                 )
             }
+            }
         }
     }
 }
