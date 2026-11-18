@@ -2,21 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import {
-  buildStandaloneInstallUrl,
+  ANDROID_APK_DOWNLOAD_URL,
+  ANDROID_APK_GITHUB_URL,
+  APK_DOWNLOAD_FILENAME,
+  buildApkShareUrl,
   detectClientPlatform,
   formatIosBlocklistText,
   getDefaultInstallGuideTarget,
   getOrderedPlatformCards,
-  resolveInitialViewMode,
-  resolveInstallActionMode,
-  shouldPromoteWebApp,
   shouldSkipPreloader,
   TOP_BETTING_DOMAINS_FOR_IOS,
 } from './platformCompatibility';
 
+test('APK download constants point to same-origin binary stream and GitHub backup mirror', () => {
+  assert.equal(APK_DOWNLOAD_FILENAME, 'GambleAware-Nigeria.apk');
+  assert.equal(ANDROID_APK_DOWNLOAD_URL, '/downloads/GambleAware-Nigeria.apk');
+  assert.ok(ANDROID_APK_GITHUB_URL.startsWith('https://github.com/'));
+  assert.ok(ANDROID_APK_GITHUB_URL.endsWith('/GambleAware-Nigeria.apk'));
+});
+
 test('shouldSkipPreloader returns true only for autostart=1 or autostart=true', () => {
   assert.equal(shouldSkipPreloader('?autostart=1'), true);
-  assert.equal(shouldSkipPreloader('?app=1&autostart=true'), true);
+  assert.equal(shouldSkipPreloader('?foo=bar&autostart=true'), true);
   assert.equal(shouldSkipPreloader('?app=1'), false);
   assert.equal(shouldSkipPreloader(''), false);
 });
@@ -40,33 +47,6 @@ test('detectClientPlatform identifies iPhone, iPadOS, Android, and Desktop corre
   );
 });
 
-test('resolveInitialViewMode opens interactive app in standalone PWA or ?app=1', () => {
-  assert.equal(
-    resolveInitialViewMode({ isStandalone: true, search: '', hash: '' }),
-    'app',
-  );
-  assert.equal(
-    resolveInitialViewMode({ isStandalone: false, search: '?app=1', hash: '' }),
-    'app',
-  );
-  assert.equal(
-    resolveInitialViewMode({ isStandalone: false, search: '', hash: '#app' }),
-    'app',
-  );
-  assert.equal(
-    resolveInitialViewMode({ isStandalone: false, search: '', hash: '' }),
-    'landing',
-  );
-});
-
-test('shouldPromoteWebApp only promotes the Web App on iOS or standalone launches', () => {
-  assert.equal(shouldPromoteWebApp('ios', false), true);
-  assert.equal(shouldPromoteWebApp('android', false), false);
-  assert.equal(shouldPromoteWebApp('desktop', false), false);
-  assert.equal(shouldPromoteWebApp('desktop', true), true);
-  assert.equal(shouldPromoteWebApp('android', true), true);
-});
-
 test('getDefaultInstallGuideTarget and getOrderedPlatformCards adapt automatically per device', () => {
   assert.equal(getDefaultInstallGuideTarget('ios'), 'ios');
   assert.equal(getDefaultInstallGuideTarget('android'), 'android');
@@ -88,29 +68,10 @@ test('TOP_BETTING_DOMAINS_FOR_IOS are all valid built-in gambling domains', () =
   assert.equal(lines.length, TOP_BETTING_DOMAINS_FOR_IOS.length);
 });
 
-test('resolveInstallActionMode selects native prompt, standalone tab escape, or manual guide cleanly', () => {
+test('buildApkShareUrl creates full HTTP APK link or falls back to GitHub mirror', () => {
   assert.equal(
-    resolveInstallActionMode({ isInstalled: true, hasDeferredPrompt: true, isInIframe: false }),
-    'installed',
+    buildApkShareUrl('https://gbb.sidihost.sbs/'),
+    'https://gbb.sidihost.sbs/downloads/GambleAware-Nigeria.apk',
   );
-  assert.equal(
-    resolveInstallActionMode({ isInstalled: false, hasDeferredPrompt: true, isInIframe: false }),
-    'native_prompt',
-  );
-  assert.equal(
-    resolveInstallActionMode({ isInstalled: false, hasDeferredPrompt: false, isInIframe: true }),
-    'open_standalone_tab',
-  );
-  assert.equal(
-    resolveInstallActionMode({ isInstalled: false, hasDeferredPrompt: false, isInIframe: false }),
-    'guided_manual',
-  );
-});
-
-test('buildStandaloneInstallUrl preserves origin and sets app=1 cleanly', () => {
-  assert.equal(
-    buildStandaloneInstallUrl('https://gbb.sidihost.sbs/?tab=shield'),
-    'https://gbb.sidihost.sbs/?tab=shield&app=1',
-  );
-  assert.equal(buildStandaloneInstallUrl('invalid-url'), '/?app=1');
+  assert.equal(buildApkShareUrl(''), ANDROID_APK_GITHUB_URL);
 });

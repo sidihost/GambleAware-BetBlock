@@ -1,21 +1,9 @@
 import React, { useState } from 'react';
+import { Download, Menu, Moon, Sun, X } from 'lucide-react';
 import {
-  BookOpen,
-  Download,
-  LockKeyhole,
-  Menu,
-  Moon,
-  Shield,
-  SlidersHorizontal,
-  Smartphone,
-  Sun,
-  TrendingUp,
-  UserCheck,
-  X,
-} from 'lucide-react';
-import { AnchorRoute } from '../data/types';
-import { ANDROID_APK_DOWNLOAD_URL } from '../utils/platformCompatibility';
-import { PWAInstallButton } from './PWAInstallModal';
+  ANDROID_APK_DOWNLOAD_URL,
+  APK_DOWNLOAD_FILENAME,
+} from '../utils/platformCompatibility';
 
 /**
  * Architectural GambleAware Geometric G Logo — pure flat Apple/Google vector paths (zero gradients)
@@ -79,62 +67,27 @@ export const BrandGIcon: React.FC<{ className?: string }> = ({ className = 'h-4 
   </svg>
 );
 
-const LANDING_NAV_LINKS = [
+const NAV_LINKS = [
   { href: '#features', label: 'Features' },
-  { href: '#platforms', label: 'Android & iPhone' },
+  { href: '#platforms', label: 'Android APK' },
   { href: '#install-guide', label: 'How to Install' },
   { href: '#comparison', label: 'vs. Gamban' },
 ];
 
-const APP_NAV_ITEMS: Array<{
-  route: Exclude<AnchorRoute, 'download' | 'admin'>;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { route: 'shield', label: 'Shield', icon: BrandGIcon },
-  { route: 'blocklist', label: 'Blocklist', icon: SlidersHorizontal },
-  { route: 'activity', label: 'Progress', icon: TrendingUp },
-  { route: 'resources', label: 'Resources', icon: BookOpen },
-  { route: 'lock', label: 'Lock', icon: LockKeyhole },
-];
-
 interface AppHeaderProps {
-  mode?: 'landing' | 'app';
-  activeRoute?: AnchorRoute;
-  isIOS?: boolean;
-  onSelectRoute?: (route: AnchorRoute) => void;
-  onOpenWebApp?: () => void;
-  onOpenDownloadPage?: () => void;
   isDarkTheme?: boolean;
   onToggleTheme?: () => void;
-  userEmail?: string | null;
-  isAdmin?: boolean;
-  onSignIn?: () => void;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
-  mode = 'landing',
-  activeRoute = 'shield',
-  isIOS = false,
-  onSelectRoute,
-  onOpenWebApp,
-  onOpenDownloadPage,
   isDarkTheme = false,
   onToggleTheme,
-  userEmail = null,
-  isAdmin = false,
-  onSignIn,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const showIosLaunchButton = mode === 'landing' && isIOS && Boolean(onOpenWebApp);
 
   const handleBrandClick = () => {
     setMobileMenuOpen(false);
-    if (mode === 'app' && onSelectRoute) {
-      onSelectRoute('shield');
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -153,60 +106,22 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </button>
 
         {/* Zone 2: Desktop Navigation */}
-        {mode === 'landing' ? (
-          <nav
-            aria-label="Primary sections"
-            className="hidden items-center gap-5 lg:flex lg:gap-7"
-          >
-            {LANDING_NAV_LINKS.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="shrink-0 text-sm font-medium whitespace-nowrap text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] hover:underline hover:underline-offset-4"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-        ) : (
-          <nav aria-label="App navigation" className="hidden items-center gap-1 md:flex">
-            {APP_NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const selected = activeRoute === item.route;
-              return (
-                <button
-                  key={item.route}
-                  type="button"
-                  onClick={() => onSelectRoute?.(item.route)}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors lg:px-3 ${
-                    selected
-                      ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
-                      : 'text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]'
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-            {isAdmin ? (
-              <button
-                type="button"
-                onClick={() => onSelectRoute?.('admin')}
-                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors lg:px-3 ${
-                  activeRoute === 'admin'
-                    ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
-                    : 'border border-[var(--glass-border)] text-[var(--accent-ink)] hover:bg-[var(--muted-fill)]'
-                }`}
-              >
-                <Shield className="h-3.5 w-3.5 shrink-0" />
-                <span>Admin</span>
-              </button>
-            ) : null}
-          </nav>
-        )}
+        <nav
+          aria-label="Primary sections"
+          className="hidden items-center gap-5 lg:flex lg:gap-7"
+        >
+          {NAV_LINKS.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="shrink-0 text-sm font-medium whitespace-nowrap text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] hover:underline hover:underline-offset-4"
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
 
-        {/* Zone 3: Responsive Utility & Primary Actions */}
+        {/* Zone 3: Theme & Direct APK Download */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {onToggleTheme ? (
             <button
@@ -224,103 +139,36 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </button>
           ) : null}
 
-          {mode === 'app' && isAdmin ? (
-            <button
-              type="button"
-              onClick={() => onSelectRoute?.('admin')}
-              className={`inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold whitespace-nowrap transition-colors md:hidden ${
-                activeRoute === 'admin'
-                  ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
-                  : 'border border-[var(--glass-border)] bg-[var(--surface)] text-[var(--accent-ink)]'
-              }`}
-            >
-              <Shield className="h-3.5 w-3.5 shrink-0" />
-              <span>Admin</span>
-            </button>
-          ) : null}
+          <a
+            href={ANDROID_APK_DOWNLOAD_URL}
+            download={APK_DOWNLOAD_FILENAME}
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-9 sm:px-3.5"
+          >
+            <Download className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden min-[380px]:inline">Download APK</span>
+            <span className="min-[380px]:hidden">APK</span>
+          </a>
 
-          {mode === 'app' && onSignIn ? (
-            <button
-              type="button"
-              onClick={userEmail ? () => onSelectRoute?.(isAdmin ? 'admin' : 'lock') : onSignIn}
-              title={userEmail ? `Signed in as ${userEmail}` : 'Sign in with Google for Cloud Sync & Support'}
-              className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-9 sm:px-3"
-            >
-              <UserCheck className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
-              <span className="hidden sm:inline">
-                {userEmail ? userEmail.split('@')[0].slice(0, 14) : 'Sign In'}
-              </span>
-              <span className="sm:hidden">{userEmail ? 'Account' : 'Sign In'}</span>
-            </button>
-          ) : null}
-
-          {showIosLaunchButton ? (
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenWebApp?.();
-              }}
-              className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-9 sm:px-3.5"
-            >
-              <Smartphone className="h-3.5 w-3.5 shrink-0" />
-              <span>Open iPhone App</span>
-            </button>
-          ) : null}
-
-          {mode === 'app' && onOpenDownloadPage ? (
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenDownloadPage();
-              }}
-              className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-9 sm:px-3.5"
-            >
-              <Download className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
-              <span className="hidden lg:inline">{isIOS ? 'iPhone Setup' : 'Android APK'}</span>
-              <span className="lg:hidden">{isIOS ? 'Setup' : 'APK'}</span>
-            </button>
-          ) : mode === 'landing' && !isIOS ? (
-            <>
-              <PWAInstallButton variant="header" className="hidden sm:inline-flex" />
-              <a
-                href={ANDROID_APK_DOWNLOAD_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-9 sm:px-3.5"
-              >
-                <Download className="h-3.5 w-3.5 shrink-0" />
-                <span className="hidden min-[380px]:inline">Download APK</span>
-                <span className="min-[380px]:hidden">APK</span>
-              </a>
-            </>
-          ) : null}
-
-          {mode === 'app' ? <PWAInstallButton variant="header" className="hidden sm:inline-flex" /> : null}
-
-          {mode === 'landing' ? (
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              aria-expanded={mobileMenuOpen}
-              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] lg:hidden"
-            >
-              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileMenuOpen}
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] lg:hidden"
+          >
+            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
         </div>
       </div>
 
-      {/* Responsive Mobile & Tablet Menu Drawer for Landing Page */}
-      {mode === 'landing' && mobileMenuOpen ? (
+      {/* Responsive Mobile & Tablet Menu Drawer */}
+      {mobileMenuOpen ? (
         <nav
           aria-label="Mobile navigation"
           className="border-t border-[var(--subtle-border)] bg-[var(--surface)] px-4 py-3 lg:hidden"
         >
           <div className="flex flex-col gap-1">
-            {LANDING_NAV_LINKS.map((item) => (
+            {NAV_LINKS.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
@@ -332,25 +180,16 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             ))}
           </div>
 
-          <div className="mt-2 flex flex-col gap-2 border-t border-[var(--subtle-border)] pt-3">
-            {showIosLaunchButton ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenWebApp?.();
-                }}
-                className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
-              >
-                <Smartphone className="h-4 w-4 shrink-0" />
-                <span>Open iPhone App</span>
-              </button>
-            ) : null}
-            <PWAInstallButton
-              variant="secondary"
-              label="Install GambleAware Web App"
-              className="w-full"
-            />
+          <div className="mt-2 border-t border-[var(--subtle-border)] pt-3">
+            <a
+              href={ANDROID_APK_DOWNLOAD_URL}
+              download={APK_DOWNLOAD_FILENAME}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+            >
+              <Download className="h-4 w-4 shrink-0" />
+              <span>Download Android App (APK)</span>
+            </a>
           </div>
         </nav>
       ) : null}

@@ -1,7 +1,8 @@
 export type ClientPlatform = 'ios' | 'android' | 'desktop';
-export type AppViewMode = 'landing' | 'app';
 
-export const ANDROID_APK_DOWNLOAD_URL =
+export const APK_DOWNLOAD_FILENAME = 'GambleAware-Nigeria.apk';
+export const ANDROID_APK_DOWNLOAD_URL = '/downloads/GambleAware-Nigeria.apk';
+export const ANDROID_APK_GITHUB_URL =
   'https://github.com/sidihost/GambleAware-BetBlock/releases/latest/download/GambleAware-Nigeria.apk';
 
 export function detectClientPlatform(
@@ -22,42 +23,10 @@ export function detectClientPlatform(
   return 'desktop';
 }
 
-export function resolveInitialViewMode(params: {
-  isStandalone: boolean;
-  search: string;
-  hash: string;
-}): AppViewMode {
-  if (params.isStandalone) return 'app';
-  const normalizedHash = (params.hash || '').trim().toLowerCase();
-  if (normalizedHash === '#app' || normalizedHash === '#shield' || normalizedHash === '#admin') {
-    return 'app';
-  }
-  const searchParams = new URLSearchParams(params.search || '');
-  const appParam = searchParams.get('app') ?? searchParams.get('mode');
-  const adminParam = searchParams.get('admin');
-  if (
-    appParam === '1' ||
-    appParam === 'true' ||
-    appParam === 'app' ||
-    adminParam === '1' ||
-    adminParam === 'true'
-  ) {
-    return 'app';
-  }
-  return 'landing';
-}
-
 export function shouldSkipPreloader(search: string): boolean {
   const searchParams = new URLSearchParams(search || '');
   const autostart = searchParams.get('autostart');
   return autostart === '1' || autostart === 'true';
-}
-
-export function shouldPromoteWebApp(
-  platform: ClientPlatform,
-  isStandalone: boolean,
-): boolean {
-  return platform === 'ios' || isStandalone;
 }
 
 export function getDefaultInstallGuideTarget(platform: ClientPlatform): 'android' | 'ios' {
@@ -101,29 +70,10 @@ export function formatIosBlocklistText(
   return domains.join('\n');
 }
 
-export type InstallActionMode =
-  | 'installed'
-  | 'native_prompt'
-  | 'open_standalone_tab'
-  | 'guided_manual';
-
-export function resolveInstallActionMode(params: {
-  isInstalled: boolean;
-  hasDeferredPrompt: boolean;
-  isInIframe: boolean;
-}): InstallActionMode {
-  if (params.isInstalled) return 'installed';
-  if (params.hasDeferredPrompt) return 'native_prompt';
-  if (params.isInIframe) return 'open_standalone_tab';
-  return 'guided_manual';
-}
-
-export function buildStandaloneInstallUrl(currentHref: string): string {
-  try {
-    const parsed = new URL(currentHref);
-    parsed.searchParams.set('app', '1');
-    return parsed.toString();
-  } catch {
-    return '/?app=1';
+export function buildApkShareUrl(origin: string): string {
+  const cleanOrigin = (origin || '').trim().replace(/\/+$/, '');
+  if (!cleanOrigin.startsWith('http://') && !cleanOrigin.startsWith('https://')) {
+    return ANDROID_APK_GITHUB_URL;
   }
+  return `${cleanOrigin}${ANDROID_APK_DOWNLOAD_URL}`;
 }

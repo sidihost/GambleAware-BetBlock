@@ -38,7 +38,7 @@
         },
         {
           "key": "Content-Disposition",
-          "value": "attachment; filename=\"GambleAware-v2.1.apk\""
+          "value": "attachment; filename=\"GambleAware-Nigeria.apk\""
         },
         {
           "key": "Cache-Control",
@@ -47,28 +47,6 @@
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
-        }
-      ]
-    },
-    {
-      "source": "/sw.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/manifest.webmanifest",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/manifest+json"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
         }
       ]
     }
@@ -82,7 +60,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!downloads/|assets/|fonts/|api/|sw\\.js|workbox-|manifest\\.webmanifest|apple-touch-icon\\.png|icon\\.svg|icon-maskable\\.svg|pwa-).*)",
+      "source": "/((?!downloads/|assets/|fonts/|api/|apple-touch-icon\\.png|icon\\.svg|icon-maskable\\.svg|pwa-).*)",
       "destination": "/index.html"
     }
   ]

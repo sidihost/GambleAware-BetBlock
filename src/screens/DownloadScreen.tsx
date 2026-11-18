@@ -4,6 +4,7 @@ import {
   Clock,
   Copy,
   Download,
+  ExternalLink,
   GlobeLock,
   LockKeyhole,
   Share,
@@ -17,8 +18,6 @@ import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import { BrandGIcon } from '../components/AppHeader';
 import { BettingBrandLogo, FeaturedBrandsWall } from '../components/BettingBrandLogo';
 import { LiquidGlassCard, LiquidShieldOrb } from '../components/LiquidGlass';
-import { PWAInstallButton } from '../components/PWAInstallModal';
-import { usePWAInstall } from '../hooks/usePWAInstall';
 import { formatNaira } from '../utils/currency';
 import {
   buildLockCountdownQuad,
@@ -27,6 +26,10 @@ import {
 } from '../utils/lockDurations';
 import {
   ANDROID_APK_DOWNLOAD_URL,
+  ANDROID_APK_GITHUB_URL,
+  APK_DOWNLOAD_FILENAME,
+  buildApkShareUrl,
+  detectClientPlatform,
   formatIosBlocklistText,
   getDefaultInstallGuideTarget,
   getOrderedPlatformCards,
@@ -48,12 +51,12 @@ const PREVIEW_TABS: Array<{
 
 const SPEND_PRESETS = [1000, 2500, 5000, 10000] as const;
 
-interface DownloadScreenProps {
-  onOpenWebApp?: () => void;
-}
-
-export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) => {
-  const { isIOS, clientPlatform } = usePWAInstall();
+export const DownloadScreen: React.FC = () => {
+  const [clientPlatform] = useState(() =>
+    typeof window !== 'undefined'
+      ? detectClientPlatform(window.navigator.userAgent || '', window.navigator.maxTouchPoints || 0)
+      : 'android',
+  );
   const [activeTab, setActiveTab] = useState<AndroidPreviewTab>('shield');
   const [installGuideTab, setInstallGuideTab] = useState<'android' | 'ios'>(() =>
     getDefaultInstallGuideTarget(clientPlatform),
@@ -64,6 +67,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
   const [previewLockDays, setPreviewLockDays] = useState<number>(180);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedIosDomains, setCopiedIosDomains] = useState(false);
+  const [downloadStarted, setDownloadStarted] = useState(false);
 
   const builtInDomainCount = GamblingRegistry.domainToCategory.size;
   const builtInAppCount = GamblingRegistry.knownGamblingAppPackages.size;
@@ -102,7 +106,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
     setActiveTab(tab);
   };
 
-  const isAppleHandheld = isIOS || clientPlatform === 'ios';
+  const isAppleHandheld = clientPlatform === 'ios';
   const isAndroidHandheld = clientPlatform === 'android';
   const orderedPlatformCards = getOrderedPlatformCards(clientPlatform);
 
@@ -118,7 +122,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
       num: '02',
       icon: GlobeLock,
       title: 'Browser & Ad Blocking Without VPN',
-      body: `Blocks ${builtInDomainCount}+ betting sites as you type (even sporty or 1xbe), plus gambling ads and pop-ups across Chrome, Brave, Firefox, Safari, Instagram, and Telegram — leaving ProtonVPN, Mullvad, or WARP free to use.`,
+      body: `Blocks ${builtInDomainCount}+ betting sites as you type (even sporty or 1xbe), plus gambling ads and pop-ups across Chrome, Brave, Firefox, Instagram, and Telegram — leaving ProtonVPN, Mullvad, or WARP free to use.`,
       wide: false,
     },
     {
@@ -145,8 +149,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
     {
       num: '06',
       icon: ShieldCheck,
-      title: 'Free on Android & iPhone',
-      body: 'No subscription or paywall. Android gets browser, ad, and uninstall protection while keeping your VPN slot free; iPhone gets a Home-Screen app paired with Apple Screen Time.',
+      title: 'Free Android APK — No Subscription',
+      body: 'No subscription, no paywall, and no browser workaround. Install the signed v2.1.1 Android APK directly for full system-wide browser, ad, and uninstall protection.',
       wide: true,
     },
   ];
@@ -187,8 +191,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
   const installSteps = [
     {
       num: '01',
-      title: 'Download GambleAware-Nigeria.apk',
-      desc: 'Tap Download Android App to save the installer to your phone.',
+      title: 'Download GambleAware-Nigeria.apk (v2.1.1)',
+      desc: 'Tap Download Android App to save the signed APK straight from this page.',
     },
     {
       num: '02',
@@ -202,13 +206,15 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
     },
   ];
 
-  const handleCopyAppUrl = async () => {
+  const handleMarkDownloadStarted = () => {
+    setDownloadStarted(true);
+    window.setTimeout(() => setDownloadStarted(false), 6000);
+  };
+
+  const handleCopyApkUrl = async () => {
     try {
-      const shareUrl =
-        typeof window !== 'undefined' && window.location.origin.startsWith('http')
-          ? window.location.origin
-          : 'https://gbb.sidihost.sbs';
-      await navigator.clipboard.writeText(shareUrl);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      await navigator.clipboard.writeText(buildApkShareUrl(origin));
       setCopiedUrl(true);
       window.setTimeout(() => setCopiedUrl(false), 2000);
     } catch {
@@ -236,68 +242,72 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
           </h1>
 
           <p className="mt-3.5 max-w-xl text-sm leading-relaxed text-[var(--ink-muted)] sm:text-[15px]">
-            GambleAware blocks {builtInDomainCount}+ sportsbooks, casinos, gambling ads, and{' '}
-            {builtInAppCount}+ betting apps across Android browsers without taking your VPN slot
-            (so your own VPN keeps working) — and runs on iPhone via Home Screen and Screen Time.
+            GambleAware for Android blocks {builtInDomainCount}+ sportsbooks, casinos, gambling ads,
+            and {builtInAppCount}+ betting apps across Chrome, Brave, Instagram, and Telegram
+            without taking your VPN slot — so your own VPN keeps working.
           </p>
 
           <div className="mt-5 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            {isAppleHandheld && onOpenWebApp ? (
-              <button
-                type="button"
-                onClick={onOpenWebApp}
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-11 sm:text-sm"
-              >
-                <Smartphone className="h-4 w-4 shrink-0" />
-                <span>Open &amp; Install for iPhone</span>
-              </button>
-            ) : (
-              <a
-                href={ANDROID_APK_DOWNLOAD_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-11 sm:text-sm"
-              >
-                <Download className="h-4 w-4 shrink-0" />
-                <span>Download Android App</span>
-              </a>
-            )}
-
-            <PWAInstallButton variant="secondary" label="Install Web App" />
+            <a
+              href={ANDROID_APK_DOWNLOAD_URL}
+              download={APK_DOWNLOAD_FILENAME}
+              onClick={handleMarkDownloadStarted}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:text-sm"
+            >
+              <Download className="h-4 w-4 shrink-0" />
+              <span>Download Android App (APK)</span>
+            </a>
 
             <button
               type="button"
-              onClick={() => void handleCopyAppUrl()}
-              className="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-11 sm:text-sm"
+              onClick={() => void handleCopyApkUrl()}
+              className="inline-flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:text-sm"
             >
               {copiedUrl ? (
                 <Check className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
               ) : (
                 <Copy className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
               )}
-              <span>{copiedUrl ? 'Copied' : 'Copy Link'}</span>
+              <span>{copiedUrl ? 'APK Link Copied' : 'Copy APK Link'}</span>
             </button>
           </div>
 
+          {downloadStarted ? (
+            <div
+              role="status"
+              className="mt-3 w-full max-w-xl rounded-2xl border border-[var(--glass-border)] bg-[var(--muted-fill)] px-4 py-2.5 text-xs leading-relaxed text-[var(--ink)]"
+            >
+              <span className="font-semibold text-[var(--accent-ink)]">Downloading v2.1.1:</span>{' '}
+              Saving <span className="font-mono font-semibold">{APK_DOWNLOAD_FILENAME}</span> (2.2
+              MB). Did it not start?{' '}
+              <a
+                href={ANDROID_APK_GITHUB_URL}
+                rel="noopener noreferrer"
+                className="font-semibold underline underline-offset-2"
+              >
+                Use the GitHub release mirror
+              </a>
+              .
+            </div>
+          ) : null}
+
           {isAppleHandheld ? (
             <div className="mt-4 w-full max-w-xl rounded-2xl border border-[var(--glass-border)] bg-[var(--muted-fill)] px-4 py-3 text-xs leading-relaxed text-[var(--ink)]">
-              <span className="font-semibold text-[var(--accent-ink)]">iPhone Ready:</span> Open
-              in Safari, tap <span className="font-semibold">Open &amp; Install for iPhone</span>{' '}
-              above, then tap <span className="font-semibold">Share → Add to Home Screen</span> and
-              copy our{' '}
+              <span className="font-semibold text-[var(--accent-ink)]">Viewing on iPhone:</span>{' '}
+              GambleAware&rsquo;s main blocker app runs on Android (APK). Send{' '}
+              <span className="font-mono font-semibold">{APK_DOWNLOAD_FILENAME}</span> to your
+              Android phone, or copy our{' '}
               <a href="#platforms" className="font-semibold underline underline-offset-2">
-                22-site Screen Time list
+                22-site Apple Screen Time list
               </a>{' '}
               below.
             </div>
           ) : null}
 
           <p className="mt-4 text-xs text-[var(--ink-muted)]">
-            {isAppleHandheld
-              ? 'iPhone / iPad detected · Home-Screen app & Screen Time list ready · Free'
-              : isAndroidHandheld
-                ? 'Android phone detected · APK & Home-Screen Web App ready · Free'
-                : 'Android 7.0+ APK · Web App · iPhone Home Screen + Screen Time · Free'}
+            {isAndroidHandheld
+              ? 'Android phone detected · Signed Release v2.1.1 APK (2.2 MB) · Free'
+              : 'Android 7.0+ · Signed Release v2.1.1 APK (2.2 MB) · Free · No VPN slot needed'}
           </p>
 
           {/* Clean Architectural Spec Strip */}
@@ -335,7 +345,6 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
           onMouseEnter={() => setIsPausedByHover(true)}
           onMouseLeave={() => setIsPausedByHover(false)}
         >
-          {/* Centered Screen Switcher (No theme switch next to it) */}
           <div
             role="tablist"
             aria-label="Android app screens"
@@ -831,11 +840,10 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
       <section id="features" className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-9">
         <div className="max-w-2xl">
           <h2 className="font-display text-xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-2xl">
-            Six practical protections built directly into the app.
+            Six practical protections built directly into the Android app.
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
-            Everything runs on your device with no required account and no subscription fee. Clearing
-            browser cache will not erase your streak, goals, or blocklist.
+            Everything runs natively on your phone with no required account and no subscription fee.
           </p>
         </div>
 
@@ -861,7 +869,9 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                   <h3 className="mt-3 font-display text-base font-semibold text-[var(--ink)]">
                     {feat.title}
                   </h3>
-                  <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-[13px]">{feat.body}</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-[13px]">
+                    {feat.body}
+                  </p>
                 </div>
               </LiquidGlassCard>
             );
@@ -869,18 +879,18 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
         </div>
       </section>
 
-      {/* Android & iPhone (2-Platform Clean Layout — No Desktop Web App Clutter) */}
+      {/* Main Android APK + Optional Apple Screen Time Blocklist */}
       <section
         id="platforms"
         className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-9"
       >
         <div className="max-w-2xl">
           <h2 className="font-display text-xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-2xl">
-            Built for Android &amp; iPhone.
+            Download the Main Android App (APK).
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
-            Install the Android APK for system-wide browser and ad blocking without occupying your
-            VPN slot, or add GambleAware to your iPhone Home Screen alongside Screen Time.
+            Get the signed v2.1.1 Android APK directly below for full system-wide browser, ad, and
+            uninstall protection without using your VPN slot.
           </p>
         </div>
 
@@ -891,12 +901,12 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-[var(--accent-ink)]">
-                      {isAndroidHandheld ? 'YOUR DEVICE · ANDROID 7.0+' : 'ANDROID 7.0+'}
+                      {isAndroidHandheld ? 'YOUR DEVICE · ANDROID 7.0+' : 'ANDROID 7.0+ · MAIN APP'}
                     </span>
                     <Smartphone className="h-4 w-4 text-[var(--accent-ink)]" />
                   </div>
                   <h3 className="mt-3 font-display text-lg font-semibold text-[var(--ink)]">
-                    Android App (APK)
+                    Android App (GambleAware-Nigeria.apk)
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
                     Blocks {builtInDomainCount}+ betting platforms as you type across Chrome, Brave,
@@ -926,15 +936,25 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                     </li>
                   </ul>
                 </div>
-                <a
-                  href={ANDROID_APK_DOWNLOAD_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
-                >
-                  <Download className="h-4 w-4 shrink-0" />
-                  <span>Download GambleAware-Nigeria.apk</span>
-                </a>
+                <div className="mt-4 flex flex-col gap-2">
+                  <a
+                    href={ANDROID_APK_DOWNLOAD_URL}
+                    download={APK_DOWNLOAD_FILENAME}
+                    onClick={handleMarkDownloadStarted}
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                  >
+                    <Download className="h-4 w-4 shrink-0" />
+                    <span>Download GambleAware-Nigeria.apk</span>
+                  </a>
+                  <a
+                    href={ANDROID_APK_GITHUB_URL}
+                    rel="noopener noreferrer"
+                    className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-xs font-medium text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    <span>Backup Mirror (GitHub Release v2.1.1)</span>
+                  </a>
+                </div>
               </LiquidGlassCard>
             ) : (
               <LiquidGlassCard key="ios" className="flex flex-col justify-between p-4 sm:p-5">
@@ -942,62 +962,45 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-[var(--accent-ink)]">
                       {isAppleHandheld
-                        ? 'YOUR DEVICE · IPHONE & IPAD (IOS)'
-                        : 'IPHONE & IPAD (IOS)'}
+                        ? 'YOUR DEVICE · IPHONE & IPAD (SCREEN TIME)'
+                        : 'IPHONE & IPAD (SCREEN TIME LIST)'}
                     </span>
                     <Share className="h-4 w-4 text-[var(--accent-ink)]" />
                   </div>
                   <h3 className="mt-3 font-display text-lg font-semibold text-[var(--ink)]">
-                    iPhone Home-Screen App + Screen Time Block
+                    Apple Screen Time Blocklist
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
-                    Apple does not allow APK installers, so iPhone users get a dedicated Home-Screen
-                    GambleAware G app paired with native Apple Screen Time site blocking:
+                    Apple does not support Android APK installers. If you also carry an iPhone or
+                    iPad, block major betting sites directly in iOS Settings:
                   </p>
                   <ol className="mt-3 space-y-2 text-xs leading-relaxed text-[var(--ink-muted)]">
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
-                        1. Add G App to Home Screen:
+                        1. Copy our top betting sites list:
                       </span>{' '}
-                      On your iPhone in Safari, open{' '}
-                      <span className="font-mono font-semibold text-[var(--ink)]">
-                        gbb.sidihost.sbs/?app=1
-                      </span>{' '}
-                      and tap{' '}
-                      <span className="font-semibold text-[var(--ink)]">
-                        Share → Add to Home Screen
-                      </span>{' '}
-                      for offline clean-streak, ₦ savings, goals &amp; 60s Calm Reset.
+                      Tap the button below to copy all {TOP_BETTING_DOMAINS_FOR_IOS.length}{' '}
+                      high-risk domains.
                     </li>
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
                         2. Block betting sites natively:
                       </span>{' '}
-                      Go to{' '}
+                      Open{' '}
                       <span className="font-semibold text-[var(--ink)]">
                         Settings → Screen Time → Content &amp; Privacy Restrictions → Web Content →
                         Limit Adult Websites → Never Allow
                       </span>{' '}
-                      and paste the betting domains below.
+                      and paste them in.
                     </li>
                   </ol>
                 </div>
 
                 <div className="mt-5 flex flex-col gap-2">
-                  {isAppleHandheld && onOpenWebApp ? (
-                    <button
-                      type="button"
-                      onClick={onOpenWebApp}
-                      className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
-                    >
-                      <Smartphone className="h-4 w-4 shrink-0" />
-                      <span>Open &amp; Add iPhone App</span>
-                    </button>
-                  ) : null}
                   <button
                     type="button"
                     onClick={() => void handleCopyIosBlocklist()}
-                    className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                    className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
                   >
                     {copiedIosDomains ? (
                       <Check className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
@@ -1024,7 +1027,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-lg font-bold text-[var(--ink)] sm:text-xl">
                 {installGuideTab === 'ios'
-                  ? 'How to install on iPhone'
+                  ? 'iPhone Screen Time setup'
                   : 'How to install on Android'}
               </h2>
               <div
@@ -1043,7 +1046,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                       : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
                   }`}
                 >
-                  Android
+                  Android APK
                 </button>
                 <button
                   type="button"
@@ -1056,7 +1059,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                       : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
                   }`}
                 >
-                  iPhone
+                  iPhone List
                 </button>
               </div>
             </div>
@@ -1064,8 +1067,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             {installGuideTab === 'ios' ? (
               <>
                 <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-                  Takes under two minutes in Safari — zero App Store friction, zero tracking, and
-                  works together with Apple Screen Time.
+                  Apple blocks APK sideloading, so use built-in iOS Screen Time with our curated
+                  betting domain list.
                 </p>
 
                 <ol className="mt-5 divide-y divide-[var(--subtle-border)]/70">
@@ -1075,32 +1078,16 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                     </span>
                     <div>
                       <p className="text-sm font-semibold text-[var(--ink)]">
-                        Open in iPhone Safari
+                        Copy the 22 betting sites below
                       </p>
                       <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-                        Tap <span className="font-semibold">Open &amp; Install for iPhone</span> or
-                        visit <span className="font-mono">gbb.sidihost.sbs/?app=1</span> in Safari.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3.5 py-3.5">
-                    <span className="mt-0.5 font-mono text-xs font-bold text-[var(--accent-ink)] tabular-nums">
-                      02
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--ink)]">
-                        Add GambleAware G to Home Screen
-                      </p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-                        Tap Safari&rsquo;s <span className="font-semibold">Share</span> icon →{' '}
-                        <span className="font-semibold">Add to Home Screen</span> for the offline G
-                        app with Naira tracker, lock timer, and 60s Calm Reset.
+                        Includes SportyBet, Bet9ja, BetKing, 1xBet, MSport, Stake, and Bet365.
                       </p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3.5 pt-3.5">
                     <span className="mt-0.5 font-mono text-xs font-bold text-[var(--accent-ink)] tabular-nums">
-                      03
+                      02
                     </span>
                     <div>
                       <p className="text-sm font-semibold text-[var(--ink)]">
@@ -1110,7 +1097,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                         Paste our {TOP_BETTING_DOMAINS_FOR_IOS.length}-domain blocklist into{' '}
                         <span className="font-semibold">
                           Settings → Screen Time → Content &amp; Privacy Restrictions → Web Content
-                          → Never Allow
+                          → Limit Adult Websites → Never Allow
                         </span>
                         .
                       </p>
@@ -1119,16 +1106,6 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 </ol>
 
                 <div className="mt-5 flex flex-col gap-2">
-                  {isAppleHandheld && onOpenWebApp ? (
-                    <button
-                      type="button"
-                      onClick={onOpenWebApp}
-                      className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
-                    >
-                      <Smartphone className="h-4 w-4 shrink-0" />
-                      <span>Open &amp; Install for iPhone</span>
-                    </button>
-                  ) : null}
                   <button
                     type="button"
                     onClick={() => void handleCopyIosBlocklist()}
@@ -1183,9 +1160,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                       <span className="font-semibold text-[var(--ink)]">
                         1. Uninstall any older GambleAware build first:
                       </span>{' '}
-                      Newer release builds (v2.1.1+) use a consistent release signing key, so
-                      Android rejects installing over older debug builds. If Uninstall Lock was on,
-                      first open{' '}
+                      Release v2.1.1+ uses a consistent release signing key, so Android rejects
+                      installing over older debug builds. If Uninstall Lock was on, first open{' '}
                       <span className="font-semibold text-[var(--ink)]">
                         Settings → Security → Device admin apps → GambleAware → Deactivate
                       </span>
@@ -1205,20 +1181,30 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                       <span className="font-semibold text-[var(--ink)]">
                         More details → Install anyway
                       </span>{' '}
-                      to finish installing the direct GitHub release.
+                      to finish installing.
                     </li>
                   </ul>
                 </div>
 
-                <a
-                  href={ANDROID_APK_DOWNLOAD_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
-                >
-                  <Download className="h-4 w-4 shrink-0" />
-                  <span>Download Android App</span>
-                </a>
+                <div className="mt-4 flex flex-col gap-2">
+                  <a
+                    href={ANDROID_APK_DOWNLOAD_URL}
+                    download={APK_DOWNLOAD_FILENAME}
+                    onClick={handleMarkDownloadStarted}
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
+                  >
+                    <Download className="h-4 w-4 shrink-0" />
+                    <span>Download Android App (APK)</span>
+                  </a>
+                  <a
+                    href={ANDROID_APK_GITHUB_URL}
+                    rel="noopener noreferrer"
+                    className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-xs font-medium text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    <span>Direct GitHub Release Mirror</span>
+                  </a>
+                </div>
               </>
             )}
           </div>

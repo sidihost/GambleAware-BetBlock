@@ -1,21 +1,23 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { loadStore } from './data/storage';
 import { ThemeMode } from './data/types';
-import { captureEarlyInstallPrompt } from './hooks/usePWAInstall';
 import './index.css';
 
-// Capture browser install prompt even if it fires before React mounts
-captureEarlyInstallPrompt();
-
-// Register Workbox service worker for offline cache & standalone installability
-try {
-  registerSW({ immediate: true });
-} catch {
-  // Ignored in unsupported browser contexts
+// Clean up any leftover PWA service workers & caches from earlier versions
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  void navigator.serviceWorker
+    .getRegistrations()
+    .then((registrations) => Promise.all(registrations.map((reg) => reg.unregister())))
+    .catch(() => {});
+}
+if (typeof window !== 'undefined' && 'caches' in window) {
+  void caches
+    .keys()
+    .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+    .catch(() => {});
 }
 
 // Synchronously apply stored theme before first React paint to prevent White/Black flash
