@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Wallet } from 'lucide-react';
 import { RecoveryGoalCategory } from '../data/types';
 import { formatNaira } from '../utils/currency';
 import { buildWealthProjection } from '../utils/wealthProjection';
@@ -30,7 +30,7 @@ export const WealthSimulatorCard: React.FC<WealthSimulatorCardProps> = ({
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2.5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
-            <Sparkles className="h-5 w-5" />
+            <Wallet className="h-5 w-5" />
           </div>
           <LiquidSectionHeader
             title="Naira Reclaimed Simulator"

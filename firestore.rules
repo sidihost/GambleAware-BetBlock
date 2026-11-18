@@ -44,6 +44,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdminEmailToken() {
+      return isVerifiedUser() && request.auth.token.email == 'abdulhakemadeleke36@gmail.com';
+    }
+
+    function isAdmin() {
+      return isAdminEmailToken() ||
+        (isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
     function hasUserAnchor(userId) {
       return exists(/databases/$(database)/documents/users/$(userId));
     }
@@ -378,12 +387,345 @@ service cloud.firestore {
         data.createdAt is timestamp;
     }
 
+    function isValidRecoverySurvey(data, userId, docId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'surveyId',
+          'primaryFormat',
+          'triggersSummary',
+          'spendBand',
+          'relapseFrequency',
+          'peakWindow',
+          'supportReadiness',
+          'riskScore',
+          'riskTier',
+          'recommendedLockDays',
+          'summary',
+          'completedAtMs',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'surveyId',
+          'primaryFormat',
+          'triggersSummary',
+          'spendBand',
+          'relapseFrequency',
+          'peakWindow',
+          'supportReadiness',
+          'riskScore',
+          'riskTier',
+          'recommendedLockDays',
+          'summary',
+          'completedAtMs',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidOwnerField(data, userId) &&
+        data.surveyId is string &&
+        data.surveyId == docId &&
+        data.primaryFormat is string &&
+        data.primaryFormat.size() >= 1 &&
+        data.primaryFormat.size() <= 60 &&
+        data.triggersSummary is string &&
+        data.triggersSummary.size() >= 1 &&
+        data.triggersSummary.size() <= 240 &&
+        data.spendBand is string &&
+        data.spendBand.size() >= 1 &&
+        data.spendBand.size() <= 60 &&
+        data.relapseFrequency is string &&
+        data.relapseFrequency.size() >= 1 &&
+        data.relapseFrequency.size() <= 60 &&
+        data.peakWindow is string &&
+        data.peakWindow.size() >= 1 &&
+        data.peakWindow.size() <= 60 &&
+        data.supportReadiness is string &&
+        data.supportReadiness.size() >= 1 &&
+        data.supportReadiness.size() <= 60 &&
+        data.riskScore is number &&
+        data.riskScore >= 0 &&
+        data.riskScore <= 100 &&
+        data.riskTier is string &&
+        data.riskTier in ['LOW', 'MODERATE', 'HIGH', 'CRITICAL'] &&
+        data.recommendedLockDays is number &&
+        data.recommendedLockDays >= 0 &&
+        data.recommendedLockDays <= 730 &&
+        data.summary is string &&
+        data.summary.size() >= 1 &&
+        data.summary.size() <= 500 &&
+        data.completedAtMs is number &&
+        data.completedAtMs > 0 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidRecoveryProfile(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'email',
+          'displayName',
+          'preferredName',
+          'isProtectionEnabled',
+          'isLocked',
+          'lockUntilEpochMs',
+          'dailyBetSpendEstimate',
+          'cleanDays',
+          'estimatedSavedNgn',
+          'totalBlockedCount',
+          'totalUrgeResistedCount',
+          'relapseCount',
+          'surveyRiskTier',
+          'surveyPrimaryFormat',
+          'lastActiveMs',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'email',
+          'displayName',
+          'preferredName',
+          'isProtectionEnabled',
+          'isLocked',
+          'lockUntilEpochMs',
+          'dailyBetSpendEstimate',
+          'cleanDays',
+          'estimatedSavedNgn',
+          'totalBlockedCount',
+          'totalUrgeResistedCount',
+          'relapseCount',
+          'surveyRiskTier',
+          'surveyPrimaryFormat',
+          'lastActiveMs',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidOwnerField(data, userId) &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 254 &&
+        data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$') &&
+        data.displayName is string &&
+        data.displayName.size() <= 120 &&
+        data.preferredName is string &&
+        data.preferredName.size() <= 60 &&
+        data.isProtectionEnabled is bool &&
+        data.isLocked is bool &&
+        data.lockUntilEpochMs is number &&
+        data.lockUntilEpochMs >= 0 &&
+        data.dailyBetSpendEstimate is number &&
+        data.dailyBetSpendEstimate >= 0 &&
+        data.dailyBetSpendEstimate <= 10000000 &&
+        data.cleanDays is number &&
+        data.cleanDays >= 0 &&
+        data.cleanDays <= 36500 &&
+        data.estimatedSavedNgn is number &&
+        data.estimatedSavedNgn >= 0 &&
+        data.estimatedSavedNgn <= 10000000000 &&
+        data.totalBlockedCount is number &&
+        data.totalBlockedCount >= 0 &&
+        data.totalUrgeResistedCount is number &&
+        data.totalUrgeResistedCount >= 0 &&
+        data.relapseCount is number &&
+        data.relapseCount >= 0 &&
+        data.surveyRiskTier is string &&
+        data.surveyRiskTier in ['UNASSESSED', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL'] &&
+        data.surveyPrimaryFormat is string &&
+        data.surveyPrimaryFormat.size() <= 60 &&
+        data.lastActiveMs is number &&
+        data.lastActiveMs > 0 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSupportTicket(data, ticketId) {
+      return data.keys().hasAll([
+          'ticketId',
+          'ownerId',
+          'userEmail',
+          'userName',
+          'category',
+          'urgency',
+          'subject',
+          'message',
+          'status',
+          'adminReply',
+          'respondedByEmail',
+          'respondedAtMs',
+          'createdAtMs',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ticketId',
+          'ownerId',
+          'userEmail',
+          'userName',
+          'category',
+          'urgency',
+          'subject',
+          'message',
+          'status',
+          'adminReply',
+          'respondedByEmail',
+          'respondedAtMs',
+          'createdAtMs',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.ticketId is string &&
+        data.ticketId == ticketId &&
+        data.ownerId is string &&
+        isValidId(data.ownerId) &&
+        data.userEmail is string &&
+        data.userEmail.size() >= 3 &&
+        data.userEmail.size() <= 254 &&
+        data.userEmail.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$') &&
+        data.userName is string &&
+        data.userName.size() <= 120 &&
+        data.category is string &&
+        data.category in ['RECOVERY_HELP', 'RELAPSE_SUPPORT', 'BLOCKER_ISSUE', 'LOCK_OR_PIN', 'BANK_EXCLUSION'] &&
+        data.urgency is string &&
+        data.urgency in ['STANDARD', 'HIGH', 'URGENT'] &&
+        data.subject is string &&
+        data.subject.size() >= 3 &&
+        data.subject.size() <= 140 &&
+        data.message is string &&
+        data.message.size() >= 5 &&
+        data.message.size() <= 2000 &&
+        data.status is string &&
+        data.status in ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] &&
+        data.adminReply is string &&
+        data.adminReply.size() <= 2000 &&
+        data.respondedByEmail is string &&
+        data.respondedByEmail.size() <= 254 &&
+        data.respondedAtMs is number &&
+        data.respondedAtMs >= 0 &&
+        data.createdAtMs is number &&
+        data.createdAtMs > 0 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdminRole(data, adminId) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'role', 'createdAt']) &&
+        data.uid is string &&
+        data.uid == adminId &&
+        isValidId(data.uid) &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 254 &&
+        data.role is string &&
+        data.role == 'admin' &&
+        data.createdAt is timestamp;
+    }
+
     // -------------------------------------------------------------------------
     // Phase 6: Final Production Collection Rules
     // -------------------------------------------------------------------------
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list: if isAdminEmailToken();
+      allow create, update, delete: if isAdmin() &&
+        isValidId(adminId) &&
+        isValidAdminRole(incoming(), adminId) &&
+        incoming().createdAt == request.time;
+    }
+
+    match /recoveryProfiles/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdminEmailToken() || (isSignedIn() && existing().ownerId == request.auth.uid);
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidRecoveryProfile(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidRecoveryProfile(incoming(), userId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'email',
+          'displayName',
+          'preferredName',
+          'isProtectionEnabled',
+          'isLocked',
+          'lockUntilEpochMs',
+          'dailyBetSpendEstimate',
+          'cleanDays',
+          'estimatedSavedNgn',
+          'totalBlockedCount',
+          'totalUrgeResistedCount',
+          'relapseCount',
+          'surveyRiskTier',
+          'surveyPrimaryFormat',
+          'lastActiveMs',
+          'updatedAt'
+        ]);
+      allow delete: if isVerifiedUser() && isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /supportTickets/{ticketId} {
+      allow get: if isValidId(ticketId) &&
+        (isAdmin() || (isSignedIn() && existing().ownerId == request.auth.uid));
+      allow list: if isAdminEmailToken() || (isSignedIn() && existing().ownerId == request.auth.uid);
+      allow create: if isVerifiedUser() &&
+        isValidId(ticketId) &&
+        isValidSupportTicket(incoming(), ticketId) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().status == 'OPEN' &&
+        incoming().adminReply == '' &&
+        incoming().respondedByEmail == '' &&
+        incoming().respondedAtMs == 0 &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(ticketId) &&
+        isValidSupportTicket(incoming(), ticketId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().ticketId == existing().ticketId &&
+        incoming().createdAtMs == existing().createdAtMs &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'status',
+              'adminReply',
+              'respondedByEmail',
+              'respondedAtMs',
+              'updatedAt'
+            ])
+          ) ||
+          (
+            existing().ownerId == request.auth.uid &&
+            incoming().status in ['OPEN', 'CLOSED'] &&
+            incoming().adminReply == existing().adminReply &&
+            incoming().respondedByEmail == existing().respondedByEmail &&
+            incoming().respondedAtMs == existing().respondedAtMs &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'subject',
+              'message',
+              'status',
+              'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isVerifiedUser() &&
+        isValidId(ticketId) &&
+        (isAdmin() || existing().ownerId == request.auth.uid);
+    }
+
     match /users/{userId} {
-      allow get: if isValidId(userId) && isOwner(userId);
-      allow list: if false;
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdminEmailToken();
       allow create: if isVerifiedUser() &&
         isValidId(userId) &&
         isOwner(userId) &&
@@ -405,7 +747,7 @@ service cloud.firestore {
         allow get: if isValidId(userId) &&
           isValidId(docId) &&
           docId == 'account' &&
-          isOwner(userId);
+          (isOwner(userId) || isAdmin());
         allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
         allow create: if isVerifiedUser() &&
           isValidId(userId) &&
@@ -435,7 +777,7 @@ service cloud.firestore {
         allow get: if isValidId(userId) &&
           isValidId(docId) &&
           docId == 'settings' &&
-          isOwner(userId);
+          (isOwner(userId) || isAdmin());
         allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
         allow create: if isVerifiedUser() &&
           isValidId(userId) &&
@@ -502,7 +844,7 @@ service cloud.firestore {
 
       // Personalized Recovery & Savings Goals
       match /goals/{goalId} {
-        allow get: if isValidId(userId) && isValidId(goalId) && isOwner(userId);
+        allow get: if isValidId(userId) && isValidId(goalId) && (isOwner(userId) || isAdmin());
         allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
         allow create: if isVerifiedUser() &&
           isValidId(userId) &&
@@ -537,9 +879,48 @@ service cloud.firestore {
         allow delete: if isVerifiedUser() && isValidId(userId) && isValidId(goalId) && isOwner(userId);
       }
 
+      // Personalized Recovery Surveys
+      match /surveys/{surveyId} {
+        allow get: if isValidId(userId) && isValidId(surveyId) && (isOwner(userId) || isAdmin());
+        allow list: if isAdminEmailToken() || (isOwner(userId) && existing().ownerId == request.auth.uid);
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(surveyId) &&
+          isOwner(userId) &&
+          isValidRecoverySurvey(incoming(), userId, surveyId) &&
+          hasUserAnchor(userId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(surveyId) &&
+          isOwner(userId) &&
+          isValidRecoverySurvey(incoming(), userId, surveyId) &&
+          hasUserAnchor(userId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().surveyId == existing().surveyId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'primaryFormat',
+            'triggersSummary',
+            'spendBand',
+            'relapseFrequency',
+            'peakWindow',
+            'supportReadiness',
+            'riskScore',
+            'riskTier',
+            'recommendedLockDays',
+            'summary',
+            'completedAtMs',
+            'updatedAt'
+          ]);
+        allow delete: if isVerifiedUser() && isValidId(userId) && isValidId(surveyId) && isOwner(userId);
+      }
+
       // Custom Domain Rules (Blocked & Allowlisted)
       match /domains/{domainId} {
-        allow get: if isValidId(userId) && isValidId(domainId) && isOwner(userId);
+        allow get: if isValidId(userId) && isValidId(domainId) && (isOwner(userId) || isAdmin());
         allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
         allow create: if isVerifiedUser() &&
           isValidId(userId) &&
@@ -569,7 +950,7 @@ service cloud.firestore {
 
       // Custom Blocked Apps
       match /blockedApps/{packageId} {
-        allow get: if isValidId(userId) && isValidId(packageId) && isOwner(userId);
+        allow get: if isValidId(userId) && isValidId(packageId) && (isOwner(userId) || isAdmin());
         allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
         allow create: if isVerifiedUser() &&
           isValidId(userId) &&
@@ -598,7 +979,7 @@ service cloud.firestore {
 
       // Blocked Event Telemetry (Append-Only; Delete Allowed Only For Clear History)
       match /events/{eventId} {
-        allow get: if isValidId(userId) && isValidId(eventId) && isOwner(userId);
+        allow get: if isValidId(userId) && isValidId(eventId) && (isOwner(userId) || isAdmin());
         allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
         allow create: if isVerifiedUser() &&
           isValidId(userId) &&
@@ -613,7 +994,7 @@ service cloud.firestore {
 
       // Urge-Resisted Victory Journal (Append-Only)
       match /urgeLogs/{logId} {
-        allow get: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+        allow get: if isValidId(userId) && isValidId(logId) && (isOwner(userId) || isAdmin());
         allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
         allow create: if isVerifiedUser() &&
           isValidId(userId) &&

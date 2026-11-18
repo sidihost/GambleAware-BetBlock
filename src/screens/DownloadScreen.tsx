@@ -357,14 +357,6 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
 
           {/* Hardware-Crafted Android Phone Chassis */}
           <div className="relative">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -inset-6 rounded-[58px] opacity-20 blur-2xl"
-              style={{
-                background:
-                  'radial-gradient(circle at 50% 35%, var(--active-fill), transparent 68%)',
-              }}
-            />
 
             <div className="relative w-[304px] rounded-[44px] border-[3px] border-[var(--glass-border)] bg-[var(--surface)] p-2.5 shadow-2xl ring-1 ring-[var(--subtle-border)] sm:w-[324px]">
               {/* Hardware Side Keys */}
@@ -582,20 +574,6 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
 
                         <div className="mt-2 rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2.5">
                           <svg viewBox="0 0 220 76" className="h-[72px] w-full">
-                            <defs>
-                              <linearGradient id="goalNairaFill" x1="0" y1="0" x2="0" y2="1">
-                                <stop
-                                  offset="0%"
-                                  stopColor="var(--active-fill)"
-                                  stopOpacity="0.34"
-                                />
-                                <stop
-                                  offset="100%"
-                                  stopColor="var(--active-fill)"
-                                  stopOpacity="0"
-                                />
-                              </linearGradient>
-                            </defs>
                             <line
                               x1="0"
                               y1="64"
@@ -615,7 +593,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                             />
                             <path
                               d="M 8 64 Q 64 56 112 38 T 212 10 L 212 72 L 8 72 Z"
-                              fill="url(#goalNairaFill)"
+                              fill="var(--active-fill)"
+                              fillOpacity={0.12}
                             />
                             <path
                               d="M 8 64 Q 64 56 112 38 T 212 10"

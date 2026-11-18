@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Activity, AlertTriangle, Calculator, PiggyBank, ShieldCheck, Zap } from 'lucide-react';
+import { Activity, AlertTriangle, Calculator, PiggyBank, ShieldCheck, TrendingUp } from 'lucide-react';
 import { formatNaira } from '../utils/currency';
 import { analyzePromoAndExpectedLoss, TiltRadarEvaluation } from '../utils/tiltRadar';
 import { LiquidGlassCard, LiquidSectionHeader } from './LiquidGlass';
@@ -61,7 +61,7 @@ export const TiltRadarCard: React.FC<TiltRadarCardProps> = ({
           {radar.level === 'CRITICAL' ? (
             <AlertTriangle className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
           ) : radar.level === 'ELEVATED' ? (
-            <Zap className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
+            <TrendingUp className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
           ) : (
             <Activity className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
           )}

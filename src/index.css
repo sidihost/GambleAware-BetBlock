@@ -84,7 +84,7 @@
   --blob-one: #FFEBF4;
   --blob-two: #FDE3F0;
   --blob-three: #FFF7FB;
-  --preloader-halo: radial-gradient(circle, rgba(216, 27, 120, 0.14) 0%, rgba(216, 27, 120, 0.04) 44%, rgba(216, 27, 120, 0) 74%);
+  --preloader-halo: rgba(216, 27, 120, 0.06);
   color-scheme: light;
 }
 
@@ -107,7 +107,7 @@
   --blob-one: #260B19;
   --blob-two: #170912;
   --blob-three: #120A10;
-  --preloader-halo: radial-gradient(circle, rgba(255, 61, 154, 0.22) 0%, rgba(255, 61, 154, 0.06) 44%, rgba(255, 61, 154, 0) 74%);
+  --preloader-halo: rgba(255, 61, 154, 0.08);
   color-scheme: dark;
 }
 

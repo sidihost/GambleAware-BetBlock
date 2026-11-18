@@ -1,51 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="512" height="512">
-  <defs>
-    <radialGradient id="ga-obs-bg" cx="34%" cy="22%" r="82%">
-      <stop offset="0%" stop-color="#29091B" />
-      <stop offset="54%" stop-color="#0D080C" />
-      <stop offset="100%" stop-color="#060608" />
-    </radialGradient>
-    <linearGradient id="ga-rim" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF7BC0" stop-opacity="0.58" />
-      <stop offset="52%" stop-color="#FF3D9A" stop-opacity="0.22" />
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.14" />
-    </linearGradient>
-    <linearGradient id="ga-pearl-g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="70%" stop-color="#FBF3F7" />
-      <stop offset="100%" stop-color="#E7CFD9" />
-    </linearGradient>
-    <linearGradient id="ga-pink-bolt" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF8CC8" />
-      <stop offset="50%" stop-color="#FF3D9A" />
-      <stop offset="100%" stop-color="#D81B78" />
-    </linearGradient>
-  </defs>
+  <rect x="2" y="2" width="104" height="104" rx="24" fill="#0A070B" />
+  <rect x="2.6" y="2.6" width="102.8" height="102.8" rx="23.4" fill="none" stroke="#FF3D9A" stroke-opacity="0.35" stroke-width="1" />
 
-  <!-- Obsidian Squircle Tile -->
-  <rect x="2" y="2" width="104" height="104" rx="24" fill="url(#ga-obs-bg)" />
-  <rect x="2.6" y="2.6" width="102.8" height="102.8" rx="23.4" fill="none" stroke="url(#ga-rim)" stroke-width="1" />
-
-  <!-- Subtle Inner Radial Glow -->
   <circle cx="54" cy="54" r="38" fill="#260B19" fill-opacity="0.48" />
 
-  <!-- Sovereign Pearl-White Geometric G Body -->
   <g transform="translate(54 54) scale(1.42) translate(-54 -54)">
     <path
       d="M68,36 L63.5,41 L45,41 L41,45 L41,63 L45,67 L63,67 L67.5,71.8 L63.8,74.5 L42,74.5 L33.5,66 L33.5,42 L42,33.5 L64.2,33.5 Z"
-      fill="url(#ga-pearl-g)"
+      fill="#FFFFFF"
     />
-    <!-- Luminous Neon Pink Vault Keystone Bolt -->
     <path
       d="M52,50.5 L74.5,50.5 L74.5,65.5 L67.2,72.5 L67.2,57.5 L48.5,57.5 Z"
-      fill="url(#ga-pink-bolt)"
+      fill="#FF3D9A"
     />
-    <!-- Deep Pink Bevel Pillar -->
     <path
       d="M67.2,57.5 L74.5,50.5 L74.5,65.5 L67.2,72.5 Z"
       fill="#C4116B"
     />
-    <!-- North-Star Beacon -->
     <path
       d="M70.5,34.5 Q70.5,39.8 75.8,39.8 Q70.5,39.8 70.5,45.1 Q70.5,39.8 65.2,39.8 Q70.5,39.8 70.5,34.5 Z"
       fill="#FF72B8"

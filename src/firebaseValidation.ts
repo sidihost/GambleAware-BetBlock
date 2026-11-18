@@ -26,7 +26,32 @@ export const BLUEPRINT_LIMITS = {
   goalMaxTargetDays: 3650,
   goalMaxAmountNgn: 100_000_000,
   validGoalCategories: ['savings', 'streak', 'milestone'] as const,
+  surveyOptionMaxLength: 60,
+  surveyTriggersMaxLength: 240,
+  surveySummaryMaxLength: 500,
+  validRiskTiers: ['LOW', 'MODERATE', 'HIGH', 'CRITICAL'] as const,
+  validProfileRiskTiers: ['UNASSESSED', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL'] as const,
+  ticketSubjectMinLength: 3,
+  ticketSubjectMaxLength: 140,
+  ticketMessageMinLength: 5,
+  ticketMessageMaxLength: 2000,
+  ticketReplyMaxLength: 2000,
+  validTicketCategories: [
+    'RECOVERY_HELP',
+    'RELAPSE_SUPPORT',
+    'BLOCKER_ISSUE',
+    'LOCK_OR_PIN',
+    'BANK_EXCLUSION',
+  ] as const,
+  validTicketUrgencies: ['STANDARD', 'HIGH', 'URGENT'] as const,
+  validTicketStatuses: ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const,
 } as const;
+
+export const BOOTSTRAPPED_ADMIN_EMAIL = 'abdulhakemadeleke36@gmail.com';
+
+export function isAdminEmail(email: string | null | undefined): boolean {
+  return Boolean(email && email.trim().toLowerCase() === BOOTSTRAPPED_ADMIN_EMAIL);
+}
 
 export function toSafeFirestoreDocId(raw: string): string {
   const cleaned = raw
@@ -81,9 +106,14 @@ export function sanitizeGoalFields(input: {
     ? (input.category as (typeof BLUEPRINT_LIMITS.validGoalCategories)[number])
     : 'streak';
   return {
-    title: input.title.trim().slice(0, BLUEPRINT_LIMITS.goalTitleMaxLength) || '30-Day Betting-Free Goal',
+    title:
+      input.title.trim().slice(0, BLUEPRINT_LIMITS.goalTitleMaxLength) ||
+      '30-Day Betting-Free Goal',
     category: safeCategory,
-    targetDays: Math.max(1, Math.min(BLUEPRINT_LIMITS.goalMaxTargetDays, Math.round(input.targetDays || 30))),
+    targetDays: Math.max(
+      1,
+      Math.min(BLUEPRINT_LIMITS.goalMaxTargetDays, Math.round(input.targetDays || 30)),
+    ),
     targetAmountNgn: Math.max(
       0,
       Math.min(BLUEPRINT_LIMITS.goalMaxAmountNgn, Math.round(input.targetAmountNgn || 0)),
@@ -91,6 +121,27 @@ export function sanitizeGoalFields(input: {
     whyNote: input.whyNote.trim().slice(0, BLUEPRINT_LIMITS.goalWhyMaxLength),
     lockDurationDays: Math.max(0, Math.min(365, Math.round(input.lockDurationDays || 0))),
   };
+}
+
+export function sanitizeSupportTicketInput(input: {
+  category: string;
+  urgency: string;
+  subject: string;
+  message: string;
+}) {
+  const category = BLUEPRINT_LIMITS.validTicketCategories.includes(
+    input.category as (typeof BLUEPRINT_LIMITS.validTicketCategories)[number],
+  )
+    ? (input.category as (typeof BLUEPRINT_LIMITS.validTicketCategories)[number])
+    : 'RECOVERY_HELP';
+  const urgency = BLUEPRINT_LIMITS.validTicketUrgencies.includes(
+    input.urgency as (typeof BLUEPRINT_LIMITS.validTicketUrgencies)[number],
+  )
+    ? (input.urgency as (typeof BLUEPRINT_LIMITS.validTicketUrgencies)[number])
+    : 'STANDARD';
+  const subject = input.subject.trim().slice(0, BLUEPRINT_LIMITS.ticketSubjectMaxLength);
+  const message = input.message.trim().slice(0, BLUEPRINT_LIMITS.ticketMessageMaxLength);
+  return { category, urgency, subject, message };
 }
 
 export function isValidFirestoreDocId(id: string): boolean {

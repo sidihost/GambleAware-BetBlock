@@ -38,7 +38,6 @@
       "properties": {
         "ownerId": {
           "type": "string",
-          "description": "Firebase Auth UID of the account owner.",
           "minLength": 1,
           "maxLength": 128,
           "pattern": "^[a-zA-Z0-9_\\-]+$"
@@ -46,19 +45,16 @@
         "email": {
           "type": "string",
           "format": "email",
-          "description": "Verified account email address.",
           "minLength": 3,
           "maxLength": 254
         },
         "displayName": {
           "type": "string",
-          "description": "Account display name.",
           "minLength": 0,
           "maxLength": 120
         },
         "preferredName": {
           "type": "string",
-          "description": "Personalized first or preferred name shown in daily greetings.",
           "minLength": 0,
           "maxLength": 60
         },
@@ -75,7 +71,7 @@
     },
     "UserSettings": {
       "title": "UserSettings",
-      "description": "Persistent GambleAware blocker configuration, streak baseline, commitment lock, AI agent toggles, and UI preferences.",
+      "description": "Persistent GambleAware blocker configuration, streak baseline, commitment lock, and UI preferences.",
       "type": "object",
       "properties": {
         "ownerId": {
@@ -155,7 +151,7 @@
     },
     "UserGoal": {
       "title": "UserGoal",
-      "description": "Personalized betting-free recovery or Naira savings goal created by the user or AI coach.",
+      "description": "Personalized betting-free recovery or Naira savings goal created by the user.",
       "type": "object",
       "properties": {
         "ownerId": {
@@ -355,6 +351,270 @@
         "timestamp",
         "createdAt"
       ]
+    },
+    "RecoverySurvey": {
+      "title": "RecoverySurvey",
+      "description": "Personalized gambling recovery assessment and recommendation profile.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "surveyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "primaryFormat": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "triggersSummary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "spendBand": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "relapseFrequency": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "peakWindow": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "supportReadiness": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "riskScore": { "type": "number" },
+        "riskTier": {
+          "type": "string",
+          "enum": ["LOW", "MODERATE", "HIGH", "CRITICAL"],
+          "maxLength": 16
+        },
+        "recommendedLockDays": { "type": "number" },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "completedAtMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "surveyId",
+        "primaryFormat",
+        "triggersSummary",
+        "spendBand",
+        "relapseFrequency",
+        "peakWindow",
+        "supportReadiness",
+        "riskScore",
+        "riskTier",
+        "recommendedLockDays",
+        "summary",
+        "completedAtMs",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RecoveryProfile": {
+      "title": "RecoveryProfile",
+      "description": "Synced user recovery progress and survey risk summary readable by the owner and authorized admins.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "preferredName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "isProtectionEnabled": { "type": "boolean" },
+        "isLocked": { "type": "boolean" },
+        "lockUntilEpochMs": { "type": "number" },
+        "dailyBetSpendEstimate": { "type": "number" },
+        "cleanDays": { "type": "number" },
+        "estimatedSavedNgn": { "type": "number" },
+        "totalBlockedCount": { "type": "number" },
+        "totalUrgeResistedCount": { "type": "number" },
+        "relapseCount": { "type": "number" },
+        "surveyRiskTier": {
+          "type": "string",
+          "enum": ["UNASSESSED", "LOW", "MODERATE", "HIGH", "CRITICAL"],
+          "maxLength": 16
+        },
+        "surveyPrimaryFormat": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "lastActiveMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "email",
+        "displayName",
+        "preferredName",
+        "isProtectionEnabled",
+        "isLocked",
+        "lockUntilEpochMs",
+        "dailyBetSpendEstimate",
+        "cleanDays",
+        "estimatedSavedNgn",
+        "totalBlockedCount",
+        "totalUrgeResistedCount",
+        "relapseCount",
+        "surveyRiskTier",
+        "surveyPrimaryFormat",
+        "lastActiveMs",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Confidential recovery or technical support request submitted by a signed-in user for staff assistance.",
+      "type": "object",
+      "properties": {
+        "ticketId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "userName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "enum": ["RECOVERY_HELP", "RELAPSE_SUPPORT", "BLOCKER_ISSUE", "LOCK_OR_PIN", "BANK_EXCLUSION"],
+          "maxLength": 32
+        },
+        "urgency": {
+          "type": "string",
+          "enum": ["STANDARD", "HIGH", "URGENT"],
+          "maxLength": 16
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 140
+        },
+        "message": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 2000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"],
+          "maxLength": 16
+        },
+        "adminReply": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "respondedByEmail": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 254
+        },
+        "respondedAtMs": { "type": "number" },
+        "createdAtMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ticketId",
+        "ownerId",
+        "userEmail",
+        "userName",
+        "category",
+        "urgency",
+        "subject",
+        "message",
+        "status",
+        "adminReply",
+        "respondedByEmail",
+        "respondedAtMs",
+        "createdAtMs",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminRole": {
+      "title": "AdminRole",
+      "description": "Authorized GambleAware administrator role record.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin"],
+          "maxLength": 16
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
     }
   },
   "firestore": {
@@ -364,7 +624,7 @@
     },
     "/users/{userId}/private/{docId}": {
       "schema": { "$ref": "#/entities/UserPrivateInfo" },
-      "description": "Isolated PII document (email, displayName, preferredName) strictly owned by userId."
+      "description": "Isolated PII document strictly owned by userId or readable by admin."
     },
     "/users/{userId}/profile/{docId}": {
       "schema": { "$ref": "#/entities/UserSettings" },
@@ -372,7 +632,7 @@
     },
     "/users/{userId}/goals/{goalId}": {
       "schema": { "$ref": "#/entities/UserGoal" },
-      "description": "Personalized recovery and Naira savings goals strictly owned by userId."
+      "description": "Personalized recovery and Naira savings goals."
     },
     "/users/{userId}/domains/{domainId}": {
       "schema": { "$ref": "#/entities/CustomDomainRule" },
@@ -389,6 +649,22 @@
     "/users/{userId}/urgeLogs/{logId}": {
       "schema": { "$ref": "#/entities/UrgeLog" },
       "description": "Urge-resisted victory journal logs scoped to user."
+    },
+    "/users/{userId}/surveys/{surveyId}": {
+      "schema": { "$ref": "#/entities/RecoverySurvey" },
+      "description": "Personalized recovery assessment & recommendation profiles."
+    },
+    "/recoveryProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/RecoveryProfile" },
+      "description": "User recovery telemetry & survey tier readable by owner or authorized admin."
+    },
+    "/supportTickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/SupportTicket" },
+      "description": "Confidential support tickets created by users and managed by authorized admins."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminRole" },
+      "description": "Allowlisted GambleAware admin role records."
     }
   }
 }

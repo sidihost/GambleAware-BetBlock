@@ -1,4 +1,5 @@
 import { DEFAULT_HIGH_RISK_SCHEDULE } from '../utils/highRiskGuard';
+import type { EvaluatedSurveyProfile } from '../utils/recoverySurvey';
 import {
   BlockedAppEntity,
   BlockedDomainEntity,
@@ -6,6 +7,7 @@ import {
   PrivateDnsStatus,
   ProtectionSettingsState,
   RecoveryGoalEntity,
+  RelapseLogEntity,
   ThemeMode,
   UrgeLogEntity,
 } from './types';
@@ -25,6 +27,8 @@ export interface PersistedStore {
   blockedApps: BlockedAppEntity[];
   events: BlockedEventEntity[];
   urgeLogs: UrgeLogEntity[];
+  relapseLogs: RelapseLogEntity[];
+  latestSurvey: EvaluatedSurveyProfile | null;
 }
 
 const PIN_ATTEMPT_KEY = 'gambleaware_pin_attempts_v1';
@@ -218,7 +222,7 @@ export function clearPinAttemptState(): void {
 export function createDefaultStore(): PersistedStore {
   const now = Date.now();
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     updatedAtMs: 0,
     preferredName: '',
     settings: {
@@ -261,6 +265,8 @@ export function createDefaultStore(): PersistedStore {
     blockedApps: [],
     events: [],
     urgeLogs: [],
+    relapseLogs: [],
+    latestSurvey: null,
   };
 }
 
@@ -303,7 +309,7 @@ export function normalizeStoreShape(parsed: Partial<PersistedStore>): PersistedS
   }
 
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     updatedAtMs: typeof parsed.updatedAtMs === 'number' ? parsed.updatedAtMs : Date.now(),
     preferredName: typeof parsed.preferredName === 'string' ? parsed.preferredName : '',
     settings: mergedSettings,
@@ -321,6 +327,8 @@ export function normalizeStoreShape(parsed: Partial<PersistedStore>): PersistedS
     blockedApps: Array.isArray(parsed.blockedApps) ? parsed.blockedApps : [],
     events: Array.isArray(parsed.events) ? parsed.events : [],
     urgeLogs: Array.isArray(parsed.urgeLogs) ? parsed.urgeLogs : [],
+    relapseLogs: Array.isArray(parsed.relapseLogs) ? parsed.relapseLogs : [],
+    latestSurvey: parsed.latestSurvey ?? null,
   };
 }
 

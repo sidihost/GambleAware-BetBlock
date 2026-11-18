@@ -2,6 +2,7 @@ import { BlockMatchResult } from '../blocker/blocklistMatcher';
 import { GamblingCategory } from '../blocker/gamblingCategory';
 import type { GroupedBlockedSite } from '../utils/blockedLogGrouping';
 import type { ShieldLeakAudit } from '../utils/leakDiagnostics';
+import type { EvaluatedSurveyProfile } from '../utils/recoverySurvey';
 import type { TiltRadarEvaluation } from '../utils/tiltRadar';
 
 export enum ThemeMode {
@@ -109,6 +110,13 @@ export interface UrgeLogEntity {
   timestamp: number;
 }
 
+export interface RelapseLogEntity {
+  id: number;
+  trigger: string;
+  note: string;
+  timestamp: number;
+}
+
 export interface InstalledAppInfo {
   packageName: string;
   label: string;
@@ -152,7 +160,42 @@ export const RECOVERY_MILESTONES: RecoveryMilestone[] = [
   { days: 730, label: '730d', title: 'Two Years' },
 ];
 
-export type AnchorRoute = 'shield' | 'blocklist' | 'activity' | 'lock' | 'download';
+export type AnchorRoute = 'shield' | 'blocklist' | 'activity' | 'resources' | 'lock' | 'admin' | 'download';
+
+export interface SupportTicketRecord {
+  ticketId: string;
+  ownerId: string;
+  userEmail: string;
+  userName: string;
+  category: 'RECOVERY_HELP' | 'RELAPSE_SUPPORT' | 'BLOCKER_ISSUE' | 'LOCK_OR_PIN' | 'BANK_EXCLUSION';
+  urgency: 'STANDARD' | 'HIGH' | 'URGENT';
+  subject: string;
+  message: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  adminReply: string;
+  respondedByEmail: string;
+  respondedAtMs: number;
+  createdAtMs: number;
+}
+
+export interface CloudRecoveryProfile {
+  ownerId: string;
+  email: string;
+  displayName: string;
+  preferredName: string;
+  isProtectionEnabled: boolean;
+  isLocked: boolean;
+  lockUntilEpochMs: number;
+  dailyBetSpendEstimate: number;
+  cleanDays: number;
+  estimatedSavedNgn: number;
+  totalBlockedCount: number;
+  totalUrgeResistedCount: number;
+  relapseCount: number;
+  surveyRiskTier: 'UNASSESSED' | 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  surveyPrimaryFormat: string;
+  lastActiveMs: number;
+}
 
 export interface InterventionPayload {
   target: string;
@@ -178,6 +221,8 @@ export interface DerivedMainState {
   recentEvents: BlockedEventEntity[];
   groupedBlockedSites: GroupedBlockedSite[];
   recentUrgeLogs: UrgeLogEntity[];
+  relapseLogs: RelapseLogEntity[];
+  latestSurvey: EvaluatedSurveyProfile | null;
   totalBlockedCount: number;
   todayBlockedCount: number;
   totalUrgeResistedCount: number;

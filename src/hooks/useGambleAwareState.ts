@@ -32,6 +32,7 @@ import {
   RECOVERY_MILESTONES,
   RecoveryGoalCategory,
   RecoveryGoalEntity,
+  RelapseLogEntity,
   ThemeMode,
   TriggerBreakdown,
   UrgeLogEntity,
@@ -48,9 +49,20 @@ import {
   groupBlockedEvents,
   normalizeBlockedTarget,
 } from '../utils/blockedLogGrouping';
+import { formatNaira } from '../utils/currency';
 import { evaluateHighRiskGuard } from '../utils/highRiskGuard';
 import { evaluateShieldLeakAudit } from '../utils/leakDiagnostics';
+import {
+  buildNotificationPayload,
+  NotificationKind,
+  requestAndDispatchNotification,
+} from '../utils/notifications';
 import { detectGamblingLoginOrSite, extractFirstName } from '../utils/personalization';
+import {
+  EvaluatedSurveyProfile,
+  evaluateRecoverySurvey,
+  RecoverySurveyAnswers,
+} from '../utils/recoverySurvey';
 import {
   evaluateTiltRadar,
   generateBuddyChallengeCode,
@@ -308,6 +320,8 @@ export function useGambleAwareState() {
       recentEvents: store.events,
       groupedBlockedSites: groupBlockedEvents(store.events),
       recentUrgeLogs: store.urgeLogs,
+      relapseLogs: store.relapseLogs,
+      latestSurvey: store.latestSurvey,
       totalBlockedCount: store.events.length,
       todayBlockedCount,
       totalUrgeResistedCount: store.urgeLogs.length,
@@ -1034,6 +1048,154 @@ export function useGambleAwareState() {
     setStatusBannerMessage('Vault snapshot saved across Local, IndexedDB & Cache');
   }, [durableStatus.persistentGranted]);
 
+  const submitSurveyAssessment = useCallback(
+    (answers: RecoverySurveyAnswers): EvaluatedSurveyProfile => {
+      const evaluated = evaluateRecoverySurvey(answers, Date.now());
+      mutateStore((prev) => ({
+        ...prev,
+        latestSurvey: evaluated,
+      }));
+      setStatusBannerMessage(`Recovery plan generated (${evaluated.riskTier} priority)`);
+      return evaluated;
+    },
+    [mutateStore],
+  );
+
+  const applySurveyRecommendationPreset = useCallback(
+    (profile: EvaluatedSurveyProfile) => {
+      const now = Date.now();
+      const lockUntil = now + profile.recommendedLockDays * 86_400_000;
+      mutateStore((prev) => ({
+        ...prev,
+        isAccessibilityEnabled: true,
+        isDeviceAdminEnabled: true,
+        settings: {
+          ...prev.settings,
+          isProtectionEnabled: true,
+          blockSportsbooks: true,
+          blockCasinos: true,
+          blockPokerAndBingo: true,
+          blockCryptoBetting: true,
+          blockFantasyAndLottery: true,
+          strictKeywordFilter: profile.recommendedStrictKeywords,
+          depositGuardEnabled: profile.recommendedDepositGuard,
+          searchGuardEnabled: true,
+          browserShieldEnabled: true,
+          appShieldEnabled: true,
+          antiTamperLockEnabled: true,
+          dailyBetSpendEstimate: profile.recommendedDailySpendNgn,
+          highRiskSchedule: profile.recommendedHighRiskSchedule,
+          lockUntilEpochMs: Math.max(prev.settings.lockUntilEpochMs, lockUntil),
+          protectionStartedAtMs:
+            prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : now,
+        },
+      }));
+      setStatusBannerMessage(
+        `Applied ${profile.recommendedLockDays}-day Shield preset & high-risk schedule`,
+      );
+    },
+    [mutateStore],
+  );
+
+  const sendNotificationAlert = useCallback(
+    async (
+      kind: NotificationKind = 'test',
+      context?: { cleanDays?: number; savedFormatted?: string; lockLabel?: string },
+    ) => {
+      const payload = buildNotificationPayload(kind, context);
+      const res = await requestAndDispatchNotification(payload, true);
+      if (res.delivered) {
+        updateSettings((s) => ({ ...s, notificationsEnabled: true }));
+        setStatusBannerMessage(`Notification sent: ${payload.title}`);
+      } else {
+        setStatusBannerMessage(res.error || 'Could not send browser notification');
+      }
+      return res;
+    },
+    [updateSettings],
+  );
+
+  const logRelapseAndReset = useCallback(
+    (params: {
+      trigger: string;
+      note: string;
+      tightenLockDays: number;
+      resetStreakTimer: boolean;
+    }) => {
+      const now = Date.now();
+      const entry: RelapseLogEntity = {
+        id: now,
+        trigger: params.trigger.trim().slice(0, 60) || 'Impulse slip',
+        note: params.note.trim().slice(0, 280),
+        timestamp: now,
+      };
+      const addLockUntil =
+        params.tightenLockDays > 0 ? now + params.tightenLockDays * 86_400_000 : 0;
+
+      mutateStore((prev) => ({
+        ...prev,
+        isAccessibilityEnabled: true,
+        relapseLogs: [entry, ...prev.relapseLogs],
+        settings: {
+          ...prev.settings,
+          isProtectionEnabled: true,
+          strictKeywordFilter: true,
+          depositGuardEnabled: true,
+          searchGuardEnabled: true,
+          antiTamperLockEnabled: true,
+          lockUntilEpochMs: Math.max(prev.settings.lockUntilEpochMs, addLockUntil),
+          protectionStartedAtMs: params.resetStreakTimer
+            ? now
+            : prev.settings.protectionStartedAtMs,
+          lastNotifiedMilestoneDay: params.resetStreakTimer
+            ? 0
+            : prev.settings.lastNotifiedMilestoneDay,
+        },
+      }));
+
+      if (storeRef.current.settings.notificationsEnabled) {
+        void requestAndDispatchNotification(buildNotificationPayload('relapse_support'), false);
+      }
+      setStatusBannerMessage('Shield hardened · Focus on the next 24 hours');
+    },
+    [mutateStore],
+  );
+
+  // Automatic milestone notification when threshold is crossed
+  useEffect(() => {
+    if (!uiState.settings.notificationsEnabled || !uiState.isFullyArmed) return;
+    const eligible = RECOVERY_MILESTONES.filter(
+      (m) => m.days <= uiState.cleanDays && m.days > uiState.settings.lastNotifiedMilestoneDay,
+    ).pop();
+    if (!eligible) return;
+    if (
+      typeof window === 'undefined' ||
+      !('Notification' in window) ||
+      Notification.permission !== 'granted'
+    ) {
+      return;
+    }
+    const payload = buildNotificationPayload('milestone', {
+      cleanDays: eligible.days,
+      savedFormatted: formatNaira(uiState.estimatedSavedAmount),
+    });
+    void requestAndDispatchNotification(payload, false).then((res) => {
+      if (res.delivered) {
+        updateSettings((s) => ({
+          ...s,
+          lastNotifiedMilestoneDay: Math.max(s.lastNotifiedMilestoneDay, eligible.days),
+        }));
+      }
+    });
+  }, [
+    uiState.cleanDays,
+    uiState.estimatedSavedAmount,
+    uiState.isFullyArmed,
+    uiState.settings.lastNotifiedMilestoneDay,
+    uiState.settings.notificationsEnabled,
+    updateSettings,
+  ]);
+
   const resetAllData = useCallback(() => {
     setStore(createDefaultStore());
   }, []);
@@ -1091,6 +1253,10 @@ export function useGambleAwareState() {
     logUrgeResisted,
     logBlockedEvent,
     clearEventHistory,
+    submitSurveyAssessment,
+    applySurveyRecommendationPreset,
+    sendNotificationAlert,
+    logRelapseAndReset,
     restoreFromVaultBackup,
     forceBackupSync,
     resetAllData,
