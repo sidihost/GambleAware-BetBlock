@@ -1,33 +1,5 @@
 import React from 'react';
-import {
-  Anchor,
-  Download,
-  LockKeyhole,
-  Moon,
-  SlidersHorizontal,
-  Sun,
-  TrendingUp,
-} from 'lucide-react';
-import { AnchorRoute, ThemeMode } from '../data/types';
-
-interface AppHeaderProps {
-  currentRoute: AnchorRoute;
-  onSelectRoute: (route: AnchorRoute) => void;
-  themeMode: ThemeMode;
-  onToggleQuickTheme: () => void;
-}
-
-const DESKTOP_NAV: Array<{
-  route: AnchorRoute;
-  label: string;
-  icon: React.ReactNode;
-}> = [
-  { route: 'shield', label: 'Home', icon: <Anchor className="h-4 w-4" /> },
-  { route: 'blocklist', label: 'Blocked', icon: <SlidersHorizontal className="h-4 w-4" /> },
-  { route: 'activity', label: 'Progress', icon: <TrendingUp className="h-4 w-4" /> },
-  { route: 'lock', label: 'Lock', icon: <LockKeyhole className="h-4 w-4" /> },
-  { route: 'download', label: 'Get App', icon: <Download className="h-4 w-4" /> },
-];
+import { Download } from 'lucide-react';
 
 /**
  * Bespoke GambleAware Sovereign G-Vault Monogram matching public/icon.svg
@@ -79,96 +51,49 @@ export const BrandAnchorMark: React.FC<{ className?: string }> = ({
   </svg>
 );
 
-export const AppHeader: React.FC<AppHeaderProps> = ({
-  currentRoute,
-  onSelectRoute,
-  themeMode,
-  onToggleQuickTheme,
-}) => {
-  const isOnDownload = currentRoute === 'download';
-  const isDarkActive =
-    themeMode === ThemeMode.DARK ||
-    (themeMode === ThemeMode.SYSTEM &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
+const NAV_LINKS = [
+  { href: '#features', label: 'Features' },
+  { href: '#install-guide', label: 'How to Install' },
+  { href: '#comparison', label: 'vs. Gamban' },
+];
 
-  return (
-    <header className="sticky top-0 z-30 w-full border-b border-[var(--subtle-border)] bg-[var(--glass-fill)] backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:px-4 md:h-16 md:gap-4 md:px-6">
-        {/* Left Zone: Sovereign G-Vault Crest + Brand Name (No domain clutter) */}
-        <button
-          type="button"
-          onClick={() => onSelectRoute('shield')}
-          className="flex min-w-0 shrink-0 cursor-pointer items-center gap-2.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
-        >
-          <BrandAnchorMark className="h-9 w-9 shrink-0" />
-          <span className="font-display text-base font-bold tracking-tight whitespace-nowrap text-[var(--ink)] md:text-lg">
-            GambleAware
-          </span>
-        </button>
+export const AppHeader: React.FC = () => (
+  <header className="sticky top-0 z-30 w-full border-b border-[var(--subtle-border)] bg-[var(--glass-fill)] backdrop-blur-xl">
+    <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-8 px-4 md:px-6">
+      {/* Zone 1: Single-line Sovereign G-Vault Brand */}
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="flex shrink-0 cursor-pointer items-center gap-2.5 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
+      >
+        <BrandAnchorMark className="h-9 w-9 shrink-0" />
+        <span className="font-display text-lg font-bold tracking-tight whitespace-nowrap text-[var(--ink)]">
+          GambleAware
+        </span>
+      </button>
 
-        {/* Center Zone: Single-Line Desktop Navigation */}
-        <nav aria-label="Desktop navigation" className="hidden items-center gap-1 md:flex">
-          {DESKTOP_NAV.map((item) => {
-            const selected = item.route === currentRoute;
-            return (
-              <button
-                key={item.route}
-                type="button"
-                onClick={() => onSelectRoute(item.route)}
-                className={`inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm whitespace-nowrap transition-colors ${
-                  selected
-                    ? 'bg-[var(--active-fill)] font-semibold text-[var(--active-content)]'
-                    : 'font-medium text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]'
-                }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Right Zone: Instant Theme Switch + Primary Action CTA */}
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <button
-            type="button"
-            onClick={onToggleQuickTheme}
-            aria-label={isDarkActive ? 'Switch to White theme' : 'Switch to Black & Pink theme'}
-            title={isDarkActive ? 'Switch to White theme' : 'Switch to Black & Pink theme'}
-            className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:opacity-90 sm:px-3"
+      {/* Zone 2: Clean Typographic Section Links */}
+      <nav aria-label="Primary sections" className="hidden items-center gap-7 md:flex">
+        {NAV_LINKS.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="text-sm font-medium whitespace-nowrap shrink-0 text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] hover:underline hover:underline-offset-4"
           >
-            {isDarkActive ? (
-              <Sun className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
-            ) : (
-              <Moon className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
-            )}
-            <span className="hidden sm:inline">
-              {isDarkActive ? 'White' : 'Black & Pink'}
-            </span>
-          </button>
+            {item.label}
+          </a>
+        ))}
+      </nav>
 
-          {isOnDownload ? (
-            <button
-              type="button"
-              onClick={() => onSelectRoute('shield')}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:px-4 sm:text-sm"
-            >
-              <Anchor className="h-3.5 w-3.5 shrink-0" />
-              <span>Open Guard</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onSelectRoute('download')}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:px-4 sm:text-sm"
-            >
-              <Download className="h-3.5 w-3.5 shrink-0" />
-              <span>Get App</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-};
+      {/* Zone 3: Single Primary Download Action */}
+      <a
+        href="/downloads/GambleAware-Nigeria.apk"
+        download="GambleAware.apk"
+        className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:px-5 sm:text-sm"
+      >
+        <Download className="h-4 w-4 shrink-0" />
+        <span>Download APK</span>
+      </a>
+    </div>
+  </header>
+);
