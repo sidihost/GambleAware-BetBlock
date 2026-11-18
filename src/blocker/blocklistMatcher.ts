@@ -160,9 +160,41 @@ function matchesDomainHierarchy(host: string, domainSet: Set<string>): string | 
   return null;
 }
 
+const HOMOGLYPH_MAP: Record<string, string> = {
+  '\u0430': 'a', '\u0435': 'e', '\u043e': 'o', '\u0440': 'p', '\u0441': 'c',
+  '\u0445': 'x', '\u0456': 'i', '\u0458': 'j', '\u0443': 'y', '\u043a': 'k',
+  '\u03b1': 'a', '\u03b5': 'e', '\u03bf': 'o', '\u03c1': 'p', '\u03b9': 'i',
+};
+
+function foldHomoglyphs(input: string): string {
+  let normalized = input.normalize('NFKC');
+  let out = '';
+  for (const ch of normalized) {
+    out += HOMOGLYPH_MAP[ch] ?? ch;
+  }
+  return out;
+}
+
+const REDIRECT_PARAM_REGEX = /[?&](?:u|url|redirect|redirect_url|next|dest|destination|target|r|link|to)=([^&#]+)/gi;
+
+function extractRedirectTargets(rawInput: string): string[] {
+  const results: string[] = [];
+  let match: RegExpExecArray | null;
+  REDIRECT_PARAM_REGEX.lastIndex = 0;
+  while ((match = REDIRECT_PARAM_REGEX.exec(rawInput)) !== null && results.length < 4) {
+    try {
+      const decoded = decodeURIComponent(match[1].replace(/\+/g, ' '));
+      if (decoded && decoded !== rawInput) results.push(decoded);
+    } catch {
+      if (match[1] && match[1] !== rawInput) results.push(match[1]);
+    }
+  }
+  return results;
+}
+
 export const BlocklistMatcher = {
   normalizeDomain(rawInput: string): string {
-    let s = rawInput.trim().toLowerCase();
+    let s = foldHomoglyphs(rawInput.trim().toLowerCase());
     if (!s) return '';
     if (INTERNAL_SCHEME_PREFIXES.some((prefix) => s.startsWith(prefix))) return '';
     const schemeIndex = s.indexOf('://');
@@ -183,7 +215,7 @@ export const BlocklistMatcher = {
   },
 
   matchSearchQueryInUrl(rawUrl: string): BlockMatchResult {
-    const lower = rawUrl.toLowerCase();
+    const lower = foldHomoglyphs(rawUrl).toLowerCase();
     const isSearchEngineUrl =
       lower.includes('/search') ||
       lower.includes('google.') ||
@@ -201,7 +233,7 @@ export const BlocklistMatcher = {
 
     let decoded: string;
     try {
-      decoded = decodeURIComponent(match[1].replace(/\+/g, ' ')).toLowerCase();
+      decoded = foldHomoglyphs(decodeURIComponent(match[1].replace(/\+/g, ' '))).toLowerCase();
     } catch {
       decoded = match[1].replace(/\+/g, ' ');
     }
@@ -224,10 +256,22 @@ export const BlocklistMatcher = {
     return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
   },
 
-  matchDomainOrUrl(rawDomainOrUrl: string, config: BlockFilterConfig): BlockMatchResult {
-    const rawLower = rawDomainOrUrl.trim().toLowerCase();
+  matchDomainOrUrl(rawDomainOrUrl: string, config: BlockFilterConfig, depth = 0): BlockMatchResult {
+    const rawLower = foldHomoglyphs(rawDomainOrUrl.trim().toLowerCase());
     if (INTERNAL_SCHEME_PREFIXES.some((prefix) => rawLower.startsWith(prefix))) {
       return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    if (depth < 2) {
+      for (const wrapped of extractRedirectTargets(rawDomainOrUrl)) {
+        const innerMatch = this.matchDomainOrUrl(wrapped, config, depth + 1);
+        if (innerMatch.isBlocked) {
+          return {
+            ...innerMatch,
+            reason: `Unwrapped redirect link (${innerMatch.reason})`,
+          };
+        }
+      }
     }
 
     if (config.searchGuardEnabled) {

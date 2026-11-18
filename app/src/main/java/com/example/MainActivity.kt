@@ -1,6 +1,7 @@
 package com.example
 
 import android.Manifest
+import android.app.admin.DevicePolicyManager
 import android.content.Intent
 import android.net.Uri
 import android.net.VpnService
@@ -13,9 +14,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -78,10 +86,13 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -99,11 +110,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.service.GambleAwareDeviceAdminReceiver
 import com.example.service.GambleAwareNotifications
 import com.example.service.GambleAwareVpnService
 import com.example.ui.BlockedInterventionActivity
 import com.example.ui.MainUiState
 import com.example.ui.MainViewModel
+import com.example.ui.buildCleanStreakShareText
 import com.example.ui.components.BrandGEmblem
 import com.example.ui.components.LiquidFloatingNavBar
 import com.example.ui.components.LiquidGlassBackdrop
@@ -160,8 +173,16 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
     var pendingPinAction by remember { mutableStateOf<((String) -> Unit)?>(null) }
     var showUrgeJournalSheet by remember { mutableStateOf(false) }
     var showSafeSupportSheet by remember { mutableStateOf(false) }
+    var showPreloader by rememberSaveable { mutableStateOf(true) }
     var hasNotificationPermission by remember {
         mutableStateOf(GambleAwareNotifications.hasNotificationPermission(context))
+    }
+
+    LaunchedEffect(showPreloader) {
+        if (showPreloader) {
+            delay(1000)
+            showPreloader = false
+        }
     }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -221,6 +242,30 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
             viewModel.enableProtection()
         }
         viewModel.refreshSystemServiceStatus()
+    }
+
+    val deviceAdminLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+    ) {
+        viewModel.refreshSystemServiceStatus()
+    }
+
+    fun handleDeviceAdminLockToggle() {
+        if (state.isDeviceAdminEnabled) {
+            viewModel.deactivateDeviceAdmin()
+        } else {
+            val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                putExtra(
+                    DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                    GambleAwareDeviceAdminReceiver.componentName(context),
+                )
+                putExtra(
+                    DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                    "Prevents impulsive uninstallation of GambleAware while your recovery Commitment Lock is active.",
+                )
+            }
+            deviceAdminLauncher.launch(intent)
+        }
     }
 
     fun requestDnsShieldActivation() {
@@ -330,8 +375,9 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                         onEnableDnsShield = { showShieldDisclosure = true },
                         onRequestNotifications = { handleToggleNotifications(true) },
                         onCompleteSetup = { name, days ->
-                            viewModel.completeInitialSetup(name, days)
+                            viewModel.completeInitialSetup(name, days, enableProtection = state.isVpnPrepared)
                         },
+                        onSkipSetup = { viewModel.skipInitialSetup() },
                     )
                 } else {
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -390,6 +436,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                         onLaunchCalmReset = { launchSosCalmReset() },
                                         onOpenUrgeJournal = { showUrgeJournalSheet = true },
                                         onOpenSafeSupport = { showSafeSupportSheet = true },
+                                        onBankUrgeStake = { stakeNgn -> viewModel.bankUrgeStake(stakeNgn) },
                                         activeTourKey = activeTourKey,
                                         bottomContentPadding = navBarReserve,
                                     )
@@ -433,6 +480,13 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                             guardRestrictedAction { viewModel.setSearchGuardEnabled(false) }
                                         }
                                     },
+                                    onToggleDepositGuard = { enabled ->
+                                        if (enabled) {
+                                            viewModel.setDepositGuardEnabled(true)
+                                        } else {
+                                            guardRestrictedAction { viewModel.setDepositGuardEnabled(false) }
+                                        }
+                                    },
                                     onAddCustomDomain = { domain, isAllowlist ->
                                         if (isAllowlist) {
                                             guardRestrictedAction { viewModel.addCustomDomain(domain, true) }
@@ -462,6 +516,21 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                     state = state,
                                     onClearHistory = {
                                         guardRestrictedAction { viewModel.clearEventHistory() }
+                                    },
+                                    onShareStreak = {
+                                        val shareText = buildCleanStreakShareText(state)
+                                        val dayWord = if (state.cleanDays == 1) "day" else "days"
+                                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(
+                                                Intent.EXTRA_SUBJECT,
+                                                "GambleAware Clean Streak: ${state.cleanDays} $dayWord betting-free",
+                                            )
+                                            putExtra(Intent.EXTRA_TEXT, shareText)
+                                        }
+                                        context.startActivity(
+                                            Intent.createChooser(sendIntent, "Share clean streak"),
+                                        )
                                     },
                                     onLaunchCalmReset = { launchSosCalmReset() },
                                     onOpenUrgeJournal = { showUrgeJournalSheet = true },
@@ -506,6 +575,12 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                     hasNotificationPermission = hasNotificationPermission,
                                     onToggleNotifications = { enabled -> handleToggleNotifications(enabled) },
                                     onSendTestNotification = { handleSendTestNotification() },
+                                    onToggleDeviceAdminLock = { handleDeviceAdminLockToggle() },
+                                    onConfigureBuddyCoLock = { partnerName -> viewModel.configureBuddyCoLock(partnerName) },
+                                    onClearBuddyCoLock = {
+                                        guardRestrictedAction { viewModel.clearBuddyCoLock() }
+                                    },
+                                    onVerifyBuddyUnlock = { salt, token -> viewModel.verifyBuddyUnlock(salt, token) },
                                     activeTourKey = activeTourKey,
                                     bottomContentPadding = navBarReserve,
                                 )
@@ -579,6 +654,14 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                             )
                         }
                     }
+                }
+
+                AnimatedVisibility(
+                    visible = showPreloader,
+                    enter = fadeIn(),
+                    exit = fadeOut(animationSpec = tween(320)),
+                ) {
+                    AppPreloaderOverlay(onDismiss = { showPreloader = false })
                 }
             }
 
@@ -814,10 +897,10 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                         LiquidDialogContent(themeMode = state.settings.themeMode) {
                             Text(
                                 text = "GambleAware creates an on-device local DNS filter using Android VpnService to:\n\n" +
-                                    "1. Block SportyBet, Bet9ja, Bet365, 1xBet, Stake & 600+ gambling domains across every browser and app.\n" +
-                                    "2. Intercept betting API connections inside gambling apps while keeping other apps normal.\n" +
-                                    "3. Keep your clean streak & Commitment Lock backed up offline on your phone.\n\n" +
-                                    "No Accessibility permission, no Device Admin lock, and zero remote server tracking.",
+                                    "1. Block SportyBet, Bet9ja, Bet365, 1xBet, Stake & 820+ gambling domains across every browser and app.\n" +
+                                    "2. Intercept betting APIs, cashier links & booking codes inside gambling apps while keeping fintech & normal apps untouched.\n" +
+                                    "3. Pair optionally with Android Device Admin Uninstall Lock and Trusted Buddy Co-Lock offline.\n\n" +
+                                    "Zero remote tracking or data harvesting.",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -995,6 +1078,84 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
     }
 }
 
+@Composable
+private fun AppPreloaderOverlay(
+    onDismiss: () -> Unit,
+) {
+    val liquid = LocalLiquidColors.current
+    val infiniteTransition = rememberInfiniteTransition(label = "preloader_ring")
+    val sweepAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "preloader_sweep_angle",
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .safeDrawingPadding(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(124.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokePx = 2.4.dp.toPx()
+                    drawCircle(
+                        color = liquid.subtleBorder.copy(alpha = 0.55f),
+                        style = Stroke(width = 1.2.dp.toPx()),
+                    )
+                    drawArc(
+                        color = liquid.activeFill,
+                        startAngle = sweepAngle - 90f,
+                        sweepAngle = 115f,
+                        useCenter = false,
+                        style = Stroke(width = strokePx, cap = StrokeCap.Round),
+                    )
+                }
+                LiquidGlassCard(
+                    cornerRadius = 24.dp,
+                    contentPadding = 12.dp,
+                ) {
+                    BrandGEmblem(modifier = Modifier.size(58.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "GambleAware",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "On-device recovery & betting shield",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+            ) {
+                Text("Continue")
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MandatoryThreeStepSetupScreen(
@@ -1003,17 +1164,19 @@ private fun MandatoryThreeStepSetupScreen(
     onEnableDnsShield: () -> Unit,
     onRequestNotifications: () -> Unit,
     onCompleteSetup: (name: String, lockDays: Int) -> Unit,
+    onSkipSetup: () -> Unit,
 ) {
     val liquid = LocalLiquidColors.current
     var setupName by remember { mutableStateOf(state.settings.preferredName) }
-    var setupLockDays by remember { mutableIntStateOf(7) }
+    var setupLockDays by remember { mutableIntStateOf(0) }
     val scrollState = rememberScrollState()
 
     val step1Done = state.isVpnPrepared || state.isShieldServiceRunning
     val step2Done = hasNotificationPermission
-    val step3Ready = step1Done
+    val step3Ready = setupLockDays > 0
 
     val durationAdjective = when (setupLockDays) {
+        0 -> ""
         1 -> "24-Hour"
         180 -> "6-Month"
         365 -> "1-Year"
@@ -1022,6 +1185,7 @@ private fun MandatoryThreeStepSetupScreen(
     }
 
     val durationLabel = when (setupLockDays) {
+        0 -> "No Lock (Decide Later)"
         1 -> "24 Hours"
         180 -> "6 Months"
         365 -> "1 Year"
@@ -1052,14 +1216,14 @@ private fun MandatoryThreeStepSetupScreen(
                 BrandGEmblem(modifier = Modifier.size(40.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "FIRST-RUN SETUP • 3 STEPS",
+                        text = "QUICK SETUP • OPTIONAL",
                         style = MaterialTheme.typography.labelSmall,
                         letterSpacing = 1.sp,
                         color = liquid.accentInk,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Arm Your DNS Shield & Lock",
+                        text = "Choose Your Protection Setup",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -1070,7 +1234,7 @@ private fun MandatoryThreeStepSetupScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Turn on the local DNS Shield so betting sites and gambling app servers are blocked immediately across every browser, then set your Commitment Lock timer.",
+                text = "Every layer is your choice. Enable the local DNS Shield or alerts now, or skip to explore the app first and decide later.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1100,14 +1264,14 @@ private fun MandatoryThreeStepSetupScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Step 1 (Required)
+            // Step 1 (Optional DNS Shield)
             MandatorySetupStepCard(
                 step = "1",
                 title = "Enable On-Device DNS Shield",
                 subtitle = if (step1Done) {
                     "Active • Blocks betting domains & app traffic locally"
                 } else {
-                    "Required first: tap to grant local DNS filter permission"
+                    "Optional: tap to grant local DNS filter permission"
                 },
                 done = step1Done,
                 onClick = onEnableDnsShield,
@@ -1116,14 +1280,14 @@ private fun MandatoryThreeStepSetupScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Step 2 (Recommended Alerts & Install Guard)
+            // Step 2 (Optional Alerts & Install Guard)
             MandatorySetupStepCard(
                 step = "2",
                 title = "Recovery Alerts & Install Guard",
                 subtitle = if (step2Done) {
                     "Enabled • Alerts on new betting APK installs & milestones"
                 } else {
-                    "Recommended: tap to allow alert & install-guard notifications"
+                    "Optional: tap to allow alert & install-guard notifications"
                 },
                 done = step2Done,
                 onClick = onRequestNotifications,
@@ -1132,7 +1296,7 @@ private fun MandatoryThreeStepSetupScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Step 3 (Commitment Lock Duration)
+            // Step 3 (Optional Commitment Lock Duration)
             LiquidGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1164,13 +1328,17 @@ private fun MandatoryThreeStepSetupScreen(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Set Commitment Lock Duration",
+                            text = "Commitment Lock Timer (Optional)",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                         Text(
-                            text = "Selected: $durationLabel • Locks shield & rule weakening until timer hits 0",
+                            text = if (setupLockDays > 0) {
+                                "Selected: $durationLabel • Locks weakening until timer hits 0"
+                            } else {
+                                "Selected: No Lock • Decide anytime in Lock settings"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1190,6 +1358,7 @@ private fun MandatoryThreeStepSetupScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     listOf(
+                        0 to "No Lock (Decide Later)",
                         1 to "24 Hours",
                         7 to "7 Days",
                         30 to "30 Days",
@@ -1221,13 +1390,7 @@ private fun MandatoryThreeStepSetupScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = {
-                    if (!step1Done) {
-                        onEnableDnsShield()
-                    } else {
-                        onCompleteSetup(setupName, setupLockDays)
-                    }
-                },
+                onClick = { onCompleteSetup(setupName, setupLockDays) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
@@ -1240,20 +1403,41 @@ private fun MandatoryThreeStepSetupScreen(
                 elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
             ) {
                 Icon(
-                    imageVector = if (!step1Done) Icons.Rounded.Shield else Icons.Rounded.Lock,
+                    imageVector = if (setupLockDays > 0) Icons.Rounded.Lock else Icons.Rounded.Shield,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (!step1Done) {
-                        "Step 1: Enable On-Device DNS Shield"
+                    text = if (setupLockDays > 0) {
+                        "Save & Arm $durationAdjective Lock"
                     } else {
-                        "Lock In $durationAdjective Protection & Enter"
+                        "Save Preferences & Enter App"
                     },
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = onSkipSetup,
+                shape = RoundedCornerShape(50),
+                border = BorderStroke(1.dp, liquid.subtleBorder),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .testTag("initial_setup_skip_button"),
+            ) {
+                Text(
+                    text = "Skip for Now — Explore App First",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
         }

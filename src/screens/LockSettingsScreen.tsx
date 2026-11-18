@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { LiquidGlassCard, LiquidSectionHeader, LiquidSwitch } from '../components/LiquidGlass';
 import { RecoveryVaultCard } from '../components/RecoveryVaultCard';
+import { ShieldDiagnosticsCard } from '../components/ShieldDiagnosticsCard';
 import { PersistedStore } from '../data/storage';
 import { DerivedMainState, THEME_MODE_LABELS, ThemeMode } from '../data/types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
@@ -33,6 +34,10 @@ interface LockSettingsScreenProps {
   onSetPin: (pin: string) => void;
   onRemovePin: () => void;
   onToggleDeviceAdmin: () => void;
+  onConfigureBuddyCoLock: (partnerName: string) => string;
+  onRefreshBuddyChallenge: () => string;
+  onClearBuddyCoLock: () => void;
+  onVerifyBuddyUnlock: (partnerSalt: string, candidateResponse: string) => boolean;
   onOpenPrivateDnsSettings: () => void;
   onSetDailySpend: (amount: number) => void;
   onSelectTheme: (mode: ThemeMode) => void;
@@ -53,6 +58,10 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   onSetPin,
   onRemovePin,
   onToggleDeviceAdmin,
+  onConfigureBuddyCoLock,
+  onRefreshBuddyChallenge,
+  onClearBuddyCoLock,
+  onVerifyBuddyUnlock,
   onOpenPrivateDnsSettings,
   onSetDailySpend,
   onSelectTheme,
@@ -212,40 +221,53 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             </button>
           </LiquidGlassCard>
 
-          {/* Delete Protection */}
+          {/* Real Android Device Admin Uninstall Lock */}
           <LiquidGlassCard className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
                 <div className="min-w-0">
                   <p className="font-display text-base font-semibold text-[var(--ink)]">
-                    {isIOS ? 'Anti-Tamper & Rule Lock' : 'Shield Tamper Protection'}
+                    {isIOS ? 'Anti-Tamper & Rule Lock' : 'Device Admin Uninstall Lock'}
                   </p>
                   <p className="text-xs text-[var(--ink-muted)]">
                     {state.isDeviceAdminEnabled
-                      ? 'Active • Keeps your rules locked until the timer completes'
-                      : 'Prevents impulsive rule changes during a betting urge'}
+                      ? 'Active · Blocks Android uninstallation & tampering until Commitment Lock expires'
+                      : 'Grant OS Device Administrator permission so you cannot uninstall GambleAware during an urge'}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={onToggleDeviceAdmin}
+                data-testid="device-admin-uninstall-lock-button"
                 className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-4 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 {state.isDeviceAdminEnabled && (isTimeLocked || state.settings.antiTamperLockEnabled) ? (
                   <>
                     <LockKeyhole className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-                    <span>Locked On</span>
+                    <span>Uninstall Blocked</span>
                   </>
                 ) : state.isDeviceAdminEnabled ? (
-                  <span>Turn Off</span>
+                  <span>Deactivate</span>
                 ) : (
-                  <span>Turn On</span>
+                  <span>Arm Admin Lock</span>
                 )}
               </button>
             </div>
           </LiquidGlassCard>
+
+          {/* 5-Layer Shield Leak Check + Trusted Buddy Co-Lock */}
+          <ShieldDiagnosticsCard
+            audit={state.leakAudit}
+            buddyPartnerName={state.settings.buddyPartnerName}
+            buddyChallengeCode={state.settings.buddyChallengeCode}
+            isLockedNow={isTimeLocked}
+            onConfigureBuddyCoLock={onConfigureBuddyCoLock}
+            onRefreshBuddyChallenge={onRefreshBuddyChallenge}
+            onClearBuddyCoLock={onClearBuddyCoLock}
+            onVerifyBuddyUnlock={onVerifyBuddyUnlock}
+          />
 
           {/* Accountability PIN Card */}
           <LiquidGlassCard className="p-4 sm:p-5">

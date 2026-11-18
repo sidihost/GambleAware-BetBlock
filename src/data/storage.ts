@@ -244,6 +244,11 @@ export function createDefaultStore(): PersistedStore {
       lastNotifiedMilestoneDay: 0,
       goalReminderEnabled: true,
       highRiskSchedule: { ...DEFAULT_HIGH_RISK_SCHEDULE },
+      bankedUrgeSavingsNgn: 0,
+      bankedUrgeCount: 0,
+      depositGuardEnabled: true,
+      buddyPartnerName: '',
+      buddyChallengeCode: '',
     },
     isAccessibilityEnabled: true,
     isDeviceAdminEnabled: false,
@@ -268,6 +273,26 @@ export function normalizeStoreShape(parsed: Partial<PersistedStore>): PersistedS
       ...DEFAULT_HIGH_RISK_SCHEDULE,
       ...(parsed.settings?.highRiskSchedule ?? {}),
     },
+    bankedUrgeSavingsNgn:
+      typeof parsed.settings?.bankedUrgeSavingsNgn === 'number'
+        ? Math.max(0, parsed.settings.bankedUrgeSavingsNgn)
+        : 0,
+    bankedUrgeCount:
+      typeof parsed.settings?.bankedUrgeCount === 'number'
+        ? Math.max(0, parsed.settings.bankedUrgeCount)
+        : 0,
+    depositGuardEnabled:
+      typeof parsed.settings?.depositGuardEnabled === 'boolean'
+        ? parsed.settings.depositGuardEnabled
+        : true,
+    buddyPartnerName:
+      typeof parsed.settings?.buddyPartnerName === 'string'
+        ? parsed.settings.buddyPartnerName
+        : '',
+    buddyChallengeCode:
+      typeof parsed.settings?.buddyChallengeCode === 'string'
+        ? parsed.settings.buddyChallengeCode
+        : '',
   };
 
   if (!parsed.schemaVersion || parsed.schemaVersion < 3) {

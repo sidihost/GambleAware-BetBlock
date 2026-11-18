@@ -40,8 +40,8 @@ import androidx.compose.material.icons.rounded.PhonelinkLock
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -65,7 +65,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.blocker.BrandCatalog
+import com.example.blocker.TiltRiskLevel
 import com.example.ui.MainUiState
+import com.example.ui.components.BettingBrandLogo
 import com.example.ui.components.BrandGEmblem
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
@@ -95,6 +98,7 @@ fun ShieldScreen(
     onLaunchCalmReset: () -> Unit,
     onOpenUrgeJournal: () -> Unit,
     onOpenSafeSupport: () -> Unit,
+    onBankUrgeStake: (Int) -> Unit = {},
     activeTourKey: String?,
     bottomContentPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
@@ -110,11 +114,11 @@ fun ShieldScreen(
         when (activeTourKey) {
             TourTargetKeys.SHIELD_ORB -> listState.animateScrollToItem(0)
             TourTargetKeys.SOS_CALM_BAR -> {
-                val sosIdx = if (showQuickOnboarding) 4 else 3
+                val sosIdx = if (showQuickOnboarding) 5 else 4
                 listState.animateScrollToItem(sosIdx)
             }
             TourTargetKeys.FILTER_TESTER -> {
-                val testerIdx = if (showQuickOnboarding) 6 else 5
+                val testerIdx = if (showQuickOnboarding) 7 else 6
                 listState.animateScrollToItem(testerIdx)
             }
         }
@@ -378,7 +382,117 @@ fun ShieldScreen(
                 }
             }
 
-            // Item 2/3: Blocked Betting Sites & Apps Summary Card
+            // Item 2/3: Tilt Velocity Radar & 1-Tap Stake Bank
+            item {
+                val radar = state.tiltRadar
+                val nairaFormat = NumberFormat.getIntegerInstance(Locale("en", "NG"))
+                val stakeAmount = state.settings.dailyBetSpendEstimate.coerceAtLeast(500)
+                val radarLabel = when (radar.level) {
+                    TiltRiskLevel.CRITICAL -> "CRITICAL SPIKE"
+                    TiltRiskLevel.ELEVATED -> "ELEVATED VELOCITY"
+                    TiltRiskLevel.CALM -> "CALM BASELINE"
+                }
+
+                LiquidGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("tilt_radar_card"),
+                    contentPadding = 18.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Tilt Velocity Radar",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            Text(
+                                text = radar.headline,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (radar.level == TiltRiskLevel.CALM) liquid.softAccentFill
+                                    else liquid.activeFill,
+                                )
+                                .border(1.dp, liquid.glassBorder, RoundedCornerShape(50))
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                        ) {
+                            Text(
+                                text = radarLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (radar.level == TiltRiskLevel.CALM) liquid.accentInk else liquid.activeContent,
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = radar.guidance,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        MetricGlassTile(
+                            title = "10m Burst",
+                            value = "${radar.attemptsLast10Min}",
+                            subtitle = "attempts",
+                            modifier = Modifier.weight(1f),
+                        )
+                        MetricGlassTile(
+                            title = "60m Window",
+                            value = "${radar.attemptsLast60Min}",
+                            subtitle = "blocked",
+                            modifier = Modifier.weight(1f),
+                        )
+                        MetricGlassTile(
+                            title = "Urge Banked",
+                            value = "₦${nairaFormat.format(state.settings.bankedUrgeSavingsNgn)}",
+                            subtitle = "${state.settings.bankedUrgeCount} urges",
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { onBankUrgeStake(stakeAmount) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                            .testTag("bank_urge_stake_button"),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = liquid.activeFill,
+                            contentColor = liquid.activeContent,
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.TrendingUp,
+                            contentDescription = null,
+                            modifier = Modifier.size(17.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Bank ₦${nairaFormat.format(stakeAmount)} Stake Instead")
+                    }
+                }
+            }
+
+            // Item 3/4: Blocked Betting Sites & Apps Summary Card
             item {
                 LiquidGlassCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -391,7 +505,7 @@ fun ShieldScreen(
                         subtitle = if (groupedSites.isNotEmpty()) {
                             "${state.totalBlockedCount} blocked attempts across $siteCount site${if (siteCount == 1) "" else "s"} & app${if (siteCount == 1) "" else "s"}"
                         } else {
-                            "${state.builtInDomainCount}+ betting websites & 130+ betting apps blocked automatically"
+                            "${state.builtInDomainCount}+ betting websites & 150+ betting apps blocked automatically"
                         },
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -400,7 +514,6 @@ fun ShieldScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             groupedSites.take(6).forEach { site ->
                                 val timeText = formatBlockedRelativeTime(site.latestTimestamp, state.currentTimeMs)
-                                val monogram = site.target.firstOrNull()?.uppercaseChar()?.toString() ?: "G"
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -410,30 +523,11 @@ fun ShieldScreen(
                                         .padding(horizontal = 12.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(liquid.softAccentFill)
-                                            .border(1.dp, liquid.glassBorder, RoundedCornerShape(10.dp)),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        if (site.isApp) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Smartphone,
-                                                contentDescription = null,
-                                                tint = liquid.accentInk,
-                                                modifier = Modifier.size(18.dp),
-                                            )
-                                        } else {
-                                            Text(
-                                                text = monogram,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = liquid.accentInk,
-                                            )
-                                        }
-                                    }
+                                    BettingBrandLogo(
+                                        target = site.target,
+                                        size = 38.dp,
+                                        cornerRadius = 11.dp,
+                                    )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
@@ -487,32 +581,39 @@ fun ShieldScreen(
                         "1xbet.com",
                         "bet365.com",
                         "stake.com",
+                        "betway.com",
+                        "msport.com",
                     )
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         sampleBlockedSites.forEach { domain ->
-                            Row(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(liquid.controlFill)
-                                    .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50))
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                            val resolved = BrandCatalog.resolve(domain)
+                            LiquidGlassCard(
+                                cornerRadius = 50.dp,
+                                fillColor = liquid.controlFill,
+                                borderColor = liquid.subtleBorder,
+                                contentPadding = 0.dp,
+                                onClick = { onTestQueryChanged(domain) },
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Block,
-                                    contentDescription = null,
-                                    tint = liquid.accentInk,
-                                    modifier = Modifier.size(13.dp),
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                Text(
-                                    text = domain,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
+                                Row(
+                                    modifier = Modifier.padding(start = 6.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    BettingBrandLogo(
+                                        target = domain,
+                                        size = 24.dp,
+                                        cornerRadius = 7.dp,
+                                    )
+                                    Spacer(modifier = Modifier.width(7.dp))
+                                    Text(
+                                        text = resolved.displayName,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                }
                             }
                         }
                     }

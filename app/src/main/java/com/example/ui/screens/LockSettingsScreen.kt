@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,6 +61,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.blocker.TiltRadarEngine
 import com.example.data.ThemeMode
 import com.example.ui.MainUiState
 import com.example.ui.components.LiquidGlassCard
@@ -91,6 +93,10 @@ fun LockSettingsScreen(
     hasNotificationPermission: Boolean,
     onToggleNotifications: (Boolean) -> Unit,
     onSendTestNotification: () -> Unit,
+    onToggleDeviceAdminLock: () -> Unit = {},
+    onConfigureBuddyCoLock: (String) -> Unit = {},
+    onClearBuddyCoLock: () -> Unit = {},
+    onVerifyBuddyUnlock: (String, String) -> Boolean = { _, _ -> false },
     activeTourKey: String? = null,
     bottomContentPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
@@ -101,6 +107,9 @@ fun LockSettingsScreen(
     var pendingLockDays by remember { mutableIntStateOf(7) }
     var includeAntiTamper by remember { mutableStateOf(true) }
     var showSetPinDialog by remember { mutableStateOf(false) }
+    var showBuddyPairDialog by remember { mutableStateOf(false) }
+    var showBuddyUnlockDialog by remember { mutableStateOf(false) }
+    var showPartnerHelperDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(activeTourKey) {
@@ -335,6 +344,73 @@ fun LockSettingsScreen(
                 }
             }
 
+            // OS Device Admin Uninstall Lock
+            item {
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 18.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (state.isDeviceAdminEnabled) liquid.activeFill else liquid.mutedFill,
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.VerifiedUser,
+                                    contentDescription = null,
+                                    tint = if (state.isDeviceAdminEnabled) liquid.activeContent else liquid.mutedContent,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Device Admin Uninstall Lock",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
+                                Text(
+                                    text = if (state.isDeviceAdminEnabled) {
+                                        "Active • Android blocks app removal while Device Admin & Lock stay armed"
+                                    } else {
+                                        "Grant Device Administrator permission so GambleAware cannot be uninstalled during urges"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = onToggleDeviceAdminLock,
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (state.isDeviceAdminEnabled) liquid.mutedFill else liquid.activeFill,
+                                contentColor = if (state.isDeviceAdminEnabled) liquid.mutedContent else liquid.activeContent,
+                            ),
+                            border = BorderStroke(1.dp, liquid.subtleBorder),
+                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                            modifier = Modifier.testTag("device_admin_uninstall_lock_button"),
+                        ) {
+                            Text(if (state.isDeviceAdminEnabled) "Armed" else "Arm Lock")
+                        }
+                    }
+                }
+            }
+
             // Always-On DNS Shield Lock Guide (Android VPN Settings)
             item {
                 LiquidGlassCard(
@@ -451,6 +527,96 @@ fun LockSettingsScreen(
                                 modifier = Modifier.testTag("set_pin_button"),
                             ) {
                                 Text("Set PIN")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Trusted Buddy Co-Lock (Zero-Server Offline Challenge / Response)
+            item {
+                val hasBuddy = state.settings.buddyPartnerName.isNotEmpty()
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 18.dp,
+                ) {
+                    LiquidSectionHeader(
+                        title = "Trusted Buddy Co-Lock",
+                        subtitle = if (hasBuddy) {
+                            "Paired with ${state.settings.buddyPartnerName} • Challenge: ${state.settings.buddyChallengeCode}"
+                        } else {
+                            "Zero-server 6-digit Challenge/Response emergency approval lock"
+                        },
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    if (hasBuddy) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = { showBuddyUnlockDialog = true },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("buddy_emergency_unlock_button"),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, liquid.glassBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = liquid.softAccentFill,
+                                    contentColor = liquid.accentInk,
+                                ),
+                            ) {
+                                Text("Buddy Unlock")
+                            }
+                            OutlinedButton(
+                                onClick = { showPartnerHelperDialog = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onBackground,
+                                ),
+                            ) {
+                                Text("Partner Key")
+                            }
+                        }
+                        if (!isTimeLocked) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextButton(
+                                onClick = onClearBuddyCoLock,
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                            ) {
+                                Text("Unpair ${state.settings.buddyPartnerName}")
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = { showBuddyPairDialog = true },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("pair_buddy_button"),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onBackground,
+                                ),
+                            ) {
+                                Text("Pair Buddy Co-Lock")
+                            }
+                            OutlinedButton(
+                                onClick = { showPartnerHelperDialog = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onBackground,
+                                ),
+                            ) {
+                                Text("Partner KeyGen")
                             }
                         }
                     }
@@ -865,6 +1031,218 @@ fun LockSettingsScreen(
                     ),
                 ) {
                     Text("Cancel")
+                }
+            },
+        )
+    }
+
+    if (showBuddyPairDialog) {
+        var partnerName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showBuddyPairDialog = false },
+            shape = RoundedCornerShape(26.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Text("Pair Trusted Buddy", color = MaterialTheme.colorScheme.onBackground)
+                }
+            },
+            text = {
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "Choose a trusted friend or family member. Agree on a shared secret word privately; they can generate your 6-digit unlock token anytime offline.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OutlinedTextField(
+                            value = partnerName,
+                            onValueChange = { partnerName = it.take(36) },
+                            label = { Text("Partner Name") },
+                            placeholder = { Text("e.g. Tunde, Mum, Coach") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onConfigureBuddyCoLock(partnerName.ifBlank { "Trusted Partner" })
+                        showBuddyPairDialog = false
+                    },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = liquid.activeFill,
+                        contentColor = liquid.activeContent,
+                    ),
+                ) {
+                    Text("Pair Now")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBuddyPairDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showBuddyUnlockDialog) {
+        var saltInput by remember { mutableStateOf("") }
+        var tokenInput by remember { mutableStateOf("") }
+        var unlockErr by remember { mutableStateOf<String?>(null) }
+
+        AlertDialog(
+            onDismissRequest = { showBuddyUnlockDialog = false },
+            shape = RoundedCornerShape(26.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Text("Emergency Buddy Approval", color = MaterialTheme.colorScheme.onBackground)
+                }
+            },
+            text = {
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "Share challenge code ${state.settings.buddyChallengeCode} with ${state.settings.buddyPartnerName}. Enter your shared secret word and their 6-digit approval code.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OutlinedTextField(
+                            value = saltInput,
+                            onValueChange = { saltInput = it; unlockErr = null },
+                            label = { Text("Shared Secret Word") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = tokenInput,
+                            onValueChange = {
+                                if (it.length <= 6 && it.all(Char::isDigit)) {
+                                    tokenInput = it
+                                    unlockErr = null
+                                }
+                            },
+                            label = { Text("6-Digit Approval Token") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        if (unlockErr != null) {
+                            Text(
+                                text = unlockErr!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = liquid.accentInk,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (onVerifyBuddyUnlock(saltInput, tokenInput)) {
+                            showBuddyUnlockDialog = false
+                        } else {
+                            unlockErr = "Token does not match challenge ${state.settings.buddyChallengeCode}"
+                        }
+                    },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = liquid.activeFill,
+                        contentColor = liquid.activeContent,
+                    ),
+                ) {
+                    Text("Verify & Unlock")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBuddyUnlockDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showPartnerHelperDialog) {
+        var challengeInput by remember {
+            mutableStateOf(state.settings.buddyChallengeCode.ifEmpty { "482-915" })
+        }
+        var partnerSaltInput by remember { mutableStateOf("") }
+        val generatedToken = remember(challengeInput, partnerSaltInput) {
+            TiltRadarEngine.computeExpectedBuddyResponse(challengeInput, partnerSaltInput)
+        }
+
+        AlertDialog(
+            onDismissRequest = { showPartnerHelperDialog = false },
+            shape = RoundedCornerShape(26.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Text("Partner Key Generator", color = MaterialTheme.colorScheme.onBackground)
+                }
+            },
+            text = {
+                LiquidDialogContent(themeMode = state.settings.themeMode) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "Generates a deterministic 6-digit approval token offline — identical across Android and Web.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OutlinedTextField(
+                            value = challengeInput,
+                            onValueChange = { challengeInput = it.take(12) },
+                            label = { Text("Challenge Code") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = partnerSaltInput,
+                            onValueChange = { partnerSaltInput = it },
+                            label = { Text("Shared Secret Word") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(liquid.softAccentFill)
+                                .border(1.dp, liquid.glassBorder, RoundedCornerShape(16.dp))
+                                .padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = "6-DIGIT APPROVAL TOKEN",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = generatedToken,
+                                fontFamily = MonoFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp,
+                                color = liquid.accentInk,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showPartnerHelperDialog = false },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = liquid.activeFill,
+                        contentColor = liquid.activeContent,
+                    ),
+                ) {
+                    Text("Done")
                 }
             },
         )

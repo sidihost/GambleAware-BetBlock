@@ -8,8 +8,16 @@ import {
   getOrderedPlatformCards,
   resolveInitialViewMode,
   shouldPromoteWebApp,
+  shouldSkipPreloader,
   TOP_BETTING_DOMAINS_FOR_IOS,
 } from './platformCompatibility';
+
+test('shouldSkipPreloader returns true only for autostart=1 or autostart=true', () => {
+  assert.equal(shouldSkipPreloader('?autostart=1'), true);
+  assert.equal(shouldSkipPreloader('?app=1&autostart=true'), true);
+  assert.equal(shouldSkipPreloader('?app=1'), false);
+  assert.equal(shouldSkipPreloader(''), false);
+});
 
 test('detectClientPlatform identifies iPhone, iPadOS, Android, and Desktop correctly', () => {
   assert.equal(

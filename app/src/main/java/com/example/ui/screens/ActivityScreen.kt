@@ -36,6 +36,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PhonelinkLock
 import androidx.compose.material.icons.rounded.PublicOff
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material3.Button
@@ -63,6 +64,7 @@ import com.example.data.BlockedEventEntity
 import com.example.ui.GroupedBlockedTarget
 import com.example.ui.MainUiState
 import com.example.ui.RECOVERY_MILESTONES
+import com.example.ui.components.BettingBrandLogo
 import com.example.ui.components.BettingFreeProgressChart
 import com.example.ui.components.InteractiveBlockedBarChart
 import com.example.ui.components.LiquidGlassCard
@@ -83,6 +85,7 @@ import java.util.Locale
 fun ActivityScreen(
     state: MainUiState,
     onClearHistory: () -> Unit,
+    onShareStreak: () -> Unit = {},
     onOpenUrgeJournal: () -> Unit,
     onLaunchCalmReset: () -> Unit,
     activeTourKey: String? = null,
@@ -282,6 +285,48 @@ fun ActivityScreen(
                                 label = "Blocked",
                                 value = "${state.totalBlockedCount}",
                                 modifier = Modifier.weight(1f),
+                            )
+                        }
+
+                        if (state.settings.bankedUrgeSavingsNgn > 0) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val bankedFormatted = remember(state.settings.bankedUrgeSavingsNgn) {
+                                "₦" + NumberFormat.getIntegerInstance(Locale("en", "NG"))
+                                    .format(state.settings.bankedUrgeSavingsNgn)
+                            }
+                            Text(
+                                text = "Includes $bankedFormatted banked across ${state.settings.bankedUrgeCount} resisted urges",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = liquid.accentInk,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedButton(
+                            onClick = onShareStreak,
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, liquid.glassBorder),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = liquid.softAccentFill,
+                                contentColor = liquid.accentInk,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(42.dp)
+                                .testTag("progress_share_streak_button"),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Share,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Share Clean Streak",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
                             )
                         }
                     }
@@ -761,7 +806,6 @@ private fun GroupedBlockedTargetRow(
 ) {
     val liquid = LocalLiquidColors.current
     val timeText = formatBlockedRelativeTime(site.latestTimestamp, nowMs)
-    val monogram = site.target.firstOrNull()?.uppercaseChar()?.toString() ?: "G"
     val sourceSummary = site.sources.joinToString(", ")
 
     LiquidGlassCard(
@@ -773,30 +817,11 @@ private fun GroupedBlockedTargetRow(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(liquid.softAccentFill)
-                    .border(1.dp, liquid.glassBorder, RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (site.isApp) {
-                    Icon(
-                        imageVector = Icons.Rounded.Smartphone,
-                        contentDescription = null,
-                        tint = liquid.accentInk,
-                        modifier = Modifier.size(20.dp),
-                    )
-                } else {
-                    Text(
-                        text = monogram,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = liquid.accentInk,
-                    )
-                }
-            }
+            BettingBrandLogo(
+                target = site.target,
+                size = 40.dp,
+                cornerRadius = 12.dp,
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -836,18 +861,8 @@ private fun GroupedBlockedTargetRow(
 
 @Composable
 private fun BlockedEventRow(event: BlockedEventEntity) {
-    val liquid = LocalLiquidColors.current
     val timeText = remember(event.timestamp) {
         SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(event.timestamp))
-    }
-    val icon = when (event.source) {
-        "DNS Shield" -> Icons.Rounded.Dns
-        "Web Shield", "Typed URL Guard" -> Icons.Rounded.Language
-        "Search Guard" -> Icons.Rounded.Search
-        "In-App WebView" -> Icons.Rounded.PublicOff
-        "App Shield" -> Icons.Rounded.PhonelinkLock
-        "Install Guard" -> Icons.Rounded.DownloadDone
-        else -> Icons.Rounded.Block
     }
 
     LiquidGlassCard(
@@ -859,20 +874,11 @@ private fun BlockedEventRow(event: BlockedEventEntity) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(liquid.activeFill),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = liquid.activeContent,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
+            BettingBrandLogo(
+                target = event.target,
+                size = 40.dp,
+                cornerRadius = 12.dp,
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

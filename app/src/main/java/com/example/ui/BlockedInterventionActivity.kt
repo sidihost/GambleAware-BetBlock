@@ -34,8 +34,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Air
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -62,13 +63,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.MainActivity
+import com.example.blocker.BrandCatalog
 import com.example.data.ProtectionPreferences
+import com.example.ui.components.BettingBrandLogo
 import com.example.ui.components.BrandGEmblem
 import com.example.ui.components.LiquidGlassBackdrop
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.theme.AnchorTheme
 import com.example.ui.theme.LocalLiquidColors
 import kotlinx.coroutines.delay
+import java.text.NumberFormat
+import java.util.Locale
 
 class BlockedInterventionActivity : ComponentActivity() {
 
@@ -82,13 +87,15 @@ class BlockedInterventionActivity : ComponentActivity() {
         val isAntiTamper = intent.getBooleanExtra(EXTRA_IS_ANTI_TAMPER, false)
         val autoStartBreathing = intent.getBooleanExtra(EXTRA_START_BREATHING, false)
 
-        val prefs = ProtectionPreferences.getInstance(this).currentSnapshot()
+        val prefsManager = ProtectionPreferences.getInstance(this)
+        val prefs = prefsManager.currentSnapshot()
         val days = if (prefs.protectionStartedAtMs > 0L) {
             ((System.currentTimeMillis() - prefs.protectionStartedAtMs).coerceAtLeast(0L) /
                 (24L * 60 * 60 * 1000)).toInt()
         } else {
             0
         }
+        val stakeNgn = prefs.dailyBetSpendEstimate.coerceAtLeast(500)
 
         setContent {
             AnchorTheme(themeMode = prefs.themeMode) {
@@ -99,6 +106,10 @@ class BlockedInterventionActivity : ComponentActivity() {
                     isAntiTamper = isAntiTamper,
                     autoStartBreathing = autoStartBreathing,
                     cleanDays = days,
+                    stakeNgn = stakeNgn,
+                    onBankUrgeStake = {
+                        prefsManager.bankUrgeStake(stakeNgn)
+                    },
                     onGoHome = {
                         val homeIntent = Intent(Intent.ACTION_MAIN).apply {
                             addCategory(Intent.CATEGORY_HOME)
@@ -133,12 +144,19 @@ private fun InterventionScreen(
     isAntiTamper: Boolean,
     autoStartBreathing: Boolean,
     cleanDays: Int,
+    stakeNgn: Int,
+    onBankUrgeStake: () -> Unit,
     onGoHome: () -> Unit,
     onOpenGambleAware: () -> Unit,
 ) {
     val liquid = LocalLiquidColors.current
     var isBreathingActive by remember { mutableStateOf(autoStartBreathing) }
     var calmSecondsLeft by remember { mutableIntStateOf(60) }
+    var bankedThisUrge by remember { mutableStateOf(false) }
+    val brandIdentity = remember(target) { BrandCatalog.resolve(target) }
+    val nairaFmt = remember { NumberFormat.getIntegerInstance(Locale("en", "NG")) }
+    val expectedThirtyBetLoss = remember(stakeNgn) { ((stakeNgn * 30) * 0.065).toInt() }
+    val isCalmResetLaunch = source.contains("Urge Reset", ignoreCase = true)
 
     LaunchedEffect(isBreathingActive) {
         if (isBreathingActive) {
@@ -213,8 +231,14 @@ private fun InterventionScreen(
                                 modifier = Modifier.size(34.dp),
                             )
                         }
-                    } else {
+                    } else if (isCalmResetLaunch) {
                         BrandGEmblem(modifier = Modifier.size(72.dp))
+                    } else {
+                        BettingBrandLogo(
+                            target = target,
+                            size = 76.dp,
+                            cornerRadius = 22.dp,
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -258,10 +282,18 @@ private fun InterventionScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(liquid.mutedFill)
                             .border(1.dp, liquid.subtleBorder, RoundedCornerShape(18.dp))
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                            .padding(horizontal = 14.dp, vertical = 14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        if (!isAntiTamper && !isCalmResetLaunch) {
+                            BettingBrandLogo(
+                                target = target,
+                                size = 42.dp,
+                                cornerRadius = 12.dp,
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
                         Column(modifier = Modifier.weight(1f)) {
                             Box(
                                 modifier = Modifier
@@ -278,7 +310,11 @@ private fun InterventionScreen(
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = target,
+                                text = if (!isAntiTamper && !isCalmResetLaunch && brandIdentity.isExactCatalogMatch) {
+                                    "${brandIdentity.displayName} • $target"
+                                } else {
+                                    target
+                                },
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground,
@@ -294,7 +330,7 @@ private fun InterventionScreen(
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
                                 text = "$cleanDays d",
@@ -306,6 +342,32 @@ private fun InterventionScreen(
                                 text = "Streak",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    if (!isAntiTamper && !isCalmResetLaunch) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(liquid.softAccentFill)
+                                .border(1.dp, liquid.glassBorder, RoundedCornerShape(14.dp))
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.VerifiedUser,
+                                contentDescription = null,
+                                tint = liquid.accentInk,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "House-Edge Math: 30 bets at ₦${nairaFmt.format(stakeNgn)} statistically lose ~₦${nairaFmt.format(expectedThirtyBetLoss)} to operator margin.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onBackground,
                             )
                         }
                     }
@@ -408,7 +470,45 @@ private fun InterventionScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    if (!isAntiTamper) {
+                        OutlinedButton(
+                            onClick = {
+                                if (!bankedThisUrge) {
+                                    onBankUrgeStake()
+                                    bankedThisUrge = true
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .testTag("intervention_bank_stake_button"),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, liquid.glassBorder),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = liquid.softAccentFill,
+                                contentColor = liquid.accentInk,
+                            ),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (bankedThisUrge) {
+                                    "Banked ₦${nairaFmt.format(stakeNgn)} Into Vault"
+                                } else {
+                                    "Bank ₦${nairaFmt.format(stakeNgn)} Stake Into Vault"
+                                },
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
 
                     Button(
                         onClick = onGoHome,

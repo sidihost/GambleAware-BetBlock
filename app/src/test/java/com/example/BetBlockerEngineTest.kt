@@ -2,9 +2,15 @@ package com.example
 
 import com.example.blocker.BlockFilterConfig
 import com.example.blocker.BlocklistMatcher
+import com.example.blocker.BrandCatalog
 import com.example.blocker.GamblingCategory
+import com.example.blocker.TiltRadarEngine
+import com.example.blocker.TiltRiskLevel
 import com.example.data.BlockedEventEntity
+import com.example.data.ProtectionSettingsState
 import com.example.service.DnsPacketCodec
+import com.example.ui.MainUiState
+import com.example.ui.buildCleanStreakShareText
 import com.example.ui.buildGroupedBlockedTargets
 import com.example.ui.formatAttemptCountLabel
 import com.example.ui.formatBlockedRelativeTime
@@ -337,5 +343,70 @@ class BetBlockerEngineTest {
         assertEquals("SportyBet App", appGroup.target)
         assertEquals(1, appGroup.attemptCount)
         assertTrue(appGroup.isApp)
+    }
+
+    @Test
+    fun buildsFormattedCleanStreakShareSummary() {
+        val now = 1_700_000_000_000L
+        val started = now - (3L * 24 * 60 * 60 * 1000) - (5L * 60 * 60 * 1000)
+        val state = MainUiState(
+            settings = ProtectionSettingsState(
+                isProtectionEnabled = true,
+                protectionStartedAtMs = started,
+                dailyBetSpendEstimate = 5000,
+            ),
+            totalUrgeResistedCount = 4,
+            totalBlockedCount = 12,
+            currentTimeMs = now,
+        )
+        val summary = buildCleanStreakShareText(state)
+        assertTrue(summary.contains("3 days"))
+        assertTrue(summary.contains("05h 00m 00s"))
+        assertTrue(summary.contains("₦"))
+        assertTrue(summary.contains("Urges resisted: 4"))
+        assertTrue(summary.contains("Betting sites blocked: 12"))
+    }
+
+    @Test
+    fun unwrapsRedirectLinksCatchesHomoglyphsAndResolvesExactBrandLogos() {
+        val config = BlockFilterConfig()
+        val igRedirect = BlocklistMatcher.matchDomainOrUrl(
+            "https://l.instagram.com/?u=https%3A%2F%2Fsportybet.com%2Fng%2Fshare%3Fcode%3DABC123",
+            config,
+        )
+        assertTrue(igRedirect.isBlocked)
+
+        val spoof = BlocklistMatcher.matchDomainOrUrl("https://sp\u043ertybet.com", config)
+        assertTrue(spoof.isBlocked)
+
+        assertFalse(BlocklistMatcher.matchDomainOrUrl("paystack.com", config).isBlocked)
+        assertFalse(BlocklistMatcher.matchDomainOrUrl("flutterwave.com", config).isBlocked)
+
+        val sportyBrand = BrandCatalog.resolve("m.sportybet.ng")
+        assertTrue(sportyBrand.isExactCatalogMatch)
+        assertEquals("SportyBet", sportyBrand.displayName)
+        assertEquals(0xFFE41B23, sportyBrand.bgHex)
+
+        val bet9jaBrand = BrandCatalog.resolve("web.bet9ja.com")
+        assertTrue(bet9jaBrand.isExactCatalogMatch)
+        assertEquals("Bet9ja", bet9jaBrand.displayName)
+
+        val now = 1_700_000_000_000L
+        val criticalEvents = (1..5).map { idx ->
+            BlockedEventEntity(
+                id = idx.toLong(),
+                target = "sportybet.com",
+                source = "DNS Shield",
+                categoryName = "SPORTSBOOK",
+                timestamp = now - (idx * 10_000L),
+            )
+        }
+        val eval = TiltRadarEngine.evaluate(criticalEvents, now)
+        assertEquals(TiltRiskLevel.CRITICAL, eval.level)
+
+        val challenge = TiltRadarEngine.generateBuddyChallengeCode(now)
+        val token = TiltRadarEngine.computeExpectedBuddyResponse(challenge, "Tunde")
+        assertTrue(TiltRadarEngine.verifyBuddyUnlockCode(challenge, "Tunde", token))
+        assertFalse(TiltRadarEngine.verifyBuddyUnlockCode(challenge, "Other", token))
     }
 }

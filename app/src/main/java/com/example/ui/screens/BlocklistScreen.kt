@@ -6,6 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,7 +28,6 @@ import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,12 +54,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.blocker.BrandCatalog
 import com.example.blocker.GamblingCategory
 import com.example.blocker.GamblingRegistry
 import com.example.data.InstalledAppInfo
 import com.example.ui.MainUiState
+import com.example.ui.components.BettingBrandLogo
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
 import com.example.ui.components.TourTargetKeys
@@ -66,7 +70,7 @@ import com.example.ui.components.tourTarget
 import com.example.ui.theme.LiquidDialogContent
 import com.example.ui.theme.LocalLiquidColors
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BlocklistScreen(
     state: MainUiState,
@@ -75,6 +79,7 @@ fun BlocklistScreen(
     onToggleBrowserShield: (Boolean) -> Unit,
     onToggleAppShield: (Boolean) -> Unit,
     onToggleSearchGuard: (Boolean) -> Unit,
+    onToggleDepositGuard: (Boolean) -> Unit = {},
     onAddCustomDomain: (String, Boolean) -> Unit,
     onRemoveCustomDomain: (String, Boolean) -> Unit,
     onOpenAppPicker: () -> Unit,
@@ -236,6 +241,63 @@ fun BlocklistScreen(
                         onCheckedChange = onToggleSearchGuard,
                         testTag = "switch_search_guard",
                     )
+                    CategorySwitchRow(
+                        title = "Cashier & Booking-Code Firewall",
+                        subtitle = "Neutralizes deposit URLs, promo bonus links & bet-slip booking codes",
+                        checked = state.settings.depositGuardEnabled,
+                        onCheckedChange = onToggleDepositGuard,
+                        testTag = "switch_deposit_guard",
+                    )
+                }
+            }
+
+            // Major Covered Platforms Showcase (Exact Brand Logos)
+            item {
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 18.dp,
+                ) {
+                    LiquidSectionHeader(
+                        title = "Major Covered Platforms",
+                        subtitle = "Tap any sportsbook or casino logo to inspect its blocked domains",
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        BrandCatalog.featuredBrands.take(12).forEach { brand ->
+                            LiquidGlassCard(
+                                cornerRadius = 16.dp,
+                                fillColor = liquid.controlFill,
+                                borderColor = liquid.subtleBorder,
+                                contentPadding = 8.dp,
+                                onClick = { registrySearch = brand.name.lowercase() },
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    BettingBrandLogo(
+                                        target = brand.primaryDomain,
+                                        size = 30.dp,
+                                        cornerRadius = 8.dp,
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = brand.name,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                        )
+                                        Text(
+                                            text = brand.primaryDomain,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -503,6 +565,7 @@ fun BlocklistScreen(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     matchingRegistryDomains.forEach { (domain, category) ->
+                        val brandMeta = BrandCatalog.resolve(domain)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -514,20 +577,28 @@ fun BlocklistScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f),
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Language,
-                                    contentDescription = null,
-                                    tint = liquid.accentInk,
-                                    modifier = Modifier.size(16.dp),
+                                BettingBrandLogo(
+                                    target = domain,
+                                    size = 30.dp,
+                                    cornerRadius = 8.dp,
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = domain,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = domain,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    if (brandMeta.isExactCatalogMatch) {
+                                        Text(
+                                            text = brandMeta.displayName,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
                             }
                             Text(
                                 text = category.displayName.substringBefore(" "),

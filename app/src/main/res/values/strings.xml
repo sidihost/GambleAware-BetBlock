@@ -6,4 +6,7 @@
     <string name="nav_blocklist">Blocklist</string>
     <string name="nav_activity">Progress</string>
     <string name="nav_lock">Lock</string>
+    <string name="device_admin_label">GambleAware Uninstall Lock</string>
+    <string name="device_admin_description">Prevents uninstalling or force-removing GambleAware while your Commitment Lock is active. No data leaves your device.</string>
 </resources>
+

@@ -80,3 +80,24 @@ test('blocks betting sites immediately while typing before pressing Enter or typ
     assert.equal(res.isBlocked, false, `Expected safe input NOT blocked while typing: "${safe}"`);
   }
 });
+
+test('unwraps social redirect links and catches Cyrillic homoglyph spoofing while sparing normal fintechs', () => {
+  const igRedirect = BlocklistMatcher.matchDomainOrUrl(
+    'https://l.instagram.com/?u=https%3A%2F%2Fsportybet.com%2Fng%2Fshare%3Fcode%3DABC123',
+    defaultConfig,
+  );
+  assert.equal(igRedirect.isBlocked, true);
+  assert.match(igRedirect.reason, /redirect/i);
+
+  const homoglyphSpoof = BlocklistMatcher.matchDomainOrUrl('https://sp\u043ertybet.com', defaultConfig);
+  assert.equal(homoglyphSpoof.isBlocked, true);
+
+  const cashierSubdomain = BlocklistMatcher.matchDomainOrUrl('https://pay.sportybet.com/deposit', defaultConfig);
+  assert.equal(cashierSubdomain.isBlocked, true);
+
+  for (const safeFintech of ['paystack.com', 'flutterwave.com', 'opayweb.com', 'kuda.com']) {
+    const res = BlocklistMatcher.matchDomainOrUrl(safeFintech, defaultConfig);
+    assert.equal(res.isBlocked, false, `Expected fintech ${safeFintech} to stay safe`);
+  }
+});
+

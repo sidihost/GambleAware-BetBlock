@@ -38,8 +38,44 @@ object BlocklistMatcher {
         "file://", "content://", "data:", "blob:", "javascript:",
     )
 
+    private val homoglyphMap: Map<Char, Char> = mapOf(
+        '\u0430' to 'a', '\u0435' to 'e', '\u043e' to 'o', '\u0440' to 'p', '\u0441' to 'c',
+        '\u0445' to 'x', '\u0456' to 'i', '\u0458' to 'j', '\u0443' to 'y', '\u043a' to 'k',
+        '\u03b1' to 'a', '\u03b5' to 'e', '\u03bf' to 'o', '\u03c1' to 'p', '\u03b9' to 'i',
+    )
+
+    private val redirectParamRegex = Regex(
+        """[?&](?:u|url|redirect|redirect_url|next|dest|destination|target|r|link|to)=([^&#]+)""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    private fun foldHomoglyphs(input: String): String {
+        val sb = StringBuilder(input.length)
+        for (ch in input) {
+            sb.append(homoglyphMap[ch] ?: ch)
+        }
+        return sb.toString()
+    }
+
+    private fun extractRedirectTargets(rawInput: String): List<String> {
+        val out = mutableListOf<String>()
+        for (match in redirectParamRegex.findAll(rawInput)) {
+            if (out.size >= 4) break
+            val rawVal = match.groupValues[1]
+            val decoded = try {
+                URLDecoder.decode(rawVal, "UTF-8")
+            } catch (_: Exception) {
+                rawVal.replace('+', ' ')
+            }
+            if (decoded.isNotEmpty() && decoded != rawInput) {
+                out.add(decoded)
+            }
+        }
+        return out
+    }
+
     fun normalizeDomain(rawInput: String): String {
-        var s = rawInput.trim().lowercase()
+        var s = foldHomoglyphs(rawInput.trim().lowercase())
         if (s.isEmpty()) return ""
         if (internalSchemePrefixes.any { s.startsWith(it) }) return ""
         val schemeIndex = s.indexOf("://")
@@ -73,10 +109,26 @@ object BlocklistMatcher {
         return s
     }
 
-    fun matchDomainOrUrl(rawDomainOrUrl: String, config: BlockFilterConfig): BlockMatchResult {
-        val rawLower = rawDomainOrUrl.trim().lowercase()
+    @JvmOverloads
+    fun matchDomainOrUrl(
+        rawDomainOrUrl: String,
+        config: BlockFilterConfig,
+        depth: Int = 0,
+    ): BlockMatchResult {
+        val rawLower = foldHomoglyphs(rawDomainOrUrl.trim().lowercase())
         if (internalSchemePrefixes.any { rawLower.startsWith(it) }) {
             return BlockMatchResult(isBlocked = false)
+        }
+
+        if (depth < 2) {
+            for (wrapped in extractRedirectTargets(rawDomainOrUrl)) {
+                val innerMatch = matchDomainOrUrl(wrapped, config, depth + 1)
+                if (innerMatch.isBlocked) {
+                    return innerMatch.copy(
+                        reason = "Unwrapped redirect link (${innerMatch.reason})",
+                    )
+                }
+            }
         }
 
         if (config.searchGuardEnabled) {
@@ -145,7 +197,7 @@ object BlocklistMatcher {
     }
 
     fun matchSearchQueryInUrl(rawUrl: String): BlockMatchResult {
-        val lower = rawUrl.lowercase()
+        val lower = foldHomoglyphs(rawUrl).lowercase()
         val isSearchEngineUrl = lower.contains("/search") ||
             lower.contains("google.") ||
             lower.contains("bing.com") ||
@@ -155,7 +207,7 @@ object BlocklistMatcher {
 
         val match = searchQueryParamRegex.find(lower) ?: return BlockMatchResult(isBlocked = false)
         val decoded = try {
-            URLDecoder.decode(match.groupValues[1], "UTF-8").lowercase()
+            foldHomoglyphs(URLDecoder.decode(match.groupValues[1], "UTF-8")).lowercase()
         } catch (_: Exception) {
             match.groupValues[1].replace('+', ' ')
         }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Heart,
@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { AppHeader, BrandGIcon } from './components/AppHeader';
+import { AppPreloader } from './components/AppPreloader';
 import { BlockedInterventionModal } from './components/BlockedInterventionModal';
 import { FirstRunSetupModal } from './components/FirstRunSetupModal';
 import { GoalModal } from './components/GoalCardModal';
@@ -42,7 +43,9 @@ import {
   AppViewMode,
   resolveInitialViewMode,
   shouldPromoteWebApp,
+  shouldSkipPreloader,
 } from './utils/platformCompatibility';
+import { shareCleanStreakStats } from './utils/streakShare';
 
 const NAV_ITEMS: NavItemConfig[] = [
   { route: 'shield', label: 'Shield', icon: <BrandGIcon className="h-4 w-4" /> },
@@ -79,12 +82,19 @@ export function App() {
     setAppShieldEnabled,
     setSearchGuardEnabled,
     setAntiTamperEnabled,
+    setDepositGuardEnabled,
+    bankUrgeStake,
+    configureBuddyCoLock,
+    refreshBuddyChallenge,
+    clearBuddyCoLock,
+    verifyBuddyUnlock,
     setHighRiskScheduleFlag,
     setThemeMode,
     toggleQuickTheme,
     setDailySpendEstimate,
     setNotificationsEnabled,
     completeInitialSetup,
+    skipInitialSetup,
     createGoal,
     setPrimaryGoal,
     toggleGoalCompleted,
@@ -104,6 +114,7 @@ export function App() {
     clearEventHistory,
     restoreFromVaultBackup,
     forceBackupSync,
+    showBanner,
     clearBanner,
   } = useGambleAwareState();
 
@@ -120,6 +131,11 @@ export function App() {
       search: window.location.search,
       hash: window.location.hash,
     });
+  });
+
+  const [showPreloader, setShowPreloader] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return !shouldSkipPreloader(window.location.search);
   });
 
   const [route, setRoute] = useState<Exclude<AnchorRoute, 'download'>>('shield');
@@ -245,6 +261,36 @@ export function App() {
     window.scrollTo({ top: 0 });
   };
 
+  const handleShareStreak = async () => {
+    const shareUrl =
+      typeof window !== 'undefined' && window.location.origin
+        ? window.location.origin
+        : 'https://gambleaware.vercel.app';
+    const outcome = await shareCleanStreakStats({
+      cleanDays: uiState.cleanDays,
+      cleanHoursRemainder: uiState.cleanHoursRemainder,
+      cleanMinutesRemainder: uiState.cleanMinutesRemainder,
+      cleanSecondsRemainder: uiState.cleanSecondsRemainder,
+      estimatedSavedAmount: uiState.estimatedSavedAmount,
+      totalUrgeResistedCount: uiState.totalUrgeResistedCount,
+      totalBlockedCount: uiState.totalBlockedCount,
+      nextMilestoneTitle: uiState.nextMilestone.title,
+      nextMilestoneDays: uiState.nextMilestone.days,
+      shareUrl,
+    });
+    if (outcome.status === 'shared') {
+      showBanner('Clean streak shared');
+    } else if (outcome.status === 'copied') {
+      showBanner('Clean streak copied to clipboard — ready to paste & share');
+    } else if (outcome.status === 'unavailable') {
+      showBanner('Share unavailable in this browser context');
+    }
+  };
+
+  const dismissPreloader = useCallback(() => {
+    setShowPreloader(false);
+  }, []);
+
   const showTour =
     viewMode === 'app' &&
     uiState.settings.hasCompletedInitialSetup &&
@@ -252,6 +298,7 @@ export function App() {
 
   return (
     <LiquidGlassBackdrop isProtected={viewMode === 'landing' || uiState.isFullyArmed}>
+      <AppPreloader visible={showPreloader} onDismiss={dismissPreloader} />
       <AppHeader
         mode={viewMode}
         activeRoute={route}
@@ -305,6 +352,7 @@ export function App() {
                 onDomainLookupChanged={updateDomainLookupQuery}
                 onQuickBlockDomain={(domain) => addCustomDomain(domain, false)}
                 onTestOrRedirectUrl={handleTestOrRedirectUrl}
+                onBankUrgeStake={bankUrgeStake}
                 showGoalReminder={showGoalReminder}
                 onDismissGoalReminder={() => setShowGoalReminder(false)}
                 onOpenGoalModal={(prefill) => setGoalModalPrefill({ open: true, ...prefill })}
@@ -369,6 +417,15 @@ export function App() {
                     setSearchGuardEnabled(true);
                   }
                 }}
+                onToggleDepositGuard={(enabled) => {
+                  if (!enabled) {
+                    runProtectedAction('disable Cashier & Booking-Code Firewall', () =>
+                      setDepositGuardEnabled(false),
+                    );
+                  } else {
+                    setDepositGuardEnabled(true);
+                  }
+                }}
                 onAddCustomDomain={addCustomDomain}
                 onRemoveCustomDomain={(domain, isAllowlist) => {
                   if (!isAllowlist) {
@@ -392,6 +449,7 @@ export function App() {
                 onClearHistory={() =>
                   runProtectedAction('clear blocked attempt log', clearEventHistory)
                 }
+                onShareStreak={() => void handleShareStreak()}
                 onOpenUrgeJournal={() => setUrgeModalOpen(true)}
                 onLaunchCalmReset={() =>
                   setInterventionPayload({
@@ -456,6 +514,10 @@ export function App() {
                     enableDeviceAdmin();
                   }
                 }}
+                onConfigureBuddyCoLock={configureBuddyCoLock}
+                onRefreshBuddyChallenge={refreshBuddyChallenge}
+                onClearBuddyCoLock={clearBuddyCoLock}
+                onVerifyBuddyUnlock={verifyBuddyUnlock}
                 onOpenPrivateDnsSettings={() => {
                   setDnsDraft(uiState.privateDnsStatus.serverHost ?? '');
                   setDnsModalOpen(true);
@@ -555,9 +617,8 @@ export function App() {
           isIOS={isIOS}
           isShieldEnabled={uiState.isAccessibilityEnabled}
           isDeviceAdminEnabled={uiState.isDeviceAdminEnabled}
-          onEnableShield={activateAccessibilityShield}
-          onEnableDeviceAdmin={enableDeviceAdmin}
-          onCompleteLockedSetup={completeInitialSetup}
+          onCompleteSetup={completeInitialSetup}
+          onSkipSetup={skipInitialSetup}
         />
       ) : null}
 
@@ -597,7 +658,9 @@ export function App() {
           cleanDays={uiState.cleanDays}
           cleanExactDays={uiState.cleanExactDays}
           estimatedSavedAmount={uiState.estimatedSavedAmount}
+          dailySpendNgn={uiState.settings.dailyBetSpendEstimate}
           primaryGoal={uiState.primaryGoal}
+          onBankUrgeStake={bankUrgeStake}
           onCreateGoal={() => setGoalModalPrefill({ open: true })}
           onClose={() => setInterventionPayload(null)}
         />

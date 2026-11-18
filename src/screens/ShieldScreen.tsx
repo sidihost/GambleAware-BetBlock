@@ -8,7 +8,6 @@ import {
   Circle,
   Compass,
   Download,
-  Globe,
   Heart,
   LockKeyhole,
   NotebookPen,
@@ -24,6 +23,7 @@ import {
 } from 'lucide-react';
 import { GAMBLING_CATEGORY_META } from '../blocker/gamblingCategory';
 import { BrandGIcon } from '../components/AppHeader';
+import { BettingBrandLogo } from '../components/BettingBrandLogo';
 import { ActiveGoalsCard, GoalReminderBanner } from '../components/GoalCardModal';
 import { HighRiskGuardCard } from '../components/HighRiskGuardCard';
 import {
@@ -33,6 +33,7 @@ import {
   LiquidStatusButton,
 } from '../components/LiquidGlass';
 import { RecoveryVaultCard } from '../components/RecoveryVaultCard';
+import { TiltRadarCard } from '../components/TiltRadarCard';
 import { PersistedStore } from '../data/storage';
 import {
   DerivedMainState,
@@ -57,6 +58,7 @@ interface ShieldScreenProps {
   onDomainLookupChanged: (query: string) => void;
   onQuickBlockDomain: (domain: string) => void;
   onTestOrRedirectUrl: (rawInput: string) => void;
+  onBankUrgeStake: (amountNgn: number) => void;
   showGoalReminder: boolean;
   onDismissGoalReminder: () => void;
   onOpenGoalModal: (prefill?: {
@@ -91,6 +93,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
   onDomainLookupChanged,
   onQuickBlockDomain,
   onTestOrRedirectUrl,
+  onBankUrgeStake,
   showGoalReminder,
   onDismissGoalReminder,
   onOpenGoalModal,
@@ -546,7 +549,6 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             {state.groupedBlockedSites.length > 0 ? (
               <div className="mt-3 space-y-2" data-testid="shield-blocked-sites-list">
                 {state.groupedBlockedSites.slice(0, 6).map((site) => {
-                  const initials = site.target.replace(/^[^a-zA-Z0-9]+/, '').charAt(0).toUpperCase() || 'G';
                   const timeAgo = formatBlockedTimestamp(site.latestTimestamp, state.currentTimeMs);
                   return (
                     <div
@@ -554,25 +556,17 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                       className="flex items-center justify-between gap-2.5 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2.5"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] font-mono text-xs font-bold text-[var(--accent-ink)]">
-                          {site.isApp ? (
-                            <Smartphone className="h-4 w-4" />
-                          ) : site.target.includes('.') ? (
-                            initials
-                          ) : (
-                            <Globe className="h-4 w-4" />
-                          )}
-                        </span>
+                        <BettingBrandLogo target={site.target} size="md" />
                         <div className="min-w-0">
                           <p className="truncate font-mono text-xs font-bold text-[var(--ink)]">
                             {site.target}
                           </p>
                           <p className="truncate text-[11px] text-[var(--ink-muted)]">
-                            {site.latestSource} • {site.categoryName} • {timeAgo}
+                            {site.latestSource} · {site.categoryName} · {timeAgo}
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-2.5 py-0.5 font-mono text-[10px] font-bold text-[var(--accent-ink)]">
+                      <span className="shrink-0 font-mono text-[11px] font-bold text-[var(--accent-ink)] tabular-nums">
                         {formatAttemptCountLabel(site.attemptCount)}
                       </span>
                     </div>
@@ -583,24 +577,30 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 
             <div className="mt-3">
               <p className="text-[10px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
-                Default Blocked Betting Sites ({state.builtInDomainCount}+)
+                Flagship Blocked Platforms ({state.builtInDomainCount}+)
               </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 {[
-                  'sportybet.com',
-                  'bet9ja.com',
-                  'betking.com',
-                  '1xbet.com',
-                  'bet365.com',
-                  'stake.com',
-                ].map((domain) => (
-                  <span
-                    key={domain}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink)]"
+                  { domain: 'sportybet.com', label: 'SportyBet' },
+                  { domain: 'bet9ja.com', label: 'Bet9ja' },
+                  { domain: 'betking.com', label: 'BetKing' },
+                  { domain: '1xbet.com', label: '1xBet' },
+                  { domain: 'bet365.com', label: 'Bet365' },
+                  { domain: 'stake.com', label: 'Stake' },
+                  { domain: 'betway.com', label: 'Betway' },
+                  { domain: 'msport.com', label: 'MSport' },
+                ].map((brand) => (
+                  <button
+                    key={brand.domain}
+                    type="button"
+                    onClick={() => onTestOrRedirectUrl(brand.domain)}
+                    className="flex cursor-pointer items-center gap-2 rounded-[12px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--muted-fill)]"
                   >
-                    <Ban className="h-3 w-3 text-[var(--accent-ink)]" />
-                    <span>{domain}</span>
-                  </span>
+                    <BettingBrandLogo target={brand.domain} size="xs" />
+                    <span className="truncate text-[11px] font-semibold text-[var(--ink)]">
+                      {brand.label}
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -624,6 +624,17 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               </button>
             </div>
           </LiquidGlassCard>
+
+          {/* Tilt Velocity Radar & 1-Tap Stake Banking */}
+          <TiltRadarCard
+            radar={state.tiltRadar}
+            dailySpendNgn={state.settings.dailyBetSpendEstimate}
+            bankedUrgeSavingsNgn={state.settings.bankedUrgeSavingsNgn}
+            bankedUrgeCount={state.settings.bankedUrgeCount}
+            lastTestedUrl={state.domainLookupQuery}
+            onBankUrgeStake={onBankUrgeStake}
+            onLaunchCalmReset={onLaunchCalmReset}
+          />
 
           {/* Smart High-Risk Schedule Guard */}
           <HighRiskGuardCard

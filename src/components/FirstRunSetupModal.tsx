@@ -15,13 +15,14 @@ interface FirstRunSetupModalProps {
   isIOS?: boolean;
   isShieldEnabled: boolean;
   isDeviceAdminEnabled: boolean;
-  onEnableShield: () => void;
-  onEnableDeviceAdmin: () => void;
-  onCompleteLockedSetup: (params: {
+  onCompleteSetup: (params: {
     preferredName: string;
     lockDays: number;
     dailySpendNgn: number;
+    enableShield: boolean;
+    enableAntiTamper: boolean;
   }) => void;
+  onSkipSetup: () => void;
 }
 
 export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
@@ -30,29 +31,22 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
   isIOS = false,
   isShieldEnabled,
   isDeviceAdminEnabled,
-  onEnableShield,
-  onEnableDeviceAdmin,
-  onCompleteLockedSetup,
+  onCompleteSetup,
+  onSkipSetup,
 }) => {
   const [name, setName] = useState(initialName);
-  const [lockDays, setLockDays] = useState(7);
+  const [enableShield, setEnableShield] = useState<boolean>(isShieldEnabled || true);
+  const [enableAntiTamper, setEnableAntiTamper] = useState<boolean>(isDeviceAdminEnabled);
+  const [lockDays, setLockDays] = useState<number>(0);
   const [dailySpendNgn, setDailySpendNgn] = useState(initialDailySpend || 5000);
-  const [stepError, setStepError] = useState<string | null>(null);
-
-  const canFinish = isShieldEnabled && isDeviceAdminEnabled;
 
   const handleFinalize = () => {
-    if (!isShieldEnabled || !isDeviceAdminEnabled) {
-      setStepError(
-        'Please activate Step 1 (Web & App Shield) and Step 2 (Uninstall Lock) above to continue.',
-      );
-      return;
-    }
-    setStepError(null);
-    onCompleteLockedSetup({
+    onCompleteSetup({
       preferredName: name.trim(),
       lockDays,
       dailySpendNgn,
+      enableShield,
+      enableAntiTamper: enableAntiTamper || lockDays > 0,
     });
   };
 
@@ -60,7 +54,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Complete Mandatory 3-Step Protection Setup"
+      aria-label="Personalize Your Protection Setup"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
     >
       <div className="max-h-[92dvh] w-full max-w-[520px] overflow-y-auto rounded-[28px] border border-[var(--glass-border)] bg-[var(--surface)] p-5 text-[var(--ink)] shadow-2xl sm:p-6">
@@ -68,18 +62,18 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
         <div className="flex items-center gap-3">
           <BrandGMark className="h-10 w-10 shrink-0" />
           <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center rounded-full bg-[var(--active-fill)] px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-[var(--active-content)] uppercase">
-              Mandatory First-Launch Setup
+            <span className="inline-flex items-center rounded-full bg-[var(--soft-accent-bg)] px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
+              Quick Setup · Optional
             </span>
             <h2 className="mt-1 font-display text-xl leading-tight font-bold text-[var(--ink)] sm:text-2xl">
-              Complete Lock &amp; Shield Setup
+              Choose Your Protection Setup
             </h2>
           </div>
         </div>
 
         <p className="mt-2.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-          Enable all 3 layers right now so GambleAware immediately blocks betting sites while you
-          type and prevents impulsive uninstalls until your timer ends.
+          Every layer is your decision. Pick what you want enabled now, or skip to explore the app
+          first and decide later.
         </p>
 
         {/* Optional Personalization */}
@@ -101,25 +95,24 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
           />
         </div>
 
-        {/* Mandatory 3 Steps */}
+        {/* User-Controlled Setup Choices */}
         <div className="mt-4 space-y-2.5">
-          {/* Step 1: Enable Web & App Shield */}
+          {/* Option 1: Enable Web & App Shield */}
           <button
             type="button"
-            onClick={() => {
-              setStepError(null);
-              onEnableShield();
-            }}
-            data-testid="mandatory-step-1"
+            role="switch"
+            aria-checked={enableShield}
+            onClick={() => setEnableShield((prev) => !prev)}
+            data-testid="setup-step-shield"
             className={`flex w-full cursor-pointer items-center gap-3 rounded-[16px] border p-3.5 text-left transition-colors ${
-              isShieldEnabled
+              enableShield
                 ? 'border-[var(--glass-border)] bg-[var(--muted-fill)]'
                 : 'border-[var(--subtle-border)] bg-[var(--control-bg)] hover:bg-[var(--muted-fill)]'
             }`}
           >
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
-                isShieldEnabled
+                enableShield
                   ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                   : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)]'
               }`}
@@ -128,40 +121,40 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-[var(--ink)]">
-                {isIOS ? 'Enable GambleAware Safari & Site Shield' : 'Enable DNS & Site Shield'}
+                {isIOS ? 'Safari & Betting Site Shield' : 'Real-Time Betting Site Shield'}
               </p>
               <p className="text-xs text-[var(--ink-muted)]">
-                {isShieldEnabled
-                  ? 'Active • Instant typing, login & betting website shield ready'
-                  : isIOS
-                    ? 'Required — tap to arm instant betting-site check & Screen Time domain blocklist'
-                    : 'Required — tap to arm real-time site & betting link guard'}
+                {enableShield
+                  ? 'Selected — blocks gambling URLs, logins & searches immediately'
+                  : 'Optional — tap to enable instant site & keyword guard'}
               </p>
             </div>
-            {isShieldEnabled ? (
+            {enableShield ? (
               <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
             ) : (
               <Circle className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
             )}
           </button>
 
-          {/* Step 2: Enable Lock & Tamper Protection */}
+          {/* Option 2: Anti-Tamper Protection */}
           <button
             type="button"
+            role="switch"
+            aria-checked={enableAntiTamper || lockDays > 0}
             onClick={() => {
-              setStepError(null);
-              onEnableDeviceAdmin();
+              if (lockDays > 0) return;
+              setEnableAntiTamper((prev) => !prev);
             }}
-            data-testid="mandatory-step-2"
+            data-testid="setup-step-tamper"
             className={`flex w-full cursor-pointer items-center gap-3 rounded-[16px] border p-3.5 text-left transition-colors ${
-              isDeviceAdminEnabled
+              enableAntiTamper || lockDays > 0
                 ? 'border-[var(--glass-border)] bg-[var(--muted-fill)]'
                 : 'border-[var(--subtle-border)] bg-[var(--control-bg)] hover:bg-[var(--muted-fill)]'
             }`}
           >
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
-                isDeviceAdminEnabled
+                enableAntiTamper || lockDays > 0
                   ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                   : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)]'
               }`}
@@ -170,39 +163,53 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-[var(--ink)]">
-                {isIOS ? 'Enable Anti-Tamper Lock & Alerts' : 'Enable Anti-Tamper Commitment Lock'}
+                {isIOS ? 'Anti-Tamper & Alerts Guard' : 'Anti-Tamper Rule Guard'}
               </p>
               <p className="text-xs text-[var(--ink-muted)]">
-                {isDeviceAdminEnabled
-                  ? 'Active • Prevents impulsive changes until your timer ends'
-                  : 'Required — tap to lock protection rules until your timer completes'}
+                {enableAntiTamper || lockDays > 0
+                  ? 'Selected — guards blocklist rules against quick changes'
+                  : 'Optional — enable only if you want extra friction'}
               </p>
             </div>
-            {isDeviceAdminEnabled ? (
+            {enableAntiTamper || lockDays > 0 ? (
               <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
             ) : (
               <Circle className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
             )}
           </button>
 
-          {/* Step 3: Set Commitment Lock Duration */}
-          <div className="rounded-[16px] border border-[var(--glass-border)] bg-[var(--muted-fill)] p-3.5">
+          {/* Option 3: Optional Commitment Lock Duration */}
+          <div className="rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3.5">
             <div className="flex items-center gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--active-fill)] text-xs font-bold text-[var(--active-content)]">
                 3
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-[var(--ink)]">
-                  Set Commitment Lock Duration
+                  Commitment Lock Timer <span className="font-normal text-[var(--ink-muted)]">(Optional)</span>
                 </p>
                 <p className="text-xs text-[var(--ink-muted)]">
-                  Locks uninstall &amp; tamper controls until timer reaches 0
+                  {lockDays > 0
+                    ? `Locks weakening rules for ${formatLockDurationAdjective(lockDays).toLowerCase()} after saving`
+                    : 'No lock armed — you can set a timer later inside Lock settings'}
                 </p>
               </div>
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+              <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setLockDays(0)}
+                className={`col-span-2 h-9 cursor-pointer rounded-[12px] border px-2.5 text-xs font-semibold transition-colors sm:col-span-3 ${
+                  lockDays === 0
+                    ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
+                    : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
+                }`}
+              >
+                No Lock Timer (Decide Later)
+              </button>
+
               {LOCK_DURATION_PRESETS.map((opt) => {
                 const selected = lockDays === opt.days;
                 return (
@@ -216,7 +223,7 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
                         : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
                     }`}
                   >
-                    {opt.days === 7 ? '7 Days (Default)' : opt.label}
+                    {opt.label}
                   </button>
                 );
               })}
@@ -249,29 +256,31 @@ export const FirstRunSetupModal: React.FC<FirstRunSetupModalProps> = ({
           </div>
         </div>
 
-        {stepError ? (
-          <p className="mt-3 text-xs font-semibold text-[var(--accent-ink)]">{stepError}</p>
-        ) : null}
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleFinalize}
+            data-testid="setup-complete-button"
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90"
+          >
+            {lockDays > 0 ? <LockKeyhole className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+            <span>
+              {lockDays > 0
+                ? `Save & Arm ${formatLockDurationAdjective(lockDays)} Lock`
+                : 'Save Preferences & Enter App'}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={handleFinalize}
-          data-testid="mandatory-complete-button"
-          className={`mt-4 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full text-sm font-semibold transition-opacity ${
-            canFinish
-              ? 'bg-[var(--active-fill)] text-[var(--active-content)] hover:opacity-90'
-              : 'border border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--ink-muted)]'
-          }`}
-        >
-          {canFinish ? <LockKeyhole className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
-          <span>
-            {canFinish
-              ? `Activate ${formatLockDurationAdjective(lockDays)} Lock & Enter`
-              : 'Complete Steps 1 & 2 Above First'}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={onSkipSetup}
+            data-testid="setup-skip-button"
+            className="flex h-10 w-full cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink-muted)] transition-colors hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]"
+          >
+            Skip for Now — Explore App First
+          </button>
+        </div>
       </div>
     </div>
   );
 };
-

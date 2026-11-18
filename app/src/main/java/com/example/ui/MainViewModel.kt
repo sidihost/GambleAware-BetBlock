@@ -1,12 +1,16 @@
 package com.example.ui
 
 import android.app.Application
+import android.app.admin.DevicePolicyManager
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.blocker.BlockMatchResult
 import com.example.blocker.BlocklistMatcher
 import com.example.blocker.GamblingCategory
 import com.example.blocker.GamblingRegistry
+import com.example.blocker.TiltRadarEngine
+import com.example.blocker.TiltRadarEvaluation
 import com.example.data.AnchorRepository
 import com.example.data.BlockedAppEntity
 import com.example.data.BlockedDomainEntity
@@ -15,6 +19,7 @@ import com.example.data.InstalledAppInfo
 import com.example.data.ProtectionSettingsState
 import com.example.data.ThemeMode
 import com.example.data.UrgeLogEntity
+import com.example.service.GambleAwareDeviceAdminReceiver
 import com.example.service.GambleAwareNotifications
 import com.example.service.GambleAwareVpnService
 import com.example.service.PrivateDnsInspector
@@ -27,6 +32,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
 import java.util.Calendar
 import java.util.Locale
 
@@ -150,6 +156,25 @@ fun formatBlockedRelativeTime(timestampMs: Long, nowMs: Long = System.currentTim
     }
 }
 
+fun buildCleanStreakShareText(state: MainUiState): String {
+    val dayWord = if (state.cleanDays == 1) "day" else "days"
+    val elapsed = String.format(
+        Locale.US,
+        "%02dh %02dm %02ds",
+        state.cleanHoursRemainder,
+        state.cleanMinutesRemainder,
+        state.cleanSecondsRemainder,
+    )
+    val savedFormatted =
+        "₦" + NumberFormat.getIntegerInstance(Locale("en", "NG")).format(state.estimatedSavedAmount)
+    return buildString {
+        appendLine("I'm ${state.cleanDays} $dayWord ($elapsed) betting-free with GambleAware.")
+        appendLine("• Estimated saved: $savedFormatted")
+        appendLine("• Urges resisted: ${state.totalUrgeResistedCount} | Betting sites blocked: ${state.totalBlockedCount}")
+        append("• Next milestone: ${state.nextMilestone.title} (${state.nextMilestone.days}d)")
+    }
+}
+
 data class RecoveryMilestone(
     val days: Int,
     val label: String,
@@ -172,6 +197,7 @@ data class MainUiState(
     val settings: ProtectionSettingsState = ProtectionSettingsState(),
     val isShieldServiceRunning: Boolean = false,
     val isVpnPrepared: Boolean = false,
+    val isDeviceAdminEnabled: Boolean = false,
     val privateDnsStatus: PrivateDnsStatus = PrivateDnsStatus(false, null),
     val customBlockedDomains: List<BlockedDomainEntity> = emptyList(),
     val allowlistedDomains: List<BlockedDomainEntity> = emptyList(),
@@ -262,7 +288,10 @@ data class MainUiState(
         }
 
     val estimatedSavedAmount: Int
-        get() = (cleanExactDays * settings.dailyBetSpendEstimate).toInt()
+        get() = (cleanExactDays * settings.dailyBetSpendEstimate).toInt() + settings.bankedUrgeSavingsNgn
+
+    val tiltRadar: TiltRadarEvaluation
+        get() = TiltRadarEngine.evaluate(recentEvents, currentTimeMs)
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -272,6 +301,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val loadingAppsFlow = MutableStateFlow(false)
     private val vpnPreparedFlow = MutableStateFlow(
         GambleAwareVpnService.isPrepared(application),
+    )
+    private val deviceAdminActiveFlow = MutableStateFlow(
+        checkDeviceAdminActive(application),
     )
     private val privateDnsFlow = MutableStateFlow(
         PrivateDnsInspector.inspect(application),
@@ -292,8 +324,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.shieldRunning,
         vpnPreparedFlow,
         privateDnsFlow,
-    ) { settings, shieldRunning, vpnPrepared, dnsStatus ->
-        Tuple5(settings, shieldRunning, vpnPrepared, dnsStatus, Unit)
+        deviceAdminActiveFlow,
+    ) { settings, shieldRunning, vpnPrepared, dnsStatus, deviceAdminActive ->
+        Tuple5(settings, shieldRunning, vpnPrepared, dnsStatus, deviceAdminActive)
     }
 
     private val dataFlow = combine(
@@ -349,6 +382,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             settings = settings,
             isShieldServiceRunning = health.second,
             isVpnPrepared = health.third,
+            isDeviceAdminEnabled = health.fifth,
             privateDnsStatus = health.fourth,
             customBlockedDomains = domains.filter { !it.isAllowlisted },
             allowlistedDomains = domains.filter { it.isAllowlisted },
@@ -387,16 +421,81 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = MainUiState(),
     )
 
+    private fun checkDeviceAdminActive(ctx: Context): Boolean {
+        return runCatching {
+            val dpm = ctx.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+            dpm?.isAdminActive(GambleAwareDeviceAdminReceiver.componentName(ctx)) == true
+        }.getOrDefault(false)
+    }
+
     fun refreshSystemServiceStatus() {
         val ctx = getApplication<Application>()
         val vpnPrepared = GambleAwareVpnService.isPrepared(ctx)
         vpnPreparedFlow.value = vpnPrepared
+        deviceAdminActiveFlow.value = checkDeviceAdminActive(ctx)
         if (!vpnPrepared) {
             repository.setShieldRunning(false)
         } else if (repository.prefs.currentSnapshot().isProtectionEnabled && !repository.shieldRunning.value) {
             GambleAwareVpnService.start(ctx)
         }
         privateDnsFlow.value = PrivateDnsInspector.inspect(ctx)
+    }
+
+    fun deactivateDeviceAdmin(): Boolean {
+        val snap = repository.prefs.currentSnapshot()
+        if (snap.isTimeLocked() || snap.antiTamperLockEnabled) {
+            bannerFlow.value = "Uninstall Lock stays armed until your Commitment Lock ends"
+            return false
+        }
+        val ctx = getApplication<Application>()
+        runCatching {
+            val dpm = ctx.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+            val admin = GambleAwareDeviceAdminReceiver.componentName(ctx)
+            if (dpm?.isAdminActive(admin) == true) {
+                dpm.removeActiveAdmin(admin)
+            }
+        }
+        deviceAdminActiveFlow.value = checkDeviceAdminActive(ctx)
+        bannerFlow.value = "Uninstall Lock deactivated"
+        return true
+    }
+
+    fun bankUrgeStake(amountNgn: Int) {
+        val safeAmount = amountNgn.coerceIn(100, 10_000_000)
+        repository.prefs.bankUrgeStake(safeAmount)
+        val formatted = "₦" + NumberFormat.getIntegerInstance(Locale("en", "NG")).format(safeAmount)
+        bannerFlow.value = "Banked $formatted into your Recovery Vault instead of betting"
+    }
+
+    fun setDepositGuardEnabled(enabled: Boolean) {
+        repository.prefs.setDepositGuardEnabled(enabled)
+        bannerFlow.value = if (enabled) {
+            "Cashier & Booking-Code Guard enabled"
+        } else {
+            "Deposit Guard paused"
+        }
+    }
+
+    fun configureBuddyCoLock(partnerName: String) {
+        val challenge = TiltRadarEngine.generateBuddyChallengeCode()
+        repository.prefs.setBuddyPartner(partnerName, challenge)
+        bannerFlow.value = "Trusted Buddy Co-Lock paired (${partnerName.trim().ifEmpty { "Partner" }})"
+    }
+
+    fun clearBuddyCoLock() {
+        repository.prefs.clearBuddyPartner()
+        bannerFlow.value = "Buddy Co-Lock cleared"
+    }
+
+    fun verifyBuddyUnlock(partnerSalt: String, candidateResponse: String): Boolean {
+        val snap = repository.prefs.currentSnapshot()
+        val challenge = snap.buddyChallengeCode.ifEmpty { return false }
+        val ok = TiltRadarEngine.verifyBuddyUnlockCode(challenge, partnerSalt, candidateResponse)
+        if (ok) {
+            repository.prefs.unlockCommitmentViaBuddyApproval()
+            bannerFlow.value = "Trusted Buddy approval verified — Commitment Lock unlocked"
+        }
+        return ok
     }
 
     fun enableProtection() {
@@ -423,17 +522,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.prefs.setPreferredName(name)
     }
 
-    fun completeInitialSetup(name: String, lockDays: Int) {
-        val safeDays = lockDays.coerceIn(1, 730)
-        repository.prefs.completeInitialSetup(name, safeDays)
+    fun completeInitialSetup(name: String, lockDays: Int, enableProtection: Boolean = true) {
+        val safeDays = if (lockDays <= 0) 0 else lockDays.coerceIn(1, 730)
+        repository.prefs.completeInitialSetup(name, safeDays, enableProtection)
         refreshSystemServiceStatus()
         val first = name.trim().split(Regex("\\s+")).firstOrNull().orEmpty()
-        val span = formatLockSpan(safeDays)
-        bannerFlow.value = if (first.isNotEmpty()) {
-            "Locked for $span — welcome, $first"
+        bannerFlow.value = if (safeDays > 0) {
+            val span = formatLockSpan(safeDays)
+            if (first.isNotEmpty()) "Locked for $span — welcome, $first"
+            else "DNS Shield & Lock armed for $span"
         } else {
-            "DNS Shield & Lock armed for $span"
+            if (first.isNotEmpty()) "Preferences saved — welcome, $first"
+            else "Setup saved — lock anytime you decide"
         }
+    }
+
+    fun skipInitialSetup() {
+        repository.prefs.skipInitialSetup()
+        refreshSystemServiceStatus()
+        bannerFlow.value = "Exploring freely — enable Shield or Lock anytime"
     }
 
     fun updateCategory(category: GamblingCategory, enabled: Boolean) {

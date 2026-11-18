@@ -49,7 +49,13 @@ import {
   normalizeBlockedTarget,
 } from '../utils/blockedLogGrouping';
 import { evaluateHighRiskGuard } from '../utils/highRiskGuard';
+import { evaluateShieldLeakAudit } from '../utils/leakDiagnostics';
 import { detectGamblingLoginOrSite, extractFirstName } from '../utils/personalization';
+import {
+  evaluateTiltRadar,
+  generateBuddyChallengeCode,
+  verifyBuddyUnlockCode,
+} from '../utils/tiltRadar';
 
 function formatTwoDigits(n: number): string {
   return String(Math.max(0, Math.floor(n))).padStart(2, '0');
@@ -268,7 +274,16 @@ export function useGambleAwareState() {
       1,
       Math.max(0, cleanExactDays / Math.max(1, nextMilestone.days)),
     );
-    const estimatedSavedAmount = Math.floor(cleanExactDays * settings.dailyBetSpendEstimate);
+    const estimatedSavedAmount =
+      Math.floor(cleanExactDays * settings.dailyBetSpendEstimate) +
+      (settings.bankedUrgeSavingsNgn || 0);
+    const tiltRadar = evaluateTiltRadar(store.events, nowMs);
+    const leakAudit = evaluateShieldLeakAudit({
+      settings,
+      isAccessibilityEnabled: store.isAccessibilityEnabled,
+      isDeviceAdminEnabled: store.isDeviceAdminEnabled,
+      nowMs,
+    });
 
     const todayStart = new Date(nowMs);
     todayStart.setHours(0, 0, 0, 0);
@@ -322,6 +337,8 @@ export function useGambleAwareState() {
       estimatedSavedAmount,
       highRiskStatus,
       durableStatus,
+      tiltRadar,
+      leakAudit,
     };
   }, [
     store,
@@ -467,6 +484,84 @@ export function useGambleAwareState() {
     [updateSettings],
   );
 
+  const setDepositGuardEnabled = useCallback(
+    (enabled: boolean) => {
+      updateSettings((s) => ({ ...s, depositGuardEnabled: enabled }));
+      setStatusBannerMessage(
+        enabled ? 'Cashier & Booking-Code Guard enabled' : 'Cashier Guard paused',
+      );
+    },
+    [updateSettings],
+  );
+
+  const bankUrgeStake = useCallback(
+    (amountNgn: number) => {
+      const safeAmount = Math.max(100, Math.min(10_000_000, Math.round(amountNgn || 5000)));
+      updateSettings((s) => ({
+        ...s,
+        bankedUrgeSavingsNgn: (s.bankedUrgeSavingsNgn || 0) + safeAmount,
+        bankedUrgeCount: (s.bankedUrgeCount || 0) + 1,
+      }));
+      setStatusBannerMessage(
+        `Banked ₦${safeAmount.toLocaleString('en-NG')} into Recovery Vault instead of betting`,
+      );
+    },
+    [updateSettings],
+  );
+
+  const configureBuddyCoLock = useCallback(
+    (partnerName: string) => {
+      const cleanName = sanitizePreferredName(partnerName) || 'Trusted Partner';
+      const challengeCode = generateBuddyChallengeCode();
+      updateSettings((s) => ({
+        ...s,
+        buddyPartnerName: cleanName,
+        buddyChallengeCode: challengeCode,
+      }));
+      setStatusBannerMessage(`Buddy Co-Lock armed with ${cleanName} (${challengeCode})`);
+      return challengeCode;
+    },
+    [updateSettings],
+  );
+
+  const refreshBuddyChallenge = useCallback(() => {
+    const challengeCode = generateBuddyChallengeCode();
+    updateSettings((s) => ({ ...s, buddyChallengeCode: challengeCode }));
+    return challengeCode;
+  }, [updateSettings]);
+
+  const clearBuddyCoLock = useCallback(() => {
+    updateSettings((s) => ({
+      ...s,
+      buddyPartnerName: '',
+      buddyChallengeCode: '',
+    }));
+    setStatusBannerMessage('Trusted Buddy Co-Lock cleared');
+  }, [updateSettings]);
+
+  const verifyBuddyUnlock = useCallback(
+    (partnerSalt: string, candidateResponse: string): boolean => {
+      const challenge = storeRef.current.settings.buddyChallengeCode;
+      if (!challenge) return false;
+      const ok = verifyBuddyUnlockCode(challenge, partnerSalt, candidateResponse);
+      if (ok) {
+        mutateStore((prev) => ({
+          ...prev,
+          isDeviceAdminEnabled: false,
+          settings: {
+            ...prev.settings,
+            lockUntilEpochMs: 0,
+            antiTamperLockEnabled: false,
+            buddyChallengeCode: '',
+          },
+        }));
+        setStatusBannerMessage('Trusted Buddy approval verified — Commitment Lock unlocked');
+      }
+      return ok;
+    },
+    [mutateStore],
+  );
+
   const setHighRiskScheduleFlag = useCallback(
     (key: keyof HighRiskScheduleConfig, enabled: boolean) => {
       updateSettings((s) => ({
@@ -532,47 +627,78 @@ export function useGambleAwareState() {
   );
 
   const completeInitialSetup = useCallback(
-    (params: { preferredName: string; lockDays: number; dailySpendNgn: number }) => {
+    (params: {
+      preferredName: string;
+      lockDays: number;
+      dailySpendNgn: number;
+      enableShield?: boolean;
+      enableAntiTamper?: boolean;
+    }) => {
       const cleanName = sanitizePreferredName(params.preferredName);
-      const safeDays = Math.max(1, Math.min(730, Math.round(params.lockDays || 7)));
+      const rawDays = Number.isFinite(params.lockDays) ? Math.round(params.lockDays) : 0;
+      const safeDays = rawDays <= 0 ? 0 : Math.max(1, Math.min(730, rawDays));
+      const enableShield = params.enableShield ?? true;
+      const enableAntiTamper = params.enableAntiTamper ?? safeDays > 0;
       const safeSpend = Math.max(0, Math.min(10_000_000, Math.round(params.dailySpendNgn || 5000)));
       const now = Date.now();
-      const until = now + safeDays * 86_400_000;
+      const until = safeDays > 0 ? now + safeDays * 86_400_000 : 0;
       mutateStore((prev) => ({
         ...prev,
         preferredName: cleanName || prev.preferredName,
-        isAccessibilityEnabled: true,
-        isDeviceAdminEnabled: true,
+        isAccessibilityEnabled: enableShield || prev.isAccessibilityEnabled,
+        isDeviceAdminEnabled: enableAntiTamper || prev.isDeviceAdminEnabled,
         settings: {
           ...prev.settings,
-          isProtectionEnabled: true,
-          antiTamperLockEnabled: true,
+          isProtectionEnabled: enableShield || safeDays > 0 ? true : prev.settings.isProtectionEnabled,
+          antiTamperLockEnabled: enableAntiTamper || safeDays > 0 ? true : prev.settings.antiTamperLockEnabled,
           hasCompletedInitialSetup: true,
           hasCompletedTour: true,
           dailyBetSpendEstimate: safeSpend,
-          lockUntilEpochMs: Math.max(prev.settings.lockUntilEpochMs, until),
+          lockUntilEpochMs: safeDays > 0 ? Math.max(prev.settings.lockUntilEpochMs, until) : prev.settings.lockUntilEpochMs,
           protectionStartedAtMs:
             prev.settings.protectionStartedAtMs > 0 ? prev.settings.protectionStartedAtMs : now,
         },
       }));
-      const spanLabel =
-        safeDays === 1
-          ? '24 hours'
-          : safeDays === 180
-            ? '6 months'
-            : safeDays === 365
-              ? '1 year'
-              : safeDays === 730
-                ? '2 years'
-                : `${safeDays} days`;
-      setStatusBannerMessage(
-        cleanName
-          ? `Locked for ${spanLabel} — welcome, ${cleanName.split(' ')[0]}`
-          : `Protection & Admin Lock armed for ${spanLabel}`,
-      );
+      if (safeDays > 0) {
+        const spanLabel =
+          safeDays === 1
+            ? '24 hours'
+            : safeDays === 180
+              ? '6 months'
+              : safeDays === 365
+                ? '1 year'
+                : safeDays === 730
+                  ? '2 years'
+                  : `${safeDays} days`;
+        setStatusBannerMessage(
+          cleanName
+            ? `Locked for ${spanLabel} — welcome, ${cleanName.split(' ')[0]}`
+            : `Protection & Lock armed for ${spanLabel}`,
+        );
+      } else {
+        setStatusBannerMessage(
+          cleanName
+            ? `Preferences saved — welcome, ${cleanName.split(' ')[0]}`
+            : enableShield
+              ? 'Shield preferences saved — lock anytime you decide'
+              : 'Setup saved — customize Shield or Lock anytime',
+        );
+      }
     },
     [mutateStore],
   );
+
+  const skipInitialSetup = useCallback(() => {
+    mutateStore((prev) => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        hasCompletedInitialSetup: true,
+        hasCompletedTour: true,
+      },
+    }));
+    setStatusBannerMessage('Exploring freely — enable Shield or Lock anytime');
+  }, [mutateStore]);
 
   const activateTimeLock = useCallback(
     (days: number, enableAntiTamper: boolean) => {
@@ -932,6 +1058,12 @@ export function useGambleAwareState() {
     setAppShieldEnabled,
     setSearchGuardEnabled,
     setAntiTamperEnabled,
+    setDepositGuardEnabled,
+    bankUrgeStake,
+    configureBuddyCoLock,
+    refreshBuddyChallenge,
+    clearBuddyCoLock,
+    verifyBuddyUnlock,
     setHighRiskScheduleFlag,
     setThemeMode,
     toggleQuickTheme,
@@ -939,6 +1071,7 @@ export function useGambleAwareState() {
     setNotificationsEnabled,
     setGoalReminderEnabled,
     completeInitialSetup,
+    skipInitialSetup,
     createGoal,
     setPrimaryGoal,
     toggleGoalCompleted,
@@ -961,6 +1094,7 @@ export function useGambleAwareState() {
     restoreFromVaultBackup,
     forceBackupSync,
     resetAllData,
+    showBanner: setStatusBannerMessage,
     clearBanner,
   };
 }

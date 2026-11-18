@@ -1,6 +1,8 @@
 import { BlockMatchResult } from '../blocker/blocklistMatcher';
 import { GamblingCategory } from '../blocker/gamblingCategory';
 import type { GroupedBlockedSite } from '../utils/blockedLogGrouping';
+import type { ShieldLeakAudit } from '../utils/leakDiagnostics';
+import type { TiltRadarEvaluation } from '../utils/tiltRadar';
 
 export enum ThemeMode {
   SYSTEM = 'SYSTEM',
@@ -72,6 +74,11 @@ export interface ProtectionSettingsState {
   lastNotifiedMilestoneDay: number;
   goalReminderEnabled: boolean;
   highRiskSchedule: HighRiskScheduleConfig;
+  bankedUrgeSavingsNgn: number;
+  bankedUrgeCount: number;
+  depositGuardEnabled: boolean;
+  buddyPartnerName: string;
+  buddyChallengeCode: string;
 }
 
 export interface BlockedDomainEntity {
@@ -200,4 +207,6 @@ export interface DerivedMainState {
   estimatedSavedAmount: number;
   highRiskStatus: HighRiskWindowStatus;
   durableStatus: DurableStorageStatus;
+  tiltRadar: TiltRadarEvaluation;
+  leakAudit: ShieldLeakAudit;
 }

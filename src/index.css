@@ -84,6 +84,7 @@
   --blob-one: #FFEBF4;
   --blob-two: #FDE3F0;
   --blob-three: #FFF7FB;
+  --preloader-halo: radial-gradient(circle, rgba(216, 27, 120, 0.14) 0%, rgba(216, 27, 120, 0.04) 44%, rgba(216, 27, 120, 0) 74%);
   color-scheme: light;
 }
 
@@ -106,6 +107,7 @@
   --blob-one: #260B19;
   --blob-two: #170912;
   --blob-three: #120A10;
+  --preloader-halo: radial-gradient(circle, rgba(255, 61, 154, 0.22) 0%, rgba(255, 61, 154, 0.06) 44%, rgba(255, 61, 154, 0) 74%);
   color-scheme: dark;
 }
 
@@ -165,6 +167,47 @@
   }
 }
 
+@keyframes preloaderSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes preloaderSpinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes preloaderSweep {
+  0% {
+    transform: scaleX(0.06);
+  }
+  65% {
+    transform: scaleX(0.86);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes preloaderFadeUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .animate-drift-a {
   animation: liquidDriftA 11s ease-in-out infinite;
 }
@@ -177,10 +220,31 @@
   animation: orbPulse 2.8s ease-in-out infinite;
 }
 
+.animate-preloader-spin {
+  animation: preloaderSpin 3.4s linear infinite;
+}
+
+.animate-preloader-spin-reverse {
+  animation: preloaderSpinReverse 5.2s linear infinite;
+}
+
+.animate-preloader-sweep {
+  transform-origin: left center;
+  animation: preloaderSweep 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-preloader-fade-up {
+  animation: preloaderFadeUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-drift-a,
   .animate-drift-b,
-  .animate-orb-pulse {
+  .animate-orb-pulse,
+  .animate-preloader-spin,
+  .animate-preloader-spin-reverse,
+  .animate-preloader-sweep,
+  .animate-preloader-fade-up {
     animation: none;
   }
 }

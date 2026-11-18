@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import {
   Ban,
   CheckCircle2,
-  Globe,
   Grid,
   Plus,
   Search,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react';
 import { GAMBLING_CATEGORY_META, GamblingCategory } from '../blocker/gamblingCategory';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
+import { BettingBrandLogo, FeaturedBrandsWall } from '../components/BettingBrandLogo';
 import { LiquidGlassCard, LiquidSectionHeader, LiquidSwitch } from '../components/LiquidGlass';
 import { DerivedMainState, InstalledAppInfo } from '../data/types';
 
@@ -21,6 +21,7 @@ interface BlocklistScreenProps {
   onToggleBrowserShield: (enabled: boolean) => void;
   onToggleAppShield: (enabled: boolean) => void;
   onToggleSearchGuard: (enabled: boolean) => void;
+  onToggleDepositGuard: (enabled: boolean) => void;
   onAddCustomDomain: (domain: string, isAllowlist: boolean) => void;
   onRemoveCustomDomain: (domain: string, isAllowlist: boolean) => void;
   onAddBlockedApp: (app: InstalledAppInfo) => void;
@@ -43,6 +44,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
   onToggleBrowserShield,
   onToggleAppShield,
   onToggleSearchGuard,
+  onToggleDepositGuard,
   onAddCustomDomain,
   onRemoveCustomDomain,
   onAddBlockedApp,
@@ -159,19 +161,39 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
           />
           <CategorySwitchRow
             title="Installed Betting Apps"
-            subtitle="Blocks 120+ betting apps from opening or being newly installed"
+            subtitle="Blocks 150+ betting apps from opening or being newly installed"
             checked={state.settings.appShieldEnabled}
             onChange={onToggleAppShield}
           />
           <CategorySwitchRow
-            title="Betting Searches"
-            subtitle="Blocks betting searches while keeping recovery & support websites open"
+            title="Betting Searches & Redirect Unwrap"
+            subtitle="Blocks betting searches & social redirects while keeping recovery portals open"
             checked={state.settings.searchGuardEnabled}
             onChange={onToggleSearchGuard}
+          />
+          <CategorySwitchRow
+            title="Cashier & Booking-Code Firewall"
+            subtitle="Stops bet-slip booking links, promo codes & deposit pages while keeping safe fintechs open"
+            checked={state.settings.depositGuardEnabled}
+            onChange={onToggleDepositGuard}
           />
         </div>
       </LiquidGlassCard>
       </div>
+
+      {/* Covered Betting Platforms Logo Showcase */}
+      <LiquidGlassCard className="p-4 sm:p-5">
+        <LiquidSectionHeader
+          title="Major Covered Platforms"
+          subtitle={`Exact brand recognition across ${state.builtInDomainCount}+ sportsbooks, casinos, crash sites & poker rooms`}
+        />
+        <div className="mt-3">
+          <FeaturedBrandsWall
+            limit={16}
+            onSelectDomain={(domain) => setRegistrySearch(domain.split('.')[0])}
+          />
+        </div>
+      </LiquidGlassCard>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Custom Website Rules */}
@@ -332,11 +354,11 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
         <div className="mt-3 divide-y divide-[var(--subtle-border)]/45">
           {matchingRegistryDomains.map(([domain, category]) => (
             <div key={domain} className="flex items-center justify-between gap-3 py-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <Globe className="h-4 w-4 shrink-0 text-[var(--ink)]" />
-                <span className="truncate text-sm text-[var(--ink)]">{domain}</span>
+              <div className="flex min-w-0 items-center gap-2.5">
+                <BettingBrandLogo target={domain} size="sm" />
+                <span className="truncate font-mono text-sm text-[var(--ink)]">{domain}</span>
               </div>
-              <span className="shrink-0 text-xs text-[var(--ink-muted)]">
+              <span className="shrink-0 font-mono text-xs text-[var(--ink-muted)]">
                 {GAMBLING_CATEGORY_META[category].displayName.split(' ')[0]}
               </span>
             </div>

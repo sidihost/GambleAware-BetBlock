@@ -1,19 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Ban,
   CheckCircle2,
-  Download,
-  Globe,
   LockKeyhole,
   NotebookPen,
   Plus,
-  Server,
-  Smartphone,
+  Share2,
   Trash2,
   Wind,
 } from 'lucide-react';
 import { GAMBLING_CATEGORY_META } from '../blocker/gamblingCategory';
 import { BrandGMark } from '../components/AppHeader';
+import { BettingBrandLogo } from '../components/BettingBrandLogo';
 import { ActiveGoalsCard } from '../components/GoalCardModal';
 import { LiquidGlassCard, LiquidSectionHeader } from '../components/LiquidGlass';
 import {
@@ -28,6 +25,7 @@ import { formatNaira } from '../utils/currency';
 interface ActivityScreenProps {
   state: DerivedMainState;
   onClearHistory: () => void;
+  onShareStreak: () => void;
   onOpenUrgeJournal: () => void;
   onLaunchCalmReset: () => void;
   onOpenGoalModal: (prefill?: {
@@ -56,6 +54,7 @@ const SOURCE_FILTERS: Array<{ value: string; label: string }> = [
 export const ActivityScreen: React.FC<ActivityScreenProps> = ({
   state,
   onClearHistory,
+  onShareStreak,
   onOpenUrgeJournal,
   onLaunchCalmReset,
   onOpenGoalModal,
@@ -99,16 +98,28 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             Betting-free streak, wealth simulator, personal goals &amp; intercept history
           </p>
         </div>
-        {state.recentEvents.length > 0 ? (
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
-            onClick={onClearHistory}
-            className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] px-3.5 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+            onClick={onShareStreak}
+            data-testid="share-streak-button"
+            aria-label="Share clean streak"
+            className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 py-2 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span>Clear</span>
+            <Share2 className="h-3.5 w-3.5 shrink-0" />
+            <span>Share</span>
           </button>
-        ) : null}
+          {state.recentEvents.length > 0 ? (
+            <button
+              type="button"
+              onClick={onClearHistory}
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] px-3.5 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Clear</span>
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <LiquidGlassCard className="p-4 sm:p-5">
@@ -138,12 +149,16 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           />
         </div>
 
-        <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <ProgressMiniStat
-            label="Est. Saved"
+            label="Total Saved"
             value={savedFormatted}
             accent
-            className="col-span-2 sm:col-span-1"
+          />
+          <ProgressMiniStat
+            label="Banked Stakes"
+            value={formatNaira(state.settings.bankedUrgeSavingsNgn)}
+            accent
           />
           <ProgressMiniStat label="Urges Resisted" value={String(state.totalUrgeResistedCount)} />
           <ProgressMiniStat label="Blocked" value={String(state.totalBlockedCount)} />
@@ -420,31 +435,22 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       ) : logViewMode === 'grouped' ? (
         <div className="flex flex-col gap-2.5" data-testid="activity-grouped-sites-list">
           {filteredGroupedSites.map((site) => {
-            const initials = site.target.replace(/^[^a-zA-Z0-9]+/, '').charAt(0).toUpperCase() || 'G';
             const timeText = formatBlockedTimestamp(site.latestTimestamp, state.currentTimeMs);
             return (
               <LiquidGlassCard key={site.key} className="rounded-[20px] p-3.5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] font-mono text-sm font-bold text-[var(--accent-ink)]">
-                      {site.isApp ? (
-                        <Smartphone className="h-5 w-5" />
-                      ) : site.target.includes('.') ? (
-                        initials
-                      ) : (
-                        <Globe className="h-5 w-5" />
-                      )}
-                    </div>
+                    <BettingBrandLogo target={site.target} size="md" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-mono text-sm font-semibold text-[var(--ink)]">
                         {site.target}
                       </p>
                       <p className="truncate text-xs text-[var(--ink-muted)]">
-                        {site.sources.join(' · ')} • {site.categoryName} • {timeText}
+                        {site.sources.join(' · ')} · {site.categoryName} · {timeText}
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-3 py-1 font-mono text-[11px] font-bold text-[var(--accent-ink)]">
+                  <span className="shrink-0 font-mono text-xs font-bold text-[var(--accent-ink)] tabular-nums">
                     {formatAttemptCountLabel(site.attemptCount)}
                   </span>
                 </div>
@@ -461,31 +467,17 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
               hour: 'numeric',
               minute: '2-digit',
             });
-            const icon =
-              ev.source === 'DNS Shield' ? (
-                <Server className="h-5 w-5" />
-              ) : ev.source === 'Web Shield' || ev.source === 'Typed URL Guard' ? (
-                <Globe className="h-5 w-5" />
-              ) : ev.source === 'App Shield' ? (
-                <Smartphone className="h-5 w-5" />
-              ) : ev.source === 'Install Guard' ? (
-                <Download className="h-5 w-5" />
-              ) : (
-                <Ban className="h-5 w-5" />
-              );
 
             return (
               <LiquidGlassCard key={ev.id} className="rounded-[20px] p-3.5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
-                    {icon}
-                  </div>
+                  <BettingBrandLogo target={ev.target} size="md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-mono text-sm font-semibold text-[var(--ink)]">
                       {ev.target}
                     </p>
                     <p className="truncate text-xs text-[var(--ink-muted)]">
-                      {ev.source} • {ev.categoryName} • {timeText}
+                      {ev.source} · {ev.categoryName} · {timeText}
                     </p>
                   </div>
                 </div>

@@ -35,6 +35,11 @@ data class ProtectionSettingsState(
     val preferredName: String = "",
     val notificationsEnabled: Boolean = true,
     val lastNotifiedMilestoneDay: Int = 0,
+    val bankedUrgeSavingsNgn: Int = 0,
+    val bankedUrgeCount: Int = 0,
+    val depositGuardEnabled: Boolean = true,
+    val buddyPartnerName: String = "",
+    val buddyChallengeCode: String = "",
 ) {
     fun isTimeLocked(nowMs: Long = System.currentTimeMillis()): Boolean {
         return lockUntilEpochMs > nowMs
@@ -89,6 +94,11 @@ class ProtectionPreferences private constructor(context: Context) {
             preferredName = prefs.getString(KEY_PREFERRED_NAME, "").orEmpty(),
             notificationsEnabled = prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true),
             lastNotifiedMilestoneDay = prefs.getInt(KEY_LAST_MILESTONE_DAY, 0),
+            bankedUrgeSavingsNgn = prefs.getInt(KEY_BANKED_URGE_SAVINGS_NGN, 0),
+            bankedUrgeCount = prefs.getInt(KEY_BANKED_URGE_COUNT, 0),
+            depositGuardEnabled = prefs.getBoolean(KEY_DEPOSIT_GUARD_ENABLED, true),
+            buddyPartnerName = prefs.getString(KEY_BUDDY_PARTNER_NAME, "").orEmpty(),
+            buddyChallengeCode = prefs.getString(KEY_BUDDY_CHALLENGE_CODE, "").orEmpty(),
         )
     }
 
@@ -129,12 +139,45 @@ class ProtectionPreferences private constructor(context: Context) {
     fun setPreferredName(name: String) = update { putString(KEY_PREFERRED_NAME, name.trim().take(40)) }
     fun setNotificationsEnabled(enabled: Boolean) = update { putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled) }
     fun setLastNotifiedMilestoneDay(day: Int) = update { putInt(KEY_LAST_MILESTONE_DAY, day) }
+    fun setDepositGuardEnabled(enabled: Boolean) = update { putBoolean(KEY_DEPOSIT_GUARD_ENABLED, enabled) }
 
-    fun completeInitialSetup(name: String, lockDays: Int) {
-        val safeDays = lockDays.coerceIn(1, 730)
-        val durationMs = safeDays.toLong() * 24L * 60L * 60L * 1000L
+    fun bankUrgeStake(amountNgn: Int) {
+        val safeAmount = amountNgn.coerceIn(100, 10_000_000)
+        val currentSavings = prefs.getInt(KEY_BANKED_URGE_SAVINGS_NGN, 0)
+        val currentCount = prefs.getInt(KEY_BANKED_URGE_COUNT, 0)
+        update {
+            putInt(KEY_BANKED_URGE_SAVINGS_NGN, (currentSavings + safeAmount).coerceAtMost(Int.MAX_VALUE / 2))
+            putInt(KEY_BANKED_URGE_COUNT, currentCount + 1)
+        }
+    }
+
+    fun setBuddyPartner(partnerName: String, challengeCode: String) {
+        val cleanName = partnerName.trim().take(40)
+        val cleanCode = challengeCode.trim().take(16)
+        update {
+            putString(KEY_BUDDY_PARTNER_NAME, cleanName)
+            putString(KEY_BUDDY_CHALLENGE_CODE, cleanCode)
+        }
+    }
+
+    fun clearBuddyPartner() {
+        update {
+            remove(KEY_BUDDY_PARTNER_NAME)
+            remove(KEY_BUDDY_CHALLENGE_CODE)
+        }
+    }
+
+    fun unlockCommitmentViaBuddyApproval() {
+        update {
+            putLong(KEY_LOCK_UNTIL_MS, 0L)
+            putBoolean(KEY_ANTI_TAMPER, false)
+            remove(KEY_BUDDY_CHALLENGE_CODE)
+        }
+    }
+
+    fun completeInitialSetup(name: String, lockDays: Int, enableProtection: Boolean = true) {
+        val safeDays = if (lockDays <= 0) 0 else lockDays.coerceIn(1, 730)
         val now = System.currentTimeMillis()
-        val until = now + durationMs
         val currentUntil = prefs.getLong(KEY_LOCK_UNTIL_MS, 0L)
         val cleanName = name.trim().take(40)
         update {
@@ -143,12 +186,23 @@ class ProtectionPreferences private constructor(context: Context) {
             }
             putBoolean(KEY_HAS_COMPLETED_INITIAL_SETUP, true)
             putBoolean(KEY_HAS_COMPLETED_TOUR, true)
-            putBoolean(KEY_PROTECTION_ENABLED, true)
-            putBoolean(KEY_ANTI_TAMPER, true)
-            putLong(KEY_LOCK_UNTIL_MS, maxOf(currentUntil, until))
-            if (prefs.getLong(KEY_STARTED_AT_MS, 0L) == 0L) {
+            putBoolean(KEY_PROTECTION_ENABLED, enableProtection || safeDays > 0)
+            if (safeDays > 0) {
+                val durationMs = safeDays.toLong() * 24L * 60L * 60L * 1000L
+                val until = now + durationMs
+                putBoolean(KEY_ANTI_TAMPER, true)
+                putLong(KEY_LOCK_UNTIL_MS, maxOf(currentUntil, until))
+            }
+            if ((enableProtection || safeDays > 0) && prefs.getLong(KEY_STARTED_AT_MS, 0L) == 0L) {
                 putLong(KEY_STARTED_AT_MS, now)
             }
+        }
+    }
+
+    fun skipInitialSetup() {
+        update {
+            putBoolean(KEY_HAS_COMPLETED_INITIAL_SETUP, true)
+            putBoolean(KEY_HAS_COMPLETED_TOUR, true)
         }
     }
 
@@ -213,6 +267,11 @@ class ProtectionPreferences private constructor(context: Context) {
         private const val KEY_PREFERRED_NAME = "preferred_name"
         private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
         private const val KEY_LAST_MILESTONE_DAY = "last_milestone_day"
+        private const val KEY_BANKED_URGE_SAVINGS_NGN = "banked_urge_savings_ngn"
+        private const val KEY_BANKED_URGE_COUNT = "banked_urge_count"
+        private const val KEY_DEPOSIT_GUARD_ENABLED = "deposit_guard_enabled"
+        private const val KEY_BUDDY_PARTNER_NAME = "buddy_partner_name"
+        private const val KEY_BUDDY_CHALLENGE_CODE = "buddy_challenge_code"
 
         @Volatile
         private var INSTANCE: ProtectionPreferences? = null

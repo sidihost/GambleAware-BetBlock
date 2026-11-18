@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { GamblingRegistry } from '../blocker/gamblingRegistry';
 import { BrandGIcon } from '../components/AppHeader';
+import { BettingBrandLogo, FeaturedBrandsWall } from '../components/BettingBrandLogo';
 import { LiquidGlassCard, LiquidShieldOrb } from '../components/LiquidGlass';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { formatNaira } from '../utils/currency';
@@ -108,72 +109,77 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
     {
       num: '01',
       icon: LockKeyhole,
-      title: 'Commitment Lock & Install Guard',
-      body: 'Asks for your first name, arms local Anti-Tamper protection, and locks your countdown from 24 hours up to 2 years right after install.',
+      title: 'Device Admin Uninstall Lock',
+      body: 'Once granted Device Administrator access, Android blocks app uninstallation while your Commitment Lock is active — impossible to remove in a moment of weakness.',
       wide: true,
     },
     {
       num: '02',
       icon: GlobeLock,
-      title: 'Play-Protect Safe On-Device DNS Shield',
-      body: 'Uses Android’s local DNS Shield tunnel (zero Accessibility & zero Device Admin triggers) so SportyBet, Bet9ja, 1xBet & Stake resolve nowhere.',
+      title: 'On-Device DNS, Redirect & Homoglyph Shield',
+      body: `Blocks ${builtInDomainCount}+ domains, mirror sites, social redirect links (ig/t.co), and Cyrillic/Greek spoofs locally across Chrome, Safari, Instagram, TikTok, and Telegram.`,
       wide: false,
     },
     {
       num: '03',
       icon: Smartphone,
-      title: `${builtInAppCount}+ Betting Apps & New APKs`,
-      body: 'Watches installed betting apps and catches newly sideloaded or Play Store betting APKs immediately upon install.',
+      title: `${builtInAppCount}+ Betting Apps & Sideload Guard`,
+      body: 'Watches installed sportsbook & casino apps and intercepts newly sideloaded APKs immediately with exact platform recognition.',
       wide: false,
     },
     {
       num: '04',
       icon: Clock,
-      title: 'Night, Weekend & Payday Guard',
-      body: 'Tightens keyword and search blocking automatically from 10 PM to 5 AM, across matchday weekends, and on salary days (25th to 3rd).',
+      title: 'Tilt Velocity Radar & Stake Banking',
+      body: 'Detects chasing-loss bursts within 10–60m, neutralizes booking codes & deposit links, and lets you bank tempted stakes into your vault instead.',
       wide: false,
     },
     {
       num: '05',
       icon: Wallet,
-      title: 'Local Naira (₦) Savings Ledger',
-      body: 'Calculates how much money stays with you based on your daily stake — stored safely on-device without accounts or subscriptions.',
+      title: 'Trusted Buddy Co-Lock + Naira (₦) Ledger',
+      body: 'Zero-server 6-digit Buddy approval unlock, 5-layer Shield Leak Check diagnostics, and persistent on-device Naira savings without accounts.',
       wide: false,
     },
     {
       num: '06',
       icon: ShieldCheck,
-      title: 'iPhone + Android Without Subscriptions',
-      body: 'Android phones install the direct APK with local DNS Shield + Private DNS helper, while iPhone users get a native Home-Screen G app + 1-tap Screen Time list.',
+      title: 'iPhone + Android Free Forever',
+      body: 'Android phones get native APK DNS + Device Admin uninstall lock, while iPhone users get a dedicated Home-Screen G app + 1-tap Screen Time list.',
       wide: true,
     },
   ];
 
   const comparisonRows = [
     {
-      capability: 'Cost & Sign-Up',
-      gambleAware: 'Free forever · Zero account',
-      gamban: 'Paid subscription · Account required',
+      capability: 'OS-Level Uninstall Prevention',
+      gambleAware: 'Device Admin + Commitment Lock (up to 2 yrs)',
+      gamban: 'Basic uninstall friction · Paid plan',
     },
     {
-      capability: `${builtInDomainCount}+ Websites & In-App Browsers`,
-      gambleAware: 'On-device DNS Shield + Private DNS',
-      gamban: 'Cloud VPN subscription required',
+      capability: `${builtInDomainCount}+ Websites & Exact Platform Logos`,
+      gambleAware: `${builtInDomainCount}+ domains, mirrors, redirects & 32 brand emblems`,
+      gamban: 'Generic block screen · Cloud VPN',
     },
     {
-      capability: `${builtInAppCount}+ Betting Apps & Sideloaded APKs`,
-      gambleAware: 'Install Guard alerts + APK registry',
-      gamban: 'Focused mainly on web traffic',
-    },
-    {
-      capability: 'Google Play Protect Clearance',
-      gambleAware: 'Clean manifest · No Accessibility spyware warnings',
-      gamban: 'Play Store / paid license only',
-    },
-    {
-      capability: 'Naira (₦) Tracker & Payday Rules',
-      gambleAware: 'Built in · Saved offline',
+      capability: 'Tilt Velocity Radar & 1-Tap Stake Banking',
+      gambleAware: 'Chasing-loss burst detection + Urge-to-Savings vault',
       gamban: 'Not included',
+    },
+    {
+      capability: 'Promo / Booking-Code & Cashier Firewall',
+      gambleAware: 'Neutralizes shared slips & calculates house-edge loss',
+      gamban: 'Not included',
+    },
+    {
+      capability: 'Trusted Buddy Co-Lock & 5-Layer Diagnostics',
+      gambleAware: 'Offline 6-digit partner unlock + 100% Leak Audit',
+      gamban: 'Paid subscription · No offline co-lock',
+    },
+    {
+      capability: 'Cost & Account Privacy',
+      gambleAware: '100% Free forever · Zero account or tracking',
+      gamban: 'Recurring monthly/annual subscription',
     },
   ];
 
@@ -185,13 +191,13 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
     },
     {
       num: '02',
-      title: 'Install without Play Protect blocks',
-      desc: 'Open the APK from Downloads and tap Install — built with Play-Protect-safe On-Device DNS Shield permissions.',
+      title: 'Install APK & Enable DNS Shield',
+      desc: 'Open the APK from Downloads, tap Install, and allow GambleAware’s on-device local VPN/DNS Shield.',
     },
     {
       num: '03',
-      title: 'Arm DNS Shield & Lock Timer',
-      desc: 'Add your first name, tap Approve DNS Shield (and optional Private DNS / Always-On VPN lock), and set a timer up to 2 years.',
+      title: 'Arm Device Admin Uninstall Lock & Timer',
+      desc: 'Grant optional Device Admin access inside Lock settings so Android blocks uninstalling GambleAware while your lock timer (up to 2 years) is active.',
     },
   ];
 
@@ -456,15 +462,18 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                       </div>
 
                       <div className="flex items-center justify-between rounded-2xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2">
-                        <div className="min-w-0">
-                          <p className="truncate font-mono text-[11px] font-semibold text-[var(--ink)]">
-                            sportybet.com
-                          </p>
-                          <p className="text-[10px] text-[var(--ink-muted)]">
-                            DNS Shield · Sportsbook · Just now
-                          </p>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <BettingBrandLogo target="sportybet.com" size="xs" />
+                          <div className="min-w-0">
+                            <p className="truncate font-mono text-[11px] font-semibold text-[var(--ink)]">
+                              sportybet.com
+                            </p>
+                            <p className="text-[10px] text-[var(--ink-muted)]">
+                              DNS Shield · Sportsbook · Just now
+                            </p>
+                          </div>
                         </div>
-                        <span className="shrink-0 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-2 py-0.5 font-mono text-[9.5px] font-bold text-[var(--accent-ink)]">
+                        <span className="shrink-0 font-mono text-[10px] font-bold text-[var(--accent-ink)]">
                           3 blocked
                         </span>
                       </div>
@@ -815,6 +824,23 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
         </div>
       </section>
 
+      {/* Covered Betting Platforms With Exact Logos */}
+      <section className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-12">
+        <div className="max-w-2xl">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-3xl">
+            Every major betting platform recognized &amp; blocked.
+          </h2>
+          <p className="mt-2.5 text-sm leading-relaxed text-[var(--ink-muted)]">
+            {builtInDomainCount}+ sportsbooks, casinos, crash sites, mirrors, and {builtInAppCount}+
+            betting apps stopped automatically across Africa, UK, North America, and crypto rooms.
+          </p>
+        </div>
+
+        <div className="mt-7">
+          <FeaturedBrandsWall limit={16} />
+        </div>
+      </section>
+
       {/* Numbered Capabilities Bento Grid */}
       <section id="features" className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-12">
         <div className="max-w-2xl">
@@ -894,22 +920,21 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                   <ul className="mt-3 space-y-2 text-xs leading-relaxed text-[var(--ink-muted)]">
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
-                        • On-Device DNS Shield:
+                        • Device Admin Uninstall Lock:
                       </span>{' '}
-                      Drops gambling DNS lookups locally while forwarding safe traffic with zero ads
-                      or tracking.
+                      Optional OS Device Administrator lock prevents uninstalling the app while your Commitment timer is active.
                     </li>
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
-                        • Install Guard + 2y Lock:
+                        • On-Device DNS &amp; Mirror Shield:
                       </span>{' '}
-                      Matches 130+ betting apps on DNS and supports Android Always-On VPN lock.
+                      Drops gambling DNS lookups locally for 820+ domains, booking-code links &amp; homoglyphs with zero cloud tracking.
                     </li>
                     <li>
                       <span className="font-semibold text-[var(--ink)]">
-                        • Clean Permissions:
+                        • Install Guard + 150+ Betting Apps:
                       </span>{' '}
-                      Zero Accessibility, zero Device Admin, and zero background package spying.
+                      Matches installed &amp; newly sideloaded betting APKs plus Android Always-On VPN lock.
                     </li>
                   </ul>
                 </div>
@@ -1136,8 +1161,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             ) : (
               <>
                 <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-                  Takes under two minutes. Zero registration, zero Accessibility service, and zero
-                  Device Admin spyware flags.
+                  Takes under two minutes. Zero account sign-up, zero Accessibility service, and
+                  real Device Admin Uninstall Lock.
                 </p>
 
                 <ol className="mt-5 divide-y divide-[var(--subtle-border)]/70">
@@ -1159,24 +1184,25 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                   ))}
                 </ol>
 
-                {/* Play Protect Clearance Note */}
+                {/* OS Uninstall Lock & Minimal Permissions Note */}
                 <div className="mt-5 rounded-2xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-4">
                   <p className="text-xs font-semibold text-[var(--ink)]">
-                    Built clean for Google Play Protect
+                    OS Uninstall Lock + Minimal Permissions
                   </p>
                   <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-                    Google Play Protect flags sideloaded APKs that declare Accessibility or Device
-                    Admin. GambleAware uses{' '}
-                    <span className="font-semibold text-[var(--ink)]">On-Device DNS Shield</span> (
-                    <span className="font-mono">VpnService</span>) + Install Guard instead, with
-                    zero contact, SMS, storage, or Accessibility access.
+                    Inside Lock settings, granting{' '}
+                    <span className="font-semibold text-[var(--ink)]">
+                      Device Admin Uninstall Lock
+                    </span>{' '}
+                    prevents uninstalling GambleAware while your Commitment Lock runs — with zero
+                    contacts, SMS, storage, or Accessibility spyware permissions.
                   </p>
                   <p className="mt-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-                    For system-wide lockdown, enable{' '}
+                    Pair with{' '}
                     <span className="font-semibold text-[var(--ink)]">
                       Settings → Network &amp; internet → VPN → GambleAware → Always-on VPN
-                    </span>
-                    .
+                    </span>{' '}
+                    for complete hardware lockdown.
                   </p>
                 </div>
 

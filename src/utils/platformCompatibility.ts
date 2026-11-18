@@ -38,6 +38,12 @@ export function resolveInitialViewMode(params: {
   return 'landing';
 }
 
+export function shouldSkipPreloader(search: string): boolean {
+  const searchParams = new URLSearchParams(search || '');
+  const autostart = searchParams.get('autostart');
+  return autostart === '1' || autostart === 'true';
+}
+
 export function shouldPromoteWebApp(
   platform: ClientPlatform,
   isStandalone: boolean,

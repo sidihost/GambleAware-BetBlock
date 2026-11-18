@@ -37,6 +37,12 @@
         <package android:name="com.fanduel.android.sportsbook" />
         <package android:name="com.betmgm.sportsbook" />
         <package android:name="com.stake.android" />
+        <package android:name="com.roobet.app" />
+        <package android:name="com.bcgame.app" />
+        <package android:name="com.pokerstars.net" />
+        <package android:name="com.prizepicks.android" />
+        <package android:name="com.underdogfantasy.app" />
+        <package android:name="com.hollywoodbets.app" />
     </queries>
 
     <application
@@ -79,6 +85,22 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Local on-device DNS filter for gambling domain blocking" />
         </service>
+
+        <receiver
+            android:name=".service.GambleAwareDeviceAdminReceiver"
+            android:description="@string/device_admin_description"
+            android:exported="true"
+            android:label="@string/device_admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_policies" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                <action android:name="android.app.action.DEVICE_ADMIN_DISABLE_REQUESTED" />
+                <action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".service.PackageInstallReceiver"
