@@ -741,7 +741,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           <EngineStatusRow
             icon={<TrendingUp className="h-4 w-4" />}
             title="Progress & Money Saved"
-            subtitle="Check your streak, simulator & ₦ saved"
+            subtitle="Check your streak, savings ledger & ₦ saved"
             isReady={state.goals.length > 0}
             onClick={onNavigateToProgress}
           />

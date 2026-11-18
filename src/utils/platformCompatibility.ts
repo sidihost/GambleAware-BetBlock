@@ -29,10 +29,19 @@ export function resolveInitialViewMode(params: {
 }): AppViewMode {
   if (params.isStandalone) return 'app';
   const normalizedHash = (params.hash || '').trim().toLowerCase();
-  if (normalizedHash === '#app' || normalizedHash === '#shield') return 'app';
+  if (normalizedHash === '#app' || normalizedHash === '#shield' || normalizedHash === '#admin') {
+    return 'app';
+  }
   const searchParams = new URLSearchParams(params.search || '');
   const appParam = searchParams.get('app') ?? searchParams.get('mode');
-  if (appParam === '1' || appParam === 'true' || appParam === 'app') {
+  const adminParam = searchParams.get('admin');
+  if (
+    appParam === '1' ||
+    appParam === 'true' ||
+    appParam === 'app' ||
+    adminParam === '1' ||
+    adminParam === 'true'
+  ) {
     return 'app';
   }
   return 'landing';

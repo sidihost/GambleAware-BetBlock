@@ -4,8 +4,8 @@ import { BETTING_BRAND_CATALOG, resolveBettingBrand } from './brandCatalog';
 
 test('resolves exact brand logos for major regional and global betting platforms', () => {
   const cases: Array<[string, string, string]> = [
-    ['https://m.sportybet.com/ng/', 'SportyBet', '#E41B23'],
-    ['sportybet.ng', 'SportyBet', '#E41B23'],
+    ['https://m.sportybet.com/ng/', 'SportyBet', '#E41827'],
+    ['sportybet.ng', 'SportyBet', '#E41827'],
     ['web.bet9ja.com', 'Bet9ja', '#107C41'],
     ['betking.com', 'BetKing', '#0B2C5F'],
     ['1xbet.ng', '1xBet', '#1A56DB'],

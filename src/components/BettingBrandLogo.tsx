@@ -29,14 +29,21 @@ function renderAuthenticBrandSvg(
 ): React.ReactNode {
   switch (brandId) {
     case 'sportybet':
-      // SportyBet: Vibrant red tile with signature slanted white geometric 'S' & speed bar
+      // SportyBet: Exact official red badge (#E41827) with signature white 'S' & two offset dots
       return (
-        <g>
+        <g transform="translate(7.97 5.85) scale(0.058)">
           <path
-            d="M23.5 8.5H13.6c-2.2 0-3.8 1.2-4.3 3.1-.4 1.7.6 3.1 2.7 3.5l4.8.9c1.2.2 1.7.8 1.5 1.6-.2.9-1 1.4-2.2 1.4H8.3l-.9 3.6h9.6c2.6 0 4.3-1.2 4.8-3.4.5-1.9-.6-3.3-2.9-3.7l-4.7-.9c-1.1-.2-1.6-.7-1.4-1.5.2-.8.9-1.2 2-1.2h7.8l.9-3.4z"
+            d="M164 86c-14 0-25-2-33 2-9 6-19 17-20 27-2 5 13 15 23 19 7 3 17 1 25 1 72 1 114 63 90 130-18 48-63 77-119 76l-17-76c12-1 24 1 32-4 10-6 16-17 24-26-10-6-18-14-28-19-6-3-15-1-23-1-62-3-99-43-96-101C25 58 79 4 132 7c6 1 16 8 17 14 7 20 10 41 15 65z"
             fill="#FFFFFF"
           />
-          <path d="M7.2 24.4h15.6l-.8 1.9H6.4l.8-1.9z" fill="#FFE0E1" opacity="0.92" />
+          <path
+            d="M92 303c1 25-21 47-46 47-24 0-45-21-46-45s18-45 43-46c26-2 48 19 49 44z"
+            fill="#FFFFFF"
+          />
+          <path
+            d="M277 44c1 26-20 48-45 48-24 0-44-20-45-45-1-26 19-47 45-47 25 0 44 19 45 44z"
+            fill="#FFFFFF"
+          />
         </g>
       );
 

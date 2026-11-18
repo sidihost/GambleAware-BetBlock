@@ -13,6 +13,9 @@ test('normalizeBlockedTarget strips protocol, www, paths, and keeps domain or ap
   assert.equal(normalizeBlockedTarget('m.bet9ja.com/mobile'), 'm.bet9ja.com');
   assert.equal(normalizeBlockedTarget('SportyBet App'), 'SportyBet App');
   assert.equal(normalizeBlockedTarget('1xbet.ng:443'), '1xbet.ng');
+  assert.equal(normalizeBlockedTarget('com.sportybet.android'), 'SportyBet');
+  assert.equal(normalizeBlockedTarget('ng.bet9ja.app'), 'Bet9ja Mobile');
+  assert.equal(normalizeBlockedTarget('team.opay.pay'), 'OPay');
 });
 
 test('groupBlockedEvents aggregates repeated attempts by site and sorts newest first', () => {

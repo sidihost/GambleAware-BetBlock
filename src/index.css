@@ -68,7 +68,7 @@
 :root {
   --canvas: #FFFFFF;
   --surface: #FFFFFF;
-  --control-bg: #FFFFFF;
+  --control-bg: #FAFAFB;
   --ink: #110B0F;
   --ink-muted: #56444E;
   --accent-ink: #C9166E;
@@ -81,10 +81,6 @@
   --muted-fill: #FAF1F6;
   --muted-content: #110B0F;
   --soft-accent-bg: #FCE7F2;
-  --blob-one: #FFEBF4;
-  --blob-two: #FDE3F0;
-  --blob-three: #FFF7FB;
-  --preloader-halo: rgba(216, 27, 120, 0.06);
   color-scheme: light;
 }
 
@@ -95,7 +91,7 @@
   --ink: #F9F5F8;
   --ink-muted: #C4B2BE;
   --accent-ink: #FF78BC;
-  --glass-fill: rgba(20, 18, 24, 0.94);
+  --glass-fill: rgba(18, 17, 22, 0.96);
   --glass-secondary: #1D151B;
   --glass-border: rgba(255, 61, 154, 0.30);
   --subtle-border: #34242E;
@@ -104,10 +100,6 @@
   --muted-fill: #1D151B;
   --muted-content: #F9F5F8;
   --soft-accent-bg: #2E1323;
-  --blob-one: #260B19;
-  --blob-two: #170912;
-  --blob-three: #120A10;
-  --preloader-halo: rgba(255, 61, 154, 0.08);
   color-scheme: dark;
 }
 
@@ -135,34 +127,14 @@
   }
 }
 
-@keyframes liquidDriftA {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(-18px, 12px, 0);
-  }
-}
-
-@keyframes liquidDriftB {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(16px, -14px, 0);
-  }
-}
-
 @keyframes orbPulse {
   0%,
   100% {
-    transform: scale(0.95);
-    opacity: 0.9;
+    transform: scale(0.97);
+    opacity: 0.92;
   }
   50% {
-    transform: scale(1.02);
+    transform: scale(1.01);
     opacity: 1;
   }
 }
@@ -200,20 +172,12 @@
 @keyframes preloaderFadeUp {
   from {
     opacity: 0;
-    transform: translate3d(0, 10px, 0);
+    transform: translate3d(0, 8px, 0);
   }
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
   }
-}
-
-.animate-drift-a {
-  animation: liquidDriftA 11s ease-in-out infinite;
-}
-
-.animate-drift-b {
-  animation: liquidDriftB 13s ease-in-out infinite;
 }
 
 .animate-orb-pulse {
@@ -238,8 +202,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-drift-a,
-  .animate-drift-b,
   .animate-orb-pulse,
   .animate-preloader-spin,
   .animate-preloader-spin-reverse,

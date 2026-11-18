@@ -187,7 +187,7 @@ export const RECOVERY_RESOURCES: RecoveryResourceItem[] = [
       'Most relapses happen within 48 hours of receiving salary, bonuses, or business payouts.',
     steps: [
       'Pay rent, food, family obligations, and utility bills the same morning income arrives.',
-      'Use Naira Reclaimed Simulator to turn weekly saved stakes into concrete life purchases.',
+      'Use your Savings & Recovery Ledger to turn weekly saved stakes into concrete life purchases.',
       'Turn on Payday Surge Guard (25th–3rd) so strict keyword & cashier firewalls auto-arm every payday.',
     ],
   },

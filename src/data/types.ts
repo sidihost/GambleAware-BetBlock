@@ -80,6 +80,7 @@ export interface ProtectionSettingsState {
   depositGuardEnabled: boolean;
   buddyPartnerName: string;
   buddyChallengeCode: string;
+  bankFreezeChecks: Record<string, boolean>;
 }
 
 export interface BlockedDomainEntity {

@@ -185,7 +185,7 @@ export function useGambleAwareState() {
       const next = updater(prev);
       return {
         ...next,
-        schemaVersion: 4,
+        schemaVersion: 5,
         updatedAtMs: Date.now(),
       };
     });
@@ -508,6 +508,25 @@ export function useGambleAwareState() {
     [updateSettings],
   );
 
+  const toggleBankFreezeCheck = useCallback(
+    (bankId: string, bankName?: string) => {
+      const nextValue = !Boolean(storeRef.current.settings.bankFreezeChecks?.[bankId]);
+      updateSettings((s) => ({
+        ...s,
+        bankFreezeChecks: {
+          ...(s.bankFreezeChecks || {}),
+          [bankId]: nextValue,
+        },
+      }));
+      setStatusBannerMessage(
+        nextValue
+          ? `${bankName || 'Bank'} gambling block marked active`
+          : `${bankName || 'Bank'} gambling block unchecked`,
+      );
+    },
+    [updateSettings],
+  );
+
   const bankUrgeStake = useCallback(
     (amountNgn: number) => {
       const safeAmount = Math.max(100, Math.min(10_000_000, Math.round(amountNgn || 5000)));
@@ -741,6 +760,12 @@ export function useGambleAwareState() {
               : safeDays === 730
                 ? '2 years'
                 : `${safeDays} days`;
+      if (storeRef.current.settings.notificationsEnabled) {
+        void requestAndDispatchNotification(
+          buildNotificationPayload('lock', { lockLabel: spanLabel }),
+          false,
+        );
+      }
       setStatusBannerMessage(`Commitment Lock active for ${spanLabel}`);
     },
     [mutateStore],
@@ -1221,6 +1246,7 @@ export function useGambleAwareState() {
     setSearchGuardEnabled,
     setAntiTamperEnabled,
     setDepositGuardEnabled,
+    toggleBankFreezeCheck,
     bankUrgeStake,
     configureBuddyCoLock,
     refreshBuddyChallenge,

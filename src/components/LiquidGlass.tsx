@@ -4,55 +4,9 @@ import { AnchorRoute } from '../data/types';
 export const LiquidGlassBackdrop: React.FC<{
   isProtected: boolean;
   children: React.ReactNode;
-}> = ({ isProtected, children }) => {
-  const ringOpacity = isProtected ? 0.14 : 0.06;
-
+}> = ({ children }) => {
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[var(--canvas)] text-[var(--ink)] transition-colors duration-200">
-      {/* Drifting Black & Pink liquid organic spheres + orbital hairline rings */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
-        <div
-          className="animate-drift-a absolute -top-24 -right-20 h-[420px] w-[420px] rounded-full opacity-90"
-          style={{ backgroundColor: 'var(--blob-one)' }}
-        />
-        <div
-          className="animate-drift-b absolute top-[30%] -left-28 h-[340px] w-[340px] rounded-full opacity-90"
-          style={{ backgroundColor: 'var(--blob-two)' }}
-        />
-        <div
-          className="animate-drift-a absolute -bottom-24 right-[15%] h-[440px] w-[440px] rounded-full opacity-90"
-          style={{ backgroundColor: 'var(--blob-three)' }}
-        />
-        <svg className="h-full w-full" preserveAspectRatio="xMidYMid slice">
-          <circle
-            cx="50%"
-            cy="24%"
-            r="260"
-            fill="none"
-            stroke="var(--active-fill)"
-            strokeWidth="0.85"
-            strokeOpacity={ringOpacity}
-          />
-          <circle
-            cx="50%"
-            cy="24%"
-            r="390"
-            fill="none"
-            stroke="var(--active-fill)"
-            strokeWidth="0.75"
-            strokeOpacity={ringOpacity * 0.72}
-          />
-          <circle
-            cx="50%"
-            cy="24%"
-            r="530"
-            fill="none"
-            stroke="var(--active-fill)"
-            strokeWidth="0.75"
-            strokeOpacity={ringOpacity * 0.45}
-          />
-        </svg>
-      </div>
       <div className="relative z-10 min-h-screen">{children}</div>
     </div>
   );
@@ -73,10 +27,10 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
   tourKey,
   muted = false,
 }) => {
-  const baseClass = `rounded-2xl border backdrop-blur-xl transition-colors duration-150 ${
+  const baseClass = `rounded-2xl border transition-colors duration-150 ${
     muted
       ? 'bg-[var(--muted-fill)] border-[var(--subtle-border)]'
-      : 'bg-[var(--glass-fill)] border-[var(--glass-border)]'
+      : 'bg-[var(--surface)] border-[var(--subtle-border)]'
   } ${className}`;
 
   if (onClick) {
@@ -85,7 +39,7 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
         type="button"
         onClick={onClick}
         data-tour-key={tourKey}
-        className={`${baseClass} w-full text-left cursor-pointer hover:opacity-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]`}
+        className={`${baseClass} w-full cursor-pointer text-left hover:border-[var(--glass-border)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]`}
       >
         {children}
       </button>
@@ -215,13 +169,13 @@ export const LiquidShieldOrb: React.FC<{
       className="group relative flex h-[136px] w-[136px] cursor-pointer items-center justify-center rounded-full transition-transform duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--active-fill)] sm:h-[152px] sm:w-[152px]"
     >
       <svg viewBox="0 0 180 180" className="h-full w-full">
-        {/* Outer translucent aura */}
+        {/* Outer translucent ring */}
         <circle
           cx="90"
           cy="90"
           r="84"
           fill="var(--active-fill)"
-          fillOpacity={isProtected ? 0.11 : 0.04}
+          fillOpacity={isProtected ? 0.09 : 0.03}
           className={isProtected ? 'animate-orb-pulse origin-center' : ''}
         />
 
@@ -240,13 +194,13 @@ export const LiquidShieldOrb: React.FC<{
           />
         ))}
 
-        {/* Inner frosted halo */}
+        {/* Inner ring */}
         <circle
           cx="90"
           cy="90"
           r="62"
           fill="var(--active-fill)"
-          fillOpacity={isProtected ? 0.16 : 0.06}
+          fillOpacity={isProtected ? 0.14 : 0.05}
         />
 
         {/* Hardened lock bezel circle */}
@@ -262,7 +216,7 @@ export const LiquidShieldOrb: React.FC<{
           />
         ) : null}
 
-        {/* Specular Core Medallion */}
+        {/* Core Medallion */}
         <circle
           cx="90"
           cy="90"
@@ -315,9 +269,9 @@ export const LiquidFloatingNavBar: React.FC<{
 }> = ({ items, selectedRoute, onSelect }) => (
   <nav
     aria-label="Primary navigation"
-    className="fixed bottom-2 left-0 right-0 z-30 flex justify-center px-2.5 md:hidden"
+    className="fixed right-0 bottom-2 left-0 z-30 flex justify-center px-2.5 md:hidden"
   >
-    <div className="w-full max-w-[460px] rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-1 shadow-lg backdrop-blur-xl">
+    <div className="w-full max-w-[460px] rounded-2xl border border-[var(--subtle-border)] bg-[var(--glass-fill)] p-1 shadow-md backdrop-blur-md">
       <div
         className="grid gap-0.5"
         style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
@@ -331,12 +285,12 @@ export const LiquidFloatingNavBar: React.FC<{
               onClick={() => onSelect(item.route)}
               className={`flex min-h-[44px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] ${
                 selected
-                  ? 'bg-[var(--active-fill)] text-[var(--active-content)] font-semibold'
-                  : 'text-[var(--ink-muted)] hover:text-[var(--ink)] font-medium'
+                  ? 'bg-[var(--active-fill)] font-semibold text-[var(--active-content)]'
+                  : 'font-medium text-[var(--ink-muted)] hover:text-[var(--ink)]'
               }`}
             >
               {item.icon}
-              <span className="mt-1 text-[10px] leading-none whitespace-nowrap shrink-0">
+              <span className="mt-1 shrink-0 text-[10px] leading-none whitespace-nowrap">
                 {item.label}
               </span>
             </button>

@@ -253,6 +253,7 @@ export function createDefaultStore(): PersistedStore {
       depositGuardEnabled: true,
       buddyPartnerName: '',
       buddyChallengeCode: '',
+      bankFreezeChecks: {},
     },
     isAccessibilityEnabled: true,
     isDeviceAdminEnabled: false,
@@ -299,6 +300,10 @@ export function normalizeStoreShape(parsed: Partial<PersistedStore>): PersistedS
       typeof parsed.settings?.buddyChallengeCode === 'string'
         ? parsed.settings.buddyChallengeCode
         : '',
+    bankFreezeChecks:
+      parsed.settings?.bankFreezeChecks && typeof parsed.settings.bankFreezeChecks === 'object'
+        ? { ...parsed.settings.bankFreezeChecks }
+        : {},
   };
 
   if (!parsed.schemaVersion || parsed.schemaVersion < 3) {

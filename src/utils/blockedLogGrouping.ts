@@ -1,4 +1,5 @@
 import { BlockedEventEntity } from '../data/types';
+import { looksLikeAndroidPackageId, resolveFriendlyAppName } from './deviceAppCatalog';
 
 export interface GroupedBlockedSite {
   key: string;
@@ -12,13 +13,16 @@ export interface GroupedBlockedSite {
 }
 
 /**
- * Normalizes a blocked target string (URL, domain, or app label) so repeated blocks
- * of the same site or app (e.g. `https://www.SportyBet.com/ng/live` and `sportybet.com`)
- * collapse cleanly under one readable site/app name in a DuckDuckGo-style feed.
+ * Normalizes a blocked target string (URL, domain, or app label/package ID) so repeated blocks
+ * of the same site or app collapse cleanly under one human-readable site or app name.
  */
 export function normalizeBlockedTarget(rawTarget: string): string {
   const trimmed = (rawTarget || '').trim();
   if (!trimmed) return 'Unknown Site';
+
+  if (looksLikeAndroidPackageId(trimmed)) {
+    return resolveFriendlyAppName(trimmed);
+  }
 
   const hasSpaces = /\s/.test(trimmed);
   const looksLikeUrlOrDomain =
@@ -33,6 +37,10 @@ export function normalizeBlockedTarget(rawTarget: string): string {
   candidate = candidate.split(/[/?#]/)[0] ?? candidate;
   candidate = candidate.split(':')[0] ?? candidate;
   candidate = candidate.replace(/^www\./i, '').replace(/\.$/, '').toLowerCase();
+
+  if (looksLikeAndroidPackageId(candidate)) {
+    return resolveFriendlyAppName(candidate);
+  }
 
   return candidate || trimmed.toLowerCase();
 }
@@ -83,7 +91,7 @@ export function groupBlockedEvents(events: readonly BlockedEventEntity[]): Group
     }
   }
 
-  return Array.from(groups.values()).sort((a, b) => b.latestTimestamp - a.latestTimestamp);
+  return Array.from(groups.values()).sort((a, b) => b.latestTimestamp - a.timestamp);
 }
 
 export function formatAttemptCountLabel(count: number): string {
