@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  BookOpen,
   CheckCircle2,
   Heart,
   LockKeyhole,
@@ -38,6 +39,7 @@ import { ActivityScreen } from './screens/ActivityScreen';
 import { BlocklistScreen } from './screens/BlocklistScreen';
 import { DownloadScreen } from './screens/DownloadScreen';
 import { LockSettingsScreen } from './screens/LockSettingsScreen';
+import { ResourcesScreen } from './screens/ResourcesScreen';
 import { ShieldScreen } from './screens/ShieldScreen';
 import {
   AppViewMode,
@@ -51,6 +53,7 @@ const NAV_ITEMS: NavItemConfig[] = [
   { route: 'shield', label: 'Shield', icon: <BrandGIcon className="h-4 w-4" /> },
   { route: 'blocklist', label: 'Blocklist', icon: <SlidersHorizontal className="h-4 w-4" /> },
   { route: 'activity', label: 'Progress', icon: <TrendingUp className="h-4 w-4" /> },
+  { route: 'resources', label: 'Resources', icon: <BookOpen className="h-4 w-4" /> },
   { route: 'lock', label: 'Lock', icon: <LockKeyhole className="h-4 w-4" /> },
 ];
 
@@ -112,6 +115,9 @@ export function App() {
     replayTour,
     logUrgeResisted,
     clearEventHistory,
+    submitSurveyAssessment,
+    applySurveyRecommendationPreset,
+    logRelapseAndReset,
     restoreFromVaultBackup,
     forceBackupSync,
     showBanner,
@@ -188,6 +194,12 @@ export function App() {
       themeMeta.setAttribute('content', isDarkTheme ? '#060608' : '#FFFFFF');
     }
   }, [isDarkTheme]);
+
+  useEffect(() => {
+    if (!uiState.statusBannerMessage) return;
+    const id = window.setTimeout(() => clearBanner(), 4800);
+    return () => window.clearTimeout(id);
+  }, [uiState.statusBannerMessage, clearBanner]);
 
   const switchToApp = () => {
     setViewMode('app');
@@ -314,7 +326,7 @@ export function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-4 bottom-24 left-4 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-[var(--glass-border)] bg-[var(--surface)] px-4 py-2.5 shadow-lg md:bottom-6"
+          className="fixed top-16 right-3 left-3 z-40 flex items-center justify-between gap-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--surface)] px-3.5 py-2 shadow-lg sm:right-5 sm:left-auto sm:w-auto sm:max-w-sm"
         >
           <div className="flex min-w-0 items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
@@ -333,11 +345,11 @@ export function App() {
         </div>
       ) : null}
 
-      <main className={viewMode === 'app' ? 'min-h-[calc(100vh-8rem)] pb-24 md:pb-12' : 'min-h-[calc(100vh-8rem)]'}>
+      <main className={viewMode === 'app' ? 'min-h-[calc(100vh-7rem)]' : 'min-h-[calc(100vh-7rem)]'}>
         {viewMode === 'landing' ? (
           <DownloadScreen onOpenWebApp={canOpenIosApp ? switchToApp : undefined} />
         ) : (
-          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">
+          <div>
             {route === 'shield' ? (
               <ShieldScreen
                 store={store}
@@ -467,6 +479,29 @@ export function App() {
               />
             ) : null}
 
+            {route === 'resources' ? (
+              <ResourcesScreen
+                state={uiState}
+                userEmail={null}
+                cloudError={null}
+                userTickets={[]}
+                onSignIn={() =>
+                  showBanner('All recovery guides, survey & reset tools work offline with zero sign-in')
+                }
+                onSubmitSurvey={submitSurveyAssessment}
+                onApplySurveyPreset={(profile) => {
+                  applySurveyRecommendationPreset(profile);
+                }}
+                onLogRelapseReset={logRelapseAndReset}
+                onCreateSupportTicket={async () => {
+                  showBanner('Request recorded locally on your device');
+                  return true;
+                }}
+                onNavigateToLock={() => handleSelectRoute('lock')}
+                onNavigateToBlocklist={() => handleSelectRoute('blocklist')}
+              />
+            ) : null}
+
             {route === 'lock' ? (
               <LockSettingsScreen
                 store={store}
@@ -545,7 +580,7 @@ export function App() {
         />
       ) : null}
 
-      <footer className="border-t border-[var(--subtle-border)] px-4 py-8">
+      <footer className="border-t border-[var(--subtle-border)] px-4 py-6 pb-20 md:pb-6">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row md:px-2">
           <div className="text-center sm:text-left">
             <p className="font-display text-sm font-bold text-[var(--ink)]">GambleAware</p>
@@ -681,22 +716,22 @@ export function App() {
               setUrgeNote('');
               setUrgeModalOpen(false);
             }}
-            className="w-full max-w-[460px] rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px] sm:p-6"
+            className="w-full max-w-[440px] rounded-t-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:rounded-2xl sm:p-5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
                   <NotebookPen className="h-4 w-4" />
                 </div>
-                <h2 className="font-display text-lg font-bold">Log Resisted Urge</h2>
+                <h2 className="font-display text-base font-bold">Log Resisted Urge</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setUrgeModalOpen(false)}
                 aria-label="Close urge journal modal"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -705,8 +740,8 @@ export function App() {
               time.
             </p>
 
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold text-[var(--ink)]">What triggered it?</p>
+            <div className="mt-3">
+              <p className="mb-1.5 text-xs font-semibold text-[var(--ink)]">What triggered it?</p>
               <div className="flex flex-wrap gap-1.5">
                 {URGE_TRIGGER_TAGS.map((tag) => {
                   const selected = urgeTag === tag;
@@ -715,7 +750,7 @@ export function App() {
                       key={tag}
                       type="button"
                       onClick={() => setUrgeTag(tag)}
-                      className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                         selected
                           ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                           : 'border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--ink)]'
@@ -730,31 +765,31 @@ export function App() {
 
             <label
               htmlFor="urge-victory-note"
-              className="mt-4 mb-1.5 block text-xs font-semibold text-[var(--ink)]"
+              className="mt-3 mb-1 block text-xs font-semibold text-[var(--ink)]"
             >
               Short Note (Optional)
             </label>
             <textarea
               id="urge-victory-note"
-              rows={3}
+              rows={2}
               maxLength={240}
               value={urgeNote}
               onChange={(e) => setUrgeNote(e.target.value)}
               placeholder="e.g. Closed browser, drank water, and remembered my savings goal."
-              className="w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] p-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+              className="w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] p-2.5 text-xs text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none sm:text-sm"
             />
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-3.5 flex gap-2">
               <button
                 type="button"
                 onClick={() => setUrgeModalOpen(false)}
-                className="h-11 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="h-10 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="h-11 flex-[1.5] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                className="h-10 flex-[1.5] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 Save Victory
               </button>
@@ -771,30 +806,30 @@ export function App() {
           aria-label="Confidential Support Resources"
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 backdrop-blur-sm sm:items-center sm:p-4"
         >
-          <div className="w-full max-w-[460px] rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px] sm:p-6">
+          <div className="w-full max-w-[440px] rounded-t-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:rounded-2xl sm:p-5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
                   <Heart className="h-4 w-4" />
                 </div>
-                <h2 className="font-display text-lg font-bold">Confidential Support</h2>
+                <h2 className="font-display text-base font-bold">Confidential Support</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setSupportModalOpen(false)}
                 aria-label="Close support modal"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+            <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
               You do not have to fight gambling urges alone. Reach free, confidential human support
               anytime — zero judgment, private, and available 24/7.
             </p>
 
-            <div className="mt-4 space-y-2.5">
+            <div className="mt-3 space-y-2">
               {[
                 {
                   title: 'GamCare / National Gambling Helpline (UK)',
@@ -815,9 +850,9 @@ export function App() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="flex items-start gap-2.5 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3"
+                  className="flex items-start gap-2 rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-2.5"
                 >
-                  <PhoneCall className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                  <PhoneCall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
                   <div>
                     <p className="text-xs font-semibold text-[var(--ink)]">{item.title}</p>
                     <p className="mt-0.5 text-[11px] text-[var(--ink-muted)]">{item.detail}</p>
@@ -826,7 +861,7 @@ export function App() {
               ))}
             </div>
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-3.5 flex gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -839,7 +874,7 @@ export function App() {
                     autoStartBreathing: true,
                   });
                 }}
-                className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 <Wind className="h-3.5 w-3.5" />
                 <span>Start 60s Calm</span>
@@ -847,7 +882,7 @@ export function App() {
               <button
                 type="button"
                 onClick={() => setSupportModalOpen(false)}
-                className="h-11 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="h-10 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 Close
               </button>
@@ -870,26 +905,26 @@ export function App() {
               setPrivateDnsHost(dnsDraft || null);
               setDnsModalOpen(false);
             }}
-            className="w-full max-w-[440px] rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px] sm:p-6"
+            className="w-full max-w-[420px] rounded-t-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:rounded-2xl sm:p-5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
                   <Server className="h-4 w-4" />
                 </div>
-                <h2 className="font-display text-lg font-bold">Private DNS (Optional)</h2>
+                <h2 className="font-display text-base font-bold">Private DNS (Optional)</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setDnsModalOpen(false)}
                 aria-label="Close Private DNS modal"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+            <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)]">
               On Android 9+, open Settings → Network &amp; internet → Private DNS to enforce a
               DNS-over-TLS hostname across all apps without consuming your VPN slot.
             </p>
@@ -899,23 +934,23 @@ export function App() {
               value={dnsDraft}
               onChange={(e) => setDnsDraft(e.target.value)}
               placeholder="e.g. family.dns.adguard.com (leave blank for Automatic)"
-              className="mt-4 h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+              className="mt-3 h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-3.5 flex gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setPrivateDnsHost(null);
                   setDnsModalOpen(false);
                 }}
-                className="h-11 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="h-10 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 Reset Automatic
               </button>
               <button
                 type="submit"
-                className="h-11 flex-[1.4] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                className="h-10 flex-[1.4] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 Save DNS Note
               </button>
@@ -942,10 +977,10 @@ export function App() {
                 setPinError(check.error ?? 'Incorrect PIN');
               }
             }}
-            className="w-full max-w-[380px] rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px] sm:p-6"
+            className="w-full max-w-[360px] rounded-t-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:rounded-2xl sm:p-5"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
                 <ShieldAlert className="h-4 w-4" />
               </div>
               <h2 className="font-display text-base font-bold">{pinPrompt.title}</h2>
@@ -962,25 +997,25 @@ export function App() {
               }}
               placeholder="••••"
               autoFocus
-              className="mt-4 h-12 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-4 text-center font-mono text-lg tracking-[0.5em] text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none"
+              className="mt-3 h-11 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] px-4 text-center font-mono text-lg tracking-[0.5em] text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none"
             />
             {pinError ? (
               <p className="mt-2 text-center text-xs font-medium text-[var(--accent-ink)]">
                 {pinError}
               </p>
             ) : null}
-            <div className="mt-4 flex gap-2">
+            <div className="mt-3.5 flex gap-2">
               <button
                 type="button"
                 onClick={() => setPinPrompt(null)}
-                className="h-11 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="h-10 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={pinInput.length !== 4}
-                className="h-11 flex-[1.4] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 disabled:opacity-50"
+                className="h-10 flex-[1.4] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 disabled:opacity-50"
               >
                 Verify PIN
               </button>

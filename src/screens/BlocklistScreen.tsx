@@ -84,9 +84,9 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
-      <div className="px-1">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3.5 px-3.5 pt-3.5 pb-24 sm:px-5 md:px-6 md:pt-5 md:pb-12">
+      <div className="px-0.5">
+        <h1 className="font-display text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl">
           Blocked Sites &amp; Apps
         </h1>
         <p className="text-xs text-[var(--ink-muted)]">
@@ -94,10 +94,10 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
 
       {/* Category Toggles */}
-      <LiquidGlassCard className="p-4 sm:p-5">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
         <LiquidSectionHeader
           title="Gambling Categories"
           subtitle={
@@ -147,7 +147,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       </LiquidGlassCard>
 
       {/* Where Protection Works */}
-      <LiquidGlassCard className="p-4 sm:p-5" tourKey="blocklist_guards">
+      <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="blocklist_guards">
         <LiquidSectionHeader
           title="Protection Coverage"
           subtitle="Blocks gambling across browsers, searches, and phone apps"
@@ -182,7 +182,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       </div>
 
       {/* Covered Betting Platforms Logo Showcase */}
-      <LiquidGlassCard className="p-4 sm:p-5">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
         <LiquidSectionHeader
           title="Major Covered Platforms"
           subtitle={`Exact brand recognition across ${state.builtInDomainCount}+ sportsbooks, casinos, crash sites & poker rooms`}
@@ -195,18 +195,18 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
         </div>
       </LiquidGlassCard>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
       {/* Custom Website Rules */}
-      <LiquidGlassCard className="p-4 sm:p-5">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
         <LiquidSectionHeader
           title="Custom Website Rules"
           subtitle="Add specific websites to always block or keep allowed"
         />
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setIsAddingAllowlist(false)}
-            className={`cursor-pointer rounded-full border px-3 py-2.5 text-xs font-medium transition-colors ${
+            className={`cursor-pointer rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
               !isAddingAllowlist
                 ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                 : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -217,7 +217,7 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
           <button
             type="button"
             onClick={() => setIsAddingAllowlist(true)}
-            className={`cursor-pointer rounded-full border px-3 py-2.5 text-xs font-medium transition-colors ${
+            className={`cursor-pointer rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
               isAddingAllowlist
                 ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                 : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -233,14 +233,14 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
             value={newDomainText}
             onChange={(e) => setNewDomainText(e.target.value)}
             placeholder="Enter a website domain"
-            className="h-12 min-w-0 flex-1 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+            className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
           />
           <button
             type="submit"
             aria-label="Add domain rule"
-            className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-[16px] bg-[var(--active-fill)] text-[var(--active-content)] hover:opacity-90"
+            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)] hover:opacity-90"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
           </button>
         </form>
 
@@ -282,10 +282,10 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       </LiquidGlassCard>
 
       {/* Extra Blocked Apps */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
+        <div className="flex items-center justify-between gap-2.5">
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-base font-semibold text-[var(--ink)]">
+            <h3 className="font-display text-[15px] font-semibold text-[var(--ink)]">
               Extra Blocked Apps
             </h3>
             <p className="text-xs text-[var(--ink-muted)]">
@@ -336,29 +336,29 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
       </div>
 
       {/* Built-in Protected Websites Search */}
-      <LiquidGlassCard className="p-4 sm:p-5">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
         <LiquidSectionHeader
           title={`Built-in Protected Websites (${state.builtInDomainCount}+)`}
           subtitle="Search sportsbooks, casinos, poker, and crypto sites already blocked for you"
         />
-        <div className="relative mt-3">
-          <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--ink-muted)]" />
+        <div className="relative mt-2.5">
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--ink-muted)]" />
           <input
             type="text"
             value={registrySearch}
             onChange={(e) => setRegistrySearch(e.target.value)}
             placeholder="Search built-in blocked websites"
-            className="h-11 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-3.5 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+            className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-3 pl-9 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
           />
         </div>
-        <div className="mt-3 divide-y divide-[var(--subtle-border)]/45">
+        <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/45">
           {matchingRegistryDomains.map(([domain, category]) => (
             <div key={domain} className="flex items-center justify-between gap-3 py-2">
               <div className="flex min-w-0 items-center gap-2.5">
                 <BettingBrandLogo target={domain} size="sm" />
-                <span className="truncate font-mono text-sm text-[var(--ink)]">{domain}</span>
+                <span className="truncate font-mono text-xs text-[var(--ink)] sm:text-sm">{domain}</span>
               </div>
-              <span className="shrink-0 font-mono text-xs text-[var(--ink-muted)]">
+              <span className="shrink-0 font-mono text-[11px] text-[var(--ink-muted)]">
                 {GAMBLING_CATEGORY_META[category].displayName.split(' ')[0]}
               </span>
             </div>
@@ -374,9 +374,9 @@ export const BlocklistScreen: React.FC<BlocklistScreenProps> = ({
           aria-label="Choose an App to Block"
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
         >
-          <div className="max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px]">
+          <div className="max-h-[90dvh] w-full max-w-[460px] overflow-y-auto rounded-t-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:rounded-2xl sm:p-5">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold">Choose an App to Block</h2>
+              <h2 className="font-display text-base font-bold sm:text-lg">Choose an App to Block</h2>
               <button
                 type="button"
                 onClick={() => setShowAppPicker(false)}

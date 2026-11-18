@@ -96,11 +96,11 @@ export const RecoveryVaultCard: React.FC<RecoveryVaultCardProps> = ({
   };
 
   return (
-    <LiquidGlassCard className="p-4 sm:p-5">
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
+    <LiquidGlassCard className="p-3.5 sm:p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-2.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
-            <ShieldCheck className="h-5 w-5" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
+            <ShieldCheck className="h-4 w-4" />
           </div>
           <LiquidSectionHeader
             title="Zero-Loss Recovery Vault"
@@ -112,7 +112,7 @@ export const RecoveryVaultCard: React.FC<RecoveryVaultCardProps> = ({
           onClick={onForceSaveVault}
           title="Refresh 3-layer snapshot"
           aria-label="Refresh recovery vault snapshot"
-          className="inline-flex h-8 w-fit shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 text-[11px] font-semibold text-[var(--ink)] hover:opacity-90"
+          className="inline-flex h-7 w-fit shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 text-[10px] font-semibold text-[var(--ink)] hover:opacity-90"
         >
           <HardDrive className="h-3 w-3 text-[var(--accent-ink)]" />
           <span>{activeLayersCount}/3 Active</span>
@@ -120,52 +120,52 @@ export const RecoveryVaultCard: React.FC<RecoveryVaultCardProps> = ({
       </div>
 
       {/* Layer Summary */}
-      <div className="mt-3 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3">
+      <div className="mt-2.5 rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
           <span className="font-semibold text-[var(--ink)]">
             Cache-Clear Auto-Heal Protection
           </span>
-          <span className="font-mono text-[11px] font-semibold text-[var(--accent-ink)]">
+          <span className="font-mono text-[10px] font-semibold text-[var(--accent-ink)]">
             Local · IndexedDB · Cache Vault
           </span>
         </div>
-        <p className="mt-1 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+        <p className="mt-1 text-[11px] leading-snug text-[var(--ink-muted)]">
           Clearing browser cache keeps your streak, goals, and rules safe automatically. Save your
           Recovery Key or backup file below so even wiping all phone data restores everything in 1 tap.
         </p>
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => void handleCopyKey()}
-          className="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+          className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
         >
           {copiedKey ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          <span>{copiedKey ? 'Recovery Key Copied' : 'Copy Recovery Key'}</span>
+          <span>{copiedKey ? 'Key Copied' : 'Copy Recovery Key'}</span>
         </button>
 
         <button
           type="button"
           onClick={handleDownloadFile}
-          className="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+          className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
         >
           <Download className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
           <span>Save Backup File</span>
         </button>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between gap-2">
+      <div className="mt-2 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => {
             setShowRestoreBox((v) => !v);
             setRestoreError(null);
           }}
-          className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-[var(--accent-ink)] hover:underline"
+          className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-[var(--accent-ink)] hover:underline"
         >
-          <RotateCcw className="h-3.5 w-3.5" />
+          <RotateCcw className="h-3 w-3" />
           <span>{showRestoreBox ? 'Hide Restore Panel' : 'Restore from Key or File'}</span>
         </button>
         <span className="font-mono text-[10px] text-[var(--ink-muted)]">

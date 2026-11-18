@@ -222,26 +222,26 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 pt-8 pb-20 md:px-6 md:pt-12 md:pb-24">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-3.5 pt-5 pb-14 sm:px-5 md:gap-12 md:px-6 md:pt-8 md:pb-16">
       {/* Hero Split Section */}
-      <section className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-10">
+      <section className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-10">
         <div className="flex flex-col items-start lg:col-span-6">
-          <h1 className="font-display text-[clamp(2.1rem,4vw,3.45rem)] leading-[1.06] font-bold tracking-tight text-balance text-[var(--ink)]">
+          <h1 className="font-display text-[clamp(1.7rem,3.4vw,2.75rem)] leading-[1.08] font-bold tracking-tight text-balance text-[var(--ink)]">
             A gambling blocker you can&rsquo;t switch off midway.
           </h1>
 
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--ink-muted)]">
+          <p className="mt-3.5 max-w-xl text-sm leading-relaxed text-[var(--ink-muted)] sm:text-[15px]">
             GambleAware blocks {builtInDomainCount}+ sportsbooks, casinos, and {builtInAppCount}+
             betting apps on Android using a Play-Protect-safe On-Device DNS Shield — and lets iPhone
             users install cleanly via Safari Home Screen + Screen Time.
           </p>
 
-          <div className="mt-7 flex w-full flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="mt-5 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             {isAppleHandheld && onOpenWebApp ? (
               <button
                 type="button"
                 onClick={onOpenWebApp}
-                className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-11 sm:text-sm"
               >
                 <Smartphone className="h-4 w-4 shrink-0" />
                 <span>Open &amp; Install for iPhone</span>
@@ -250,7 +250,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
               <a
                 href={ANDROID_APK_DOWNLOAD_URL}
                 rel="noopener noreferrer"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-11 sm:text-sm"
               >
                 <Download className="h-4 w-4 shrink-0" />
                 <span>Download Android App</span>
@@ -260,7 +260,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
             <button
               type="button"
               onClick={() => void handleCopyAppUrl()}
-              className="inline-flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-sm font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)]"
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-11 sm:text-sm"
             >
               {copiedUrl ? (
                 <Check className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
@@ -293,28 +293,28 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
           </p>
 
           {/* Clean Architectural Spec Strip */}
-          <div className="mt-8 grid w-full max-w-lg grid-cols-3 gap-4 border-t border-[var(--subtle-border)] pt-6">
+          <div className="mt-6 grid w-full max-w-lg grid-cols-3 gap-3 border-t border-[var(--subtle-border)] pt-5">
             <div>
-              <p className="font-display text-xl font-bold tracking-tight text-[var(--ink)] tabular-nums sm:text-2xl">
+              <p className="font-display text-lg font-bold tracking-tight text-[var(--ink)] tabular-nums sm:text-xl">
                 {builtInDomainCount}+
               </p>
-              <p className="mt-0.5 text-xs leading-snug text-[var(--ink-muted)]">
+              <p className="mt-0.5 text-[11px] leading-snug text-[var(--ink-muted)] sm:text-xs">
                 Betting sites &amp; links
               </p>
             </div>
             <div>
-              <p className="font-display text-xl font-bold tracking-tight text-[var(--ink)] tabular-nums sm:text-2xl">
+              <p className="font-display text-lg font-bold tracking-tight text-[var(--ink)] tabular-nums sm:text-xl">
                 {builtInAppCount}+
               </p>
-              <p className="mt-0.5 text-xs leading-snug text-[var(--ink-muted)]">
+              <p className="mt-0.5 text-[11px] leading-snug text-[var(--ink-muted)] sm:text-xs">
                 Apps &amp; new APKs
               </p>
             </div>
             <div>
-              <p className="font-display text-xl font-bold tracking-tight text-[var(--accent-ink)] tabular-nums sm:text-2xl">
+              <p className="font-display text-lg font-bold tracking-tight text-[var(--accent-ink)] tabular-nums sm:text-xl">
                 2 Years
               </p>
-              <p className="mt-0.5 text-xs leading-snug text-[var(--ink-muted)]">
+              <p className="mt-0.5 text-[11px] leading-snug text-[var(--ink-muted)] sm:text-xs">
                 Max Lock timer
               </p>
             </div>
@@ -356,21 +356,20 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
           </div>
 
           {/* Hardware-Crafted Android Phone Chassis */}
-          <div className="relative">
-
-            <div className="relative w-[304px] rounded-[44px] border-[3px] border-[var(--glass-border)] bg-[var(--surface)] p-2.5 shadow-2xl ring-1 ring-[var(--subtle-border)] sm:w-[324px]">
+          <div className="relative flex w-full justify-center">
+            <div className="relative w-full max-w-[292px] rounded-[36px] border-[3px] border-[var(--glass-border)] bg-[var(--surface)] p-2 shadow-xl ring-1 ring-[var(--subtle-border)] sm:max-w-[308px]">
               {/* Hardware Side Keys */}
               <div
                 aria-hidden="true"
-                className="absolute top-24 -right-[5px] h-14 w-[3px] rounded-r-sm bg-[var(--subtle-border)]"
+                className="absolute top-20 -right-[5px] h-12 w-[3px] rounded-r-sm bg-[var(--subtle-border)]"
               />
               <div
                 aria-hidden="true"
-                className="absolute top-42 -right-[5px] h-9 w-[3px] rounded-r-sm bg-[var(--subtle-border)]"
+                className="absolute top-36 -right-[5px] h-8 w-[3px] rounded-r-sm bg-[var(--subtle-border)]"
               />
 
-              {/* Inner Android Viewport matching native Compose theme & fixed height */}
-              <div className="relative flex h-[584px] flex-col justify-between overflow-hidden rounded-[34px] border border-[var(--subtle-border)] bg-[var(--canvas)] text-[var(--ink)]">
+              {/* Inner Android Viewport matching native Compose theme & compact height */}
+              <div className="relative flex h-[510px] flex-col justify-between overflow-hidden rounded-[28px] border border-[var(--subtle-border)] bg-[var(--canvas)] text-[var(--ink)] sm:h-[536px]">
                 {/* Native Android Status Strip */}
                 <div className="flex shrink-0 items-center justify-between px-5 pt-3 pb-1.5 font-mono text-[10px] font-semibold text-[var(--ink-muted)] tabular-nums">
                   <span>9:41</span>
@@ -384,14 +383,14 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 </div>
 
                 {/* Active Native Screen Body */}
-                <div className="flex-1 overflow-hidden px-3.5 pt-1.5 pb-2.5">
+                <div className="flex-1 overflow-y-auto px-3 pt-1 pb-2">
                   {/* SCREEN 01: ShieldScreen.kt */}
                   {activeTab === 'shield' ? (
-                    <div className="flex h-full flex-col justify-between gap-2.5">
-                      <div className="rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-3.5">
+                    <div className="flex h-full flex-col justify-between gap-2">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-display text-sm font-bold whitespace-nowrap text-[var(--ink)]">
+                            <p className="font-display text-[13px] font-bold whitespace-nowrap text-[var(--ink)]">
                               GambleAware · Tunde
                             </p>
                             <p className="text-[10px] text-[var(--ink-muted)]">
@@ -404,8 +403,8 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                           </span>
                         </div>
 
-                        <div className="my-1 flex justify-center">
-                          <div className="-my-4 scale-[0.78]">
+                        <div className="my-0.5 flex justify-center">
+                          <div className="-my-6 scale-[0.68]">
                             <LiquidShieldOrb
                               isProtected
                               isLocked
@@ -414,14 +413,14 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                           </div>
                         </div>
 
-                        <p className="text-center font-display text-sm font-bold text-[var(--ink)]">
+                        <p className="text-center font-display text-[13px] font-bold text-[var(--ink)]">
                           DNS Shield &amp; Lock On
                         </p>
                         <p className="mt-0.5 text-center text-[10px] leading-snug text-[var(--ink-muted)]">
                           Blocking SportyBet, Bet9ja, Bet365, 1xBet, Stake &amp; betting apps.
                         </p>
 
-                        <div className="mt-2.5 flex items-center justify-between rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-2 text-[10px]">
+                        <div className="mt-2 flex items-center justify-between rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2.5 py-1.5 text-[10px]">
                           <span className="flex items-center gap-1.5 font-medium text-[var(--ink)]">
                             <LockKeyhole className="h-3 w-3 text-[var(--accent-ink)]" />
                             <span>{formatLockDurationLong(previewLockDays)} Lock</span>
@@ -433,19 +432,19 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                       </div>
 
                       <div className="grid grid-cols-3 gap-1.5">
-                        <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2.5">
+                        <div className="rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2">
                           <p className="text-[9px] text-[var(--ink-muted)]">Clean Streak</p>
                           <p className="mt-0.5 font-mono text-xs font-bold text-[var(--ink)] tabular-nums">
                             7d 14h
                           </p>
                         </div>
-                        <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2.5">
+                        <div className="rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2">
                           <p className="text-[9px] text-[var(--ink-muted)]">Blocked</p>
                           <p className="mt-0.5 font-mono text-xs font-bold text-[var(--ink)] tabular-nums">
                             28
                           </p>
                         </div>
-                        <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--muted-fill)] p-2.5">
+                        <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--muted-fill)] p-2">
                           <p className="text-[9px] text-[var(--ink-muted)]">Saved (7d)</p>
                           <p className="mt-0.5 font-mono text-xs font-bold text-[var(--accent-ink)] tabular-nums">
                             {weekSaved}
@@ -453,14 +452,14 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between rounded-2xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2">
+                      <div className="flex items-center justify-between rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2.5 py-1.5">
                         <div className="flex min-w-0 items-center gap-2">
                           <BettingBrandLogo target="sportybet.com" size="xs" />
                           <div className="min-w-0">
                             <p className="truncate font-mono text-[11px] font-semibold text-[var(--ink)]">
                               sportybet.com
                             </p>
-                            <p className="text-[10px] text-[var(--ink-muted)]">
+                            <p className="text-[9.5px] text-[var(--ink-muted)]">
                               DNS Shield · Sportsbook · Just now
                             </p>
                           </div>
@@ -474,9 +473,9 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
 
                   {/* SCREEN 02: BlocklistScreen.kt */}
                   {activeTab === 'rules' ? (
-                    <div className="flex h-full flex-col gap-2.5">
+                    <div className="flex h-full flex-col justify-between gap-2">
                       <div className="px-0.5">
-                        <p className="font-display text-base font-bold text-[var(--ink)]">
+                        <p className="font-display text-[15px] font-bold text-[var(--ink)]">
                           Blocklist &amp; Rules
                         </p>
                         <p className="text-[10px] text-[var(--ink-muted)]">
@@ -484,15 +483,15 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                         </p>
                       </div>
 
-                      <div className="rounded-[20px] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-3">
-                        <p className="text-xs font-semibold text-[var(--ink)]">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-2.5">
+                        <p className="text-[11px] font-semibold text-[var(--ink)]">
                           Gambling Categories
                         </p>
-                        <p className="text-[10px] text-[var(--ink-muted)]">
+                        <p className="text-[9.5px] text-[var(--ink-muted)]">
                           {builtInDomainCount}+ sites included out of the box
                         </p>
 
-                        <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/70">
+                        <div className="mt-1.5 divide-y divide-[var(--subtle-border)]/70">
                           {[
                             { name: 'Sportsbooks & Live Betting', count: '210+ sites' },
                             { name: 'Online Casinos & Slots', count: '190+ sites' },
@@ -501,7 +500,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                           ].map((cat) => (
                             <div
                               key={cat.name}
-                              className="flex items-center justify-between py-2 text-[11px]"
+                              className="flex items-center justify-between py-1.5 text-[10.5px]"
                             >
                               <div>
                                 <p className="font-medium text-[var(--ink)]">{cat.name}</p>
@@ -515,11 +514,11 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                         </div>
                       </div>
 
-                      <div className="rounded-[20px] border border-[var(--subtle-border)] bg-[var(--surface)] p-3">
-                        <p className="text-xs font-semibold text-[var(--ink)]">
+                      <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2.5">
+                        <p className="text-[11px] font-semibold text-[var(--ink)]">
                           Device-Wide Filters
                         </p>
-                        <div className="mt-2 space-y-2 text-[11px]">
+                        <div className="mt-1.5 space-y-1.5 text-[10.5px]">
                           {[
                             { label: 'Browsers & In-App Links', detail: 'Chrome, IG, TikTok, TG' },
                             { label: 'Installed & New APKs', detail: `${builtInAppCount}+ betting apps` },
@@ -712,10 +711,10 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                           ))}
                         </div>
 
-                        <p className="mt-2.5 mb-1.5 text-[10px] font-medium text-[var(--ink-muted)]">
+                        <p className="mt-2 mb-1 text-[10px] font-medium text-[var(--ink-muted)]">
                           Select lock duration:
                         </p>
-                        <div className="grid grid-cols-7 gap-1">
+                        <div className="grid grid-cols-4 gap-1">
                           {LOCK_DURATION_PRESETS.map((preset) => {
                             const selected = previewLockDays === preset.days;
                             return (
@@ -727,7 +726,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                                   setPreviewLockDays(preset.days);
                                 }}
                                 aria-label={`Preview ${preset.label} lock`}
-                                className={`h-7 cursor-pointer rounded-md border px-0 font-mono text-[9.5px] font-semibold transition-colors ${
+                                className={`h-6 cursor-pointer rounded-md border px-0 font-mono text-[9.5px] font-semibold transition-colors ${
                                   selected
                                     ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                                     : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
@@ -804,57 +803,57 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
       </section>
 
       {/* Covered Betting Platforms With Exact Logos */}
-      <section className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-12">
+      <section className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-9">
         <div className="max-w-2xl">
-          <h2 className="font-display text-2xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-3xl">
+          <h2 className="font-display text-xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-2xl">
             Every major betting platform recognized &amp; blocked.
           </h2>
-          <p className="mt-2.5 text-sm leading-relaxed text-[var(--ink-muted)]">
+          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
             {builtInDomainCount}+ sportsbooks, casinos, crash sites, mirrors, and {builtInAppCount}+
             betting apps stopped automatically across Africa, UK, North America, and crypto rooms.
           </p>
         </div>
 
-        <div className="mt-7">
+        <div className="mt-5">
           <FeaturedBrandsWall limit={16} />
         </div>
       </section>
 
       {/* Numbered Capabilities Bento Grid */}
-      <section id="features" className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-12">
+      <section id="features" className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-9">
         <div className="max-w-2xl">
-          <h2 className="font-display text-2xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-3xl">
+          <h2 className="font-display text-xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-2xl">
             Six protections built directly into Android.
           </h2>
-          <p className="mt-2.5 text-sm leading-relaxed text-[var(--ink-muted)]">
+          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
             Everything runs locally on your phone with no account, no subscription, and no server
             dependency. Clearing cache or app data will not wipe your timer or blocklist.
           </p>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12">
+        <div className="mt-6 grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-12">
           {features.map((feat) => {
             const Icon = feat.icon;
             return (
               <LiquidGlassCard
                 key={feat.num}
-                className={`flex flex-col justify-between p-6 ${
+                className={`flex flex-col justify-between p-4 sm:p-5 ${
                   feat.wide ? 'lg:col-span-6' : 'lg:col-span-3'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-bold text-[var(--accent-ink)] tabular-nums">
+                    <span className="font-mono text-xs font-bold text-[var(--accent-ink)] tabular-nums">
                       {feat.num}.
                     </span>
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--accent-ink)]">
-                      <Icon className="h-4 w-4" />
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--accent-ink)]">
+                      <Icon className="h-3.5 w-3.5" />
                     </span>
                   </div>
-                  <h3 className="mt-4 font-display text-lg font-semibold text-[var(--ink)]">
+                  <h3 className="mt-3 font-display text-base font-semibold text-[var(--ink)]">
                     {feat.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)]">{feat.body}</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-[13px]">{feat.body}</p>
                 </div>
               </LiquidGlassCard>
             );
@@ -865,22 +864,22 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
       {/* Android & iPhone (2-Platform Clean Layout — No Desktop Web App Clutter) */}
       <section
         id="platforms"
-        className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-12"
+        className="scroll-mt-20 border-t border-[var(--subtle-border)] pt-9"
       >
         <div className="max-w-2xl">
-          <h2 className="font-display text-2xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-3xl">
+          <h2 className="font-display text-xl font-bold tracking-tight text-balance text-[var(--ink)] sm:text-2xl">
             Built for Android &amp; iPhone.
           </h2>
-          <p className="mt-2.5 text-sm leading-relaxed text-[var(--ink-muted)]">
+          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
             Install the native Android APK for on-device DNS Shield blocking, or set up GambleAware
             on your iPhone cleanly via Safari Home Screen + Screen Time.
           </p>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-3.5 md:grid-cols-2">
           {orderedPlatformCards.map((platformKey) =>
             platformKey === 'android' ? (
-              <LiquidGlassCard key="android" className="flex flex-col justify-between p-6">
+              <LiquidGlassCard key="android" className="flex flex-col justify-between p-4 sm:p-5">
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-[var(--accent-ink)]">
@@ -920,14 +919,14 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 <a
                   href={ANDROID_APK_DOWNLOAD_URL}
                   rel="noopener noreferrer"
-                  className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                  className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
                 >
                   <Download className="h-4 w-4 shrink-0" />
                   <span>Download GambleAware.apk</span>
                 </a>
               </LiquidGlassCard>
             ) : (
-              <LiquidGlassCard key="ios" className="flex flex-col justify-between p-6">
+              <LiquidGlassCard key="ios" className="flex flex-col justify-between p-4 sm:p-5">
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-[var(--accent-ink)]">
@@ -1008,11 +1007,11 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
       </section>
 
       {/* Clean Editorial 01/02/03 Install Guide + Play Protect Clearance + Gamban Comparison */}
-      <section className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        <LiquidGlassCard className="p-6 lg:col-span-5">
+      <section className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
+        <LiquidGlassCard className="p-4 sm:p-5 lg:col-span-5">
           <div id="install-guide" className="scroll-mt-20">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-display text-xl font-bold text-[var(--ink)]">
+              <h2 className="font-display text-lg font-bold text-[var(--ink)] sm:text-xl">
                 {installGuideTab === 'ios'
                   ? 'How to install on iPhone'
                   : 'How to install on Android'}
@@ -1188,7 +1187,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
                 <a
                   href={ANDROID_APK_DOWNLOAD_URL}
                   rel="noopener noreferrer"
-                  className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+                  className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
                 >
                   <Download className="h-4 w-4 shrink-0" />
                   <span>Download Android App</span>
@@ -1198,9 +1197,9 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({ onOpenWebApp }) 
           </div>
         </LiquidGlassCard>
 
-        <LiquidGlassCard className="p-6 lg:col-span-7">
+        <LiquidGlassCard className="p-4 sm:p-5 lg:col-span-7">
           <div id="comparison" className="scroll-mt-20">
-            <h2 className="font-display text-xl font-bold text-[var(--ink)]">
+            <h2 className="font-display text-lg font-bold text-[var(--ink)] sm:text-xl">
               GambleAware vs. Gamban
             </h2>
             <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">

@@ -159,23 +159,23 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
-      {/* Personalized Greeting Hero Bar */}
-      <div className="flex flex-col justify-between gap-3 rounded-[24px] border border-[var(--subtle-border)] bg-[var(--glass-fill)] px-5 py-4 backdrop-blur-xl sm:flex-row sm:items-center">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3.5 px-3.5 pt-3.5 pb-24 sm:px-5 md:px-6 md:pt-5 md:pb-12">
+      {/* Compact Personalized Greeting Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-[var(--subtle-border)] bg-[var(--glass-fill)] px-4 py-3 backdrop-blur-xl">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p className="text-[11px] font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <p className="text-[10px] font-bold tracking-wider text-[var(--accent-ink)] uppercase">
               {isArmed ? 'Protection Active' : 'Protection Paused'}
             </p>
             {state.highRiskStatus.isActive ? (
-              <span className="font-mono text-[11px] font-semibold text-[var(--accent-ink)] uppercase">
-                · High-Risk Guard Heightened
+              <span className="font-mono text-[10px] font-semibold text-[var(--accent-ink)] uppercase">
+                · High-Risk Guard On
               </span>
             ) : null}
           </div>
 
           {editingName ? (
-            <form onSubmit={handleSaveName} className="mt-1.5 flex max-w-sm items-center gap-2">
+            <form onSubmit={handleSaveName} className="mt-1 flex max-w-xs items-center gap-1.5">
               <input
                 type="text"
                 maxLength={40}
@@ -183,27 +183,27 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 onChange={(e) => setNameDraft(e.target.value)}
                 placeholder="Enter your first name"
                 autoFocus
-                className="h-9 min-w-0 flex-1 rounded-[12px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3 text-sm text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none"
+                className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--subtle-border)] bg-[var(--canvas)] px-2.5 text-xs text-[var(--ink)] focus:border-[var(--active-fill)] focus:outline-none sm:text-sm"
               />
               <button
                 type="submit"
                 aria-label="Save first name"
-                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)] hover:opacity-90"
+                className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-[var(--active-fill)] text-[var(--active-content)] hover:opacity-90"
               >
-                <Check className="h-4 w-4" />
+                <Check className="h-3.5 w-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => setEditingName(false)}
                 aria-label="Cancel name edit"
-                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] border border-[var(--subtle-border)] text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[var(--subtle-border)] text-[var(--ink-muted)] hover:text-[var(--ink)]"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </form>
           ) : (
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-[26px]">
+              <h1 className="font-display text-lg font-bold tracking-tight text-[var(--ink)] sm:text-xl">
                 {greeting.headline}
               </h1>
               <button
@@ -214,29 +214,29 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 }}
                 aria-label="Personalize greeting name"
                 title="Personalize greeting name"
-                className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-2 py-0.5 text-[10px] font-medium text-[var(--ink-muted)] hover:text-[var(--ink)]"
               >
-                <Pencil className="h-3 w-3 text-[var(--accent-ink)]" />
-                <span>{state.firstName ? 'Edit name' : 'Add name'}</span>
+                <Pencil className="h-2.5 w-2.5 text-[var(--accent-ink)]" />
+                <span>{state.firstName ? 'Edit' : 'Add name'}</span>
               </button>
             </div>
           )}
 
-          <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
+          <p className="mt-0.5 text-xs leading-snug text-[var(--ink-muted)]">
             {greeting.subline}
           </p>
         </div>
 
-        <div className="flex w-full shrink-0 sm:w-auto">
+        {state.goals.length > 0 || !showGoalReminder ? (
           <button
             type="button"
             onClick={() => onOpenGoalModal()}
-            className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
+            className="inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:h-9"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>{state.goals.length === 0 ? 'Create Goal' : 'Add Goal'}</span>
           </button>
-        </div>
+        ) : null}
       </div>
 
       {/* Automatic Goal Creation Reminder Banner when user has no goals */}
@@ -249,60 +249,11 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
         />
       ) : null}
 
-      {/* Compact Non-Intrusive Download Prompt Banner */}
-      {!promptDismissed && !isInstalled ? (
-        <div className="flex flex-col gap-3 rounded-[22px] border border-[var(--glass-border)] bg-[var(--muted-fill)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
-              <Download className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-display text-sm font-semibold text-[var(--ink)]">
-                  Get GambleAware on Your Phone
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setPromptDismissed(true)}
-                  aria-label="Dismiss download banner"
-                  className="-mt-1 -mr-1 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--surface)] hover:text-[var(--ink)] sm:hidden"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="mt-0.5 text-xs leading-snug text-[var(--ink-muted)]">
-                {isIOS
-                  ? 'Tap Safari Share → Add to Home Screen, then paste the 22 betting sites into Settings → Screen Time.'
-                  : 'Download the Android APK for device-wide On-Device DNS Shield or view the setup guide.'}
-              </p>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onOpenDownloadPage}
-              className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:w-auto"
-            >
-              <span>{isIOS ? 'iPhone Setup Guide' : 'Get Android APK'}</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setPromptDismissed(true)}
-              aria-label="Dismiss download banner"
-              className="hidden h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--surface)] hover:text-[var(--ink)] sm:flex"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      ) : null}
-
       {/* Top Two-Column Workspace on Desktop, Single Column on Mobile */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
         {/* Left Column: Hero Anchor Chronograph Orb, Metrics & Personalized Goals */}
-        <div className="flex flex-col gap-4 lg:col-span-5">
-          <LiquidGlassCard className="p-5 sm:p-6">
+        <div className="flex flex-col gap-3.5 lg:col-span-5">
+          <LiquidGlassCard className="p-4 sm:p-5">
             <div className="flex flex-col items-center">
               <div className="flex w-full items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
@@ -330,7 +281,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 )}
               </div>
 
-              <div className="mt-4">
+              <div className="mt-3">
                 <LiquidShieldOrb
                   isProtected={isArmed}
                   isLocked={isLocked}
@@ -339,22 +290,22 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 />
               </div>
 
-              <h2 className="mt-3.5 text-center font-display text-xl font-bold text-[var(--ink)]">
+              <h2 className="mt-3 text-center font-display text-lg font-bold text-[var(--ink)]">
                 {statusTitle}
               </h2>
-              <p className="mt-1 max-w-md text-center text-xs leading-relaxed text-[var(--ink-muted)]">
+              <p className="mt-1 max-w-md text-center text-xs leading-snug text-[var(--ink-muted)]">
                 {statusSubtitle}
               </p>
 
               {isLocked ? (
-                <div className="mt-3.5 flex w-full items-center justify-between rounded-[18px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3.5 py-3">
+                <div className="mt-3 flex w-full items-center justify-between rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-2.5">
                   <div className="flex items-center gap-2">
-                    <LockKeyhole className="h-4 w-4 text-[var(--accent-ink)]" />
+                    <LockKeyhole className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
                     <span className="text-xs font-medium text-[var(--ink)]">
                       {isIOS ? 'Commitment Lock Timer' : 'Uninstall Lock Timer'}
                     </span>
                   </div>
-                  <span className="font-mono text-sm font-semibold tabular-nums text-[var(--ink)]">
+                  <span className="font-mono text-xs font-semibold tabular-nums text-[var(--ink)] sm:text-sm">
                     {state.lockCountdownFormatted}
                   </span>
                 </div>
@@ -363,7 +314,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               <button
                 type="button"
                 onClick={onPrimaryShieldClick}
-                className={`mt-4 flex h-[50px] w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] px-5 text-sm font-semibold transition-colors duration-150 ${
+                className={`mt-3.5 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] px-4 text-xs font-semibold transition-colors duration-150 sm:h-11 sm:text-sm ${
                   isArmed
                     ? 'bg-[var(--muted-fill)] text-[var(--muted-content)] hover:opacity-90'
                     : 'bg-[var(--active-fill)] text-[var(--active-content)] hover:opacity-90'
@@ -383,30 +334,30 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
 
           {/* Responsive Metrics Trio */}
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-            <LiquidGlassCard className="rounded-[22px] p-3.5">
-              <p className="truncate text-xs font-medium text-[var(--ink-muted)]">Clean Streak</p>
-              <p className="mt-1.5 truncate font-mono text-lg font-bold tabular-nums text-[var(--ink)]">
+            <LiquidGlassCard className="rounded-2xl p-3">
+              <p className="truncate text-[11px] font-medium text-[var(--ink-muted)]">Clean Streak</p>
+              <p className="mt-1 truncate font-mono text-base font-bold tabular-nums text-[var(--ink)]">
                 {cleanMetricValue}
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-[var(--ink-muted)]">
+              <p className="mt-0.5 truncate text-[10px] text-[var(--ink-muted)]">
                 Next: {state.nextMilestone.label}
               </p>
             </LiquidGlassCard>
-            <LiquidGlassCard className="rounded-[22px] p-3.5">
-              <p className="truncate text-xs font-medium text-[var(--ink-muted)]">Blocked</p>
-              <p className="mt-1.5 truncate font-mono text-lg font-bold tabular-nums text-[var(--ink)]">
+            <LiquidGlassCard className="rounded-2xl p-3">
+              <p className="truncate text-[11px] font-medium text-[var(--ink-muted)]">Blocked</p>
+              <p className="mt-1 truncate font-mono text-base font-bold tabular-nums text-[var(--ink)]">
                 {state.todayBlockedCount}
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-[var(--ink-muted)]">
+              <p className="mt-0.5 truncate text-[10px] text-[var(--ink-muted)]">
                 {state.totalBlockedCount} total
               </p>
             </LiquidGlassCard>
-            <LiquidGlassCard className="col-span-2 rounded-[22px] p-3.5 sm:col-span-1">
-              <p className="truncate text-xs font-medium text-[var(--ink-muted)]">Est. Saved</p>
-              <p className="mt-1.5 truncate font-mono text-lg font-bold tabular-nums text-[var(--accent-ink)]">
+            <LiquidGlassCard className="col-span-2 rounded-2xl p-3 sm:col-span-1">
+              <p className="truncate text-[11px] font-medium text-[var(--ink-muted)]">Est. Saved</p>
+              <p className="mt-1 truncate font-mono text-base font-bold tabular-nums text-[var(--accent-ink)]">
                 {savedFormatted}
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-[var(--ink-muted)]">
+              <p className="mt-0.5 truncate text-[10px] text-[var(--ink-muted)]">
                 {state.totalUrgeResistedCount} urges resisted
               </p>
             </LiquidGlassCard>
@@ -425,9 +376,9 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
         </div>
 
         {/* Right Column: Site Check, High-Risk Guard, GambleAware AI, Setup, Calm & Vault */}
-        <div className="flex flex-col gap-4 lg:col-span-7">
+        <div className="flex flex-col gap-3.5 lg:col-span-7">
           {/* Check or Block a Website */}
-          <LiquidGlassCard className="p-4 sm:p-5" tourKey="domain_lookup">
+          <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="domain_lookup">
             <LiquidSectionHeader
               title="Check or Block a Website"
               subtitle="Type a betting brand (e.g. sportybet) or URL — blocked immediately as you type"
@@ -439,32 +390,32 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                   onTestOrRedirectUrl(state.domainLookupQuery);
                 }
               }}
-              className="mt-3 flex flex-col gap-2 sm:flex-row"
+              className="mt-2.5 flex flex-col gap-2 sm:flex-row"
             >
               <div className="relative flex-1">
-                <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--accent-ink)]" />
+                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--accent-ink)]" />
                 <input
                   type="text"
                   value={state.domainLookupQuery}
                   onChange={(e) => onDomainLookupChanged(e.target.value)}
                   placeholder="Type sportybet, bet9ja, stake.c, or full URL"
-                  className="h-12 w-full rounded-[18px] border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-10 pl-10 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-9 pl-9 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
                 />
                 {state.domainLookupQuery ? (
                   <button
                     type="button"
                     onClick={() => onDomainLookupChanged('')}
                     aria-label="Clear site search"
-                    className="absolute top-1/2 right-2.5 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                    className="absolute top-1/2 right-2 flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:text-[var(--ink)]"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 ) : null}
               </div>
               <button
                 type="submit"
                 disabled={!state.domainLookupQuery.trim()}
-                className="inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[18px] bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 disabled:opacity-50"
               >
                 <ShieldAlert className="h-4 w-4" />
                 <span>Check Site</span>
@@ -536,7 +487,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           </LiquidGlassCard>
 
           {/* Blocked Betting Sites & Apps Summary Card (DuckDuckGo-Style List) */}
-          <LiquidGlassCard className="p-4 sm:p-5">
+          <LiquidGlassCard className="p-3.5 sm:p-4">
             <LiquidSectionHeader
               title="Blocked Betting Sites & Apps"
               subtitle={
@@ -547,16 +498,16 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             />
 
             {state.groupedBlockedSites.length > 0 ? (
-              <div className="mt-3 space-y-2" data-testid="shield-blocked-sites-list">
+              <div className="mt-2.5 space-y-1.5" data-testid="shield-blocked-sites-list">
                 {state.groupedBlockedSites.slice(0, 6).map((site) => {
                   const timeAgo = formatBlockedTimestamp(site.latestTimestamp, state.currentTimeMs);
                   return (
                     <div
                       key={site.key}
-                      className="flex items-center justify-between gap-2.5 rounded-[16px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2.5"
+                      className="flex items-center justify-between gap-2 rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2.5 py-2"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                        <BettingBrandLogo target={site.target} size="md" />
+                        <BettingBrandLogo target={site.target} size="sm" />
                         <div className="min-w-0">
                           <p className="truncate font-mono text-xs font-bold text-[var(--ink)]">
                             {site.target}
@@ -575,11 +526,11 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               </div>
             ) : null}
 
-            <div className="mt-3">
+            <div className="mt-2.5">
               <p className="text-[10px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
                 Flagship Blocked Platforms ({state.builtInDomainCount}+)
               </p>
-              <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 {[
                   { domain: 'sportybet.com', label: 'SportyBet' },
                   { domain: 'bet9ja.com', label: 'Bet9ja' },
@@ -594,7 +545,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                     key={brand.domain}
                     type="button"
                     onClick={() => onTestOrRedirectUrl(brand.domain)}
-                    className="flex cursor-pointer items-center gap-2 rounded-[12px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--muted-fill)]"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-2 py-1.5 text-left transition-colors hover:bg-[var(--muted-fill)]"
                   >
                     <BettingBrandLogo target={brand.domain} size="xs" />
                     <span className="truncate text-[11px] font-semibold text-[var(--ink)]">
@@ -605,12 +556,12 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               {state.recentEvents.length > 0 ? (
                 <button
                   type="button"
                   onClick={onNavigateToProgress}
-                  className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                  className="inline-flex h-9 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
                 >
                   View Full Log ({state.groupedBlockedSites.length})
                 </button>
@@ -618,7 +569,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               <button
                 type="button"
                 onClick={onNavigateToRules}
-                className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-4 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="inline-flex h-9 flex-1 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 Browse Blocklist
               </button>
@@ -644,12 +595,12 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           />
 
           {showQuickOnboarding ? (
-            <LiquidGlassCard className="p-4 sm:p-5">
+            <LiquidGlassCard className="p-3.5 sm:p-4">
               <LiquidSectionHeader
                 title="3 Simple Steps to Stay Protected"
                 subtitle="Set these up once so it stays hard to gamble during an urge"
               />
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="mt-2.5 flex flex-col gap-1.5">
                 <SetupStepRow
                   step="1"
                   title={isIOS ? 'Turn On Safari & Site Shield' : 'Turn On DNS & Site Shield'}
@@ -688,17 +639,17 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           ) : null}
 
           {/* SOS Calm Support + Zero-Loss Recovery Vault */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <LiquidGlassCard className="p-4 sm:p-5" tourKey="sos_calm_bar">
+          <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+            <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="sos_calm_bar">
               <LiquidSectionHeader
                 title="Calm & Support Tools"
                 subtitle="Quick help whenever an urge hits"
               />
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={onLaunchCalmReset}
-                  className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90"
+                  className="flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90"
                 >
                   <Wind className="h-3.5 w-3.5 shrink-0" />
                   <span>60s Calm</span>
@@ -706,7 +657,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
                 <button
                   type="button"
                   onClick={onOpenUrgeJournal}
-                  className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-2.5 text-xs font-medium whitespace-nowrap text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                  className="flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-2.5 text-xs font-medium whitespace-nowrap text-[var(--ink)] hover:bg-[var(--muted-fill)]"
                 >
                   <NotebookPen className="h-3.5 w-3.5 shrink-0" />
                   <span>Log Victory</span>
@@ -715,9 +666,9 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
               <button
                 type="button"
                 onClick={onOpenSafeSupport}
-                className="mt-2.5 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] px-4 text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
+                className="mt-2 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] px-4 text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
-                <Heart className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                <Heart className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
                 <span>Talk to Confidential Support</span>
               </button>
             </LiquidGlassCard>
@@ -732,31 +683,70 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
         </div>
       </div>
 
+      {/* Non-Intrusive Phone App Prompt (Placed below core dashboard so Shield Orb is above the fold) */}
+      {!promptDismissed && !isInstalled ? (
+        <div className="flex flex-col gap-2.5 rounded-2xl border border-[var(--glass-border)] bg-[var(--muted-fill)] px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
+              <Download className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-xs font-semibold text-[var(--ink)] sm:text-sm">
+                Get GambleAware on Your Phone
+              </p>
+              <p className="truncate text-[11px] text-[var(--ink-muted)]">
+                {isIOS
+                  ? 'Safari Share → Add to Home Screen + Screen Time blocker list'
+                  : 'Download Android APK for device-wide On-Device DNS Shield'}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onOpenDownloadPage}
+              className="inline-flex h-8 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90 sm:flex-initial"
+            >
+              <span>{isIOS ? 'iPhone Guide' : 'Get Android APK'}</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPromptDismissed(true)}
+              aria-label="Dismiss download banner"
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Clear Everyday Navigation Shortcuts */}
-      <LiquidGlassCard className="p-4 sm:p-5">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <LiquidSectionHeader
             title="Where to Go Next"
             subtitle="Everything you need is one tap away"
           />
         </div>
-        <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <EngineStatusRow
-            icon={<Compass className="h-5 w-5" />}
+            icon={<Compass className="h-4 w-4" />}
             title="Blocked Sites & Apps"
             subtitle={`${state.builtInDomainCount}+ sites ready · customize anytime`}
             isReady={isArmed}
             onClick={onNavigateToRules}
           />
           <EngineStatusRow
-            icon={<TrendingUp className="h-5 w-5" />}
+            icon={<TrendingUp className="h-4 w-4" />}
             title="Progress & Money Saved"
             subtitle="Check your streak, simulator & ₦ saved"
             isReady={state.goals.length > 0}
             onClick={onNavigateToProgress}
           />
           <EngineStatusRow
-            icon={<Timer className="h-5 w-5" />}
+            icon={<Timer className="h-4 w-4" />}
             title="Lock Timer & PIN"
             subtitle={
               isLocked
@@ -767,7 +757,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
             onClick={onNavigateToLock}
           />
           <EngineStatusRow
-            icon={<Smartphone className="h-5 w-5" />}
+            icon={<Smartphone className="h-4 w-4" />}
             title="Get Phone App"
             subtitle="Install GambleAware on Android or iPhone"
             isReady={false}
@@ -777,9 +767,9 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
       </LiquidGlassCard>
 
       {/* Footer */}
-      <footer className="py-2 text-center">
+      <footer className="py-1 text-center">
         <p className="text-xs font-semibold text-[var(--ink)]">GambleAware</p>
-        <p className="text-xs text-[var(--ink-muted)]">
+        <p className="text-[11px] text-[var(--ink-muted)]">
           A product of Imoogle Technology • Free Forever
         </p>
       </footer>
@@ -797,12 +787,12 @@ const SetupStepRow: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`flex w-full cursor-pointer items-center gap-3 rounded-[16px] border border-[var(--subtle-border)] p-3 text-left transition-colors ${
+    className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-[var(--subtle-border)] p-2.5 text-left transition-colors ${
       done ? 'bg-[var(--muted-fill)]' : 'bg-[var(--control-bg)] hover:bg-[var(--muted-fill)]'
     }`}
   >
     <span
-      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--subtle-border)] text-xs font-bold ${
+      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--subtle-border)] text-[11px] font-bold ${
         done
           ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
           : 'bg-[var(--control-bg)] text-[var(--ink)]'
@@ -811,13 +801,13 @@ const SetupStepRow: React.FC<{
       {step}
     </span>
     <div className="min-w-0 flex-1">
-      <p className="text-sm font-semibold text-[var(--ink)]">{title}</p>
-      <p className="text-xs text-[var(--ink-muted)]">{subtitle}</p>
+      <p className="text-xs font-semibold text-[var(--ink)] sm:text-sm">{title}</p>
+      <p className="text-[11px] text-[var(--ink-muted)]">{subtitle}</p>
     </div>
     {done ? (
-      <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+      <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
     ) : (
-      <Circle className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
+      <Circle className="h-4 w-4 shrink-0 text-[var(--ink-muted)]" />
     )}
   </button>
 );
@@ -832,12 +822,12 @@ const EngineStatusRow: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`flex w-full cursor-pointer items-center gap-3 rounded-[18px] border border-[var(--subtle-border)] p-3.5 text-left transition-colors ${
+    className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-[var(--subtle-border)] p-3 text-left transition-colors ${
       isReady ? 'bg-[var(--muted-fill)]' : 'bg-[var(--control-bg)] hover:bg-[var(--muted-fill)]'
     }`}
   >
     <div
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] ${
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
         isReady
           ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
           : 'bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]'
@@ -846,13 +836,13 @@ const EngineStatusRow: React.FC<{
       {icon}
     </div>
     <div className="min-w-0 flex-1">
-      <p className="text-sm font-semibold text-[var(--ink)]">{title}</p>
-      <p className="text-xs text-[var(--ink-muted)]">{subtitle}</p>
+      <p className="truncate text-xs font-semibold text-[var(--ink)] sm:text-sm">{title}</p>
+      <p className="truncate text-[11px] text-[var(--ink-muted)]">{subtitle}</p>
     </div>
     {isReady ? (
-      <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+      <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
     ) : (
-      <ChevronRight className="h-5 w-5 shrink-0 text-[var(--ink-muted)]" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-[var(--ink-muted)]" />
     )}
   </button>
 );

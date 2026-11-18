@@ -45,11 +45,11 @@ export const HighRiskGuardCard: React.FC<HighRiskGuardCardProps> = ({
   ];
 
   return (
-    <LiquidGlassCard className="p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
+    <LiquidGlassCard className="p-3.5 sm:p-4">
+      <div className="flex items-start justify-between gap-2.5">
         <div className="flex min-w-0 items-start gap-2.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
-            <CalendarClock className="h-5 w-5" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
+            <CalendarClock className="h-4 w-4" />
           </div>
           <LiquidSectionHeader
             title="Smart High-Risk Schedule"
@@ -57,7 +57,7 @@ export const HighRiskGuardCard: React.FC<HighRiskGuardCardProps> = ({
           />
         </div>
         <span
-          className={`shrink-0 font-mono text-[11px] font-semibold ${
+          className={`shrink-0 font-mono text-[10px] font-semibold ${
             status.isActive ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-muted)]'
           }`}
         >
@@ -65,7 +65,7 @@ export const HighRiskGuardCard: React.FC<HighRiskGuardCardProps> = ({
         </span>
       </div>
 
-      <div className="mt-3 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-2 text-xs">
+      <div className="mt-2.5 rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3 py-2 text-xs">
         <p className="font-semibold text-[var(--ink)]">
           {status.isActive
             ? `Active now: ${status.activeLabels.join(' · ')}`
@@ -74,13 +74,13 @@ export const HighRiskGuardCard: React.FC<HighRiskGuardCardProps> = ({
         <p className="mt-0.5 text-[11px] text-[var(--ink-muted)]">{status.nextWindowHint}</p>
       </div>
 
-      <div className="mt-3 divide-y divide-[var(--subtle-border)]/50">
+      <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/50">
         {rows.map((row) => (
-          <div key={row.key} className="flex items-center justify-between gap-3 py-2.5 first:pt-1 last:pb-1">
-            <div className="flex min-w-0 flex-1 items-start gap-2.5">
+          <div key={row.key} className="flex items-center justify-between gap-3 py-2 first:pt-1 last:pb-1">
+            <div className="flex min-w-0 flex-1 items-start gap-2">
               <div className="mt-0.5 shrink-0">{row.icon}</div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-[var(--ink)] sm:text-sm">{row.title}</p>
+                <p className="text-xs font-semibold text-[var(--ink)]">{row.title}</p>
                 <p className="text-[11px] text-[var(--ink-muted)]">{row.subtitle}</p>
               </div>
             </div>

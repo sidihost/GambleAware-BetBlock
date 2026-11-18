@@ -244,11 +244,11 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
   const showSupport = activeTab === 'all' || activeTab === 'support';
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3.5 px-3.5 pt-3.5 pb-24 sm:px-5 md:px-6 md:pt-5 md:pb-12">
       {/* Page Title & Clean View Switcher */}
-      <div className="flex flex-col justify-between gap-3 px-1 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-2.5 px-0.5 sm:flex-row sm:items-end">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
+          <h1 className="font-display text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl">
             Recovery Resources &amp; Support
           </h1>
           <p className="text-xs text-[var(--ink-muted)]">
@@ -260,7 +260,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
         <div
           role="tablist"
           aria-label="Resources sections"
-          className="inline-flex flex-wrap gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] p-1"
+          className="inline-flex flex-wrap gap-1 self-start rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] p-1 sm:self-auto"
         >
           {(
             [
@@ -278,7 +278,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setActiveTab(tab.id)}
-                className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
                   selected
                     ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                     : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -292,15 +292,15 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
       </div>
 
       {/* Urgent Relapse 48-Hour Reset Banner Card */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
-              <RefreshCw className="h-5 w-5" />
+      <LiquidGlassCard className="p-3.5 sm:p-4">
+        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+          <div className="flex min-w-0 flex-1 items-start gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
+              <RefreshCw className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-display text-base font-bold text-[var(--ink)]">
+                <h2 className="font-display text-[15px] font-bold text-[var(--ink)]">
                   I Relapsed — 48-Hour Reset Protocol
                 </h2>
                 {state.relapseLogs.length > 0 ? (
@@ -314,7 +314,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                 A slip does not erase weeks of brain rewiring. Stop chasing immediately, tighten
                 filters, extend your lock, and stabilize the next 48 hours without shame.
               </p>
-              <div className="mt-2.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
                 {RELAPSE_QUICK_ACTIONS.map((step) => (
                   <p key={step} className="text-[11px] text-[var(--ink)]">
                     <span className="font-bold text-[var(--accent-ink)]">·</span> {step}
@@ -328,7 +328,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
             type="button"
             onClick={() => setRelapseModalOpen(true)}
             data-testid="open-relapse-protocol-button"
-            className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90"
+            className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] hover:opacity-90"
           >
             <ShieldAlert className="h-4 w-4" />
             <span>Start Reset &amp; Harden Shield</span>
@@ -338,11 +338,11 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
 
       {/* Section 1: Personalized Recovery Survey & Recommendations */}
       {showSurvey ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <LiquidGlassCard className="p-4 sm:p-5 lg:col-span-7">
+        <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
+          <LiquidGlassCard className="p-3.5 sm:p-4 lg:col-span-7">
             <div className="flex items-start gap-2.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
-                <ClipboardCheck className="h-5 w-5" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
+                <ClipboardCheck className="h-4 w-4" />
               </div>
               <LiquidSectionHeader
                 title="Personalized Recovery Assessment"
@@ -518,7 +518,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
               <button
                 type="submit"
                 data-testid="generate-survey-plan-button"
-                className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 <ClipboardCheck className="h-4 w-4" />
                 <span>Generate Personalized Protection Plan</span>
@@ -527,7 +527,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
           </LiquidGlassCard>
 
           {/* Tailored Recommendations Output */}
-          <LiquidGlassCard className="flex flex-col justify-between p-4 sm:p-5 lg:col-span-5">
+          <LiquidGlassCard className="flex flex-col justify-between p-3.5 sm:p-4 lg:col-span-5">
             {surveyResult ? (
               <div data-testid="survey-recommendation-panel">
                 <div className="flex items-start justify-between gap-2">
@@ -616,11 +616,11 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
 
       {/* Section 2: Gamban-Parity Resources Library */}
       {showLibrary ? (
-        <LiquidGlassCard className="p-4 sm:p-5">
-          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <LiquidGlassCard className="p-3.5 sm:p-4">
+          <div className="flex flex-col justify-between gap-2.5 sm:flex-row sm:items-center">
             <div className="flex items-start gap-2.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
-                <BookOpen className="h-5 w-5" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
+                <BookOpen className="h-4 w-4" />
               </div>
               <LiquidSectionHeader
                 title="Bank Blocks, Self-Exclusion & Practical Guides"
@@ -727,11 +727,11 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
 
       {/* Section 3: Confidential Support Desk */}
       {showSupport ? (
-        <LiquidGlassCard className="p-4 sm:p-5">
-          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <LiquidGlassCard className="p-3.5 sm:p-4">
+          <div className="flex flex-col justify-between gap-2.5 sm:flex-row sm:items-center">
             <div className="flex items-start gap-2.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
-                <LifeBuoy className="h-5 w-5" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
+                <LifeBuoy className="h-4 w-4" />
               </div>
               <LiquidSectionHeader
                 title="Confidential Recovery Support Desk"
@@ -938,22 +938,22 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
         >
           <form
             onSubmit={handleRelapseSubmit}
-            className="max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px] sm:p-6"
+            className="max-h-[90dvh] w-full max-w-[460px] overflow-y-auto rounded-t-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:rounded-2xl sm:p-5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
                   <LockKeyhole className="h-4 w-4" />
                 </div>
-                <h2 className="font-display text-lg font-bold">48-Hour Reset &amp; Harden</h2>
+                <h2 className="font-display text-base font-bold">48-Hour Reset &amp; Harden</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setRelapseModalOpen(false)}
                 aria-label="Close relapse reset dialog"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -962,8 +962,8 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
               cashier firewalls so a slip stops here.
             </p>
 
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold text-[var(--ink)]">What led to this slip?</p>
+            <div className="mt-3.5">
+              <p className="mb-1.5 text-xs font-semibold text-[var(--ink)]">What led to this slip?</p>
               <div className="flex flex-wrap gap-1.5">
                 {RELAPSE_TRIGGER_CHOICES.map((choice) => {
                   const selected = relapseTrigger === choice;
@@ -972,7 +972,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
                       key={choice}
                       type="button"
                       onClick={() => setRelapseTrigger(choice)}
-                      className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium ${
+                      className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium ${
                         selected
                           ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                           : 'border-[var(--subtle-border)] bg-[var(--muted-fill)] text-[var(--ink)]'
@@ -985,11 +985,11 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
               </div>
             </div>
 
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold text-[var(--ink)]">
+            <div className="mt-3.5">
+              <p className="mb-1.5 text-xs font-semibold text-[var(--ink)]">
                 Lock Protection Extension
               </p>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 {[
                   { days: 7, label: '+7 Days' },
                   { days: 30, label: '+30 Days' },
@@ -1015,7 +1015,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
               </div>
             </div>
 
-            <label className="mt-4 flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3 text-xs font-medium text-[var(--ink)]">
+            <label className="mt-3.5 flex cursor-pointer items-center gap-2.5 rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-2.5 text-xs font-medium text-[var(--ink)]">
               <input
                 type="checkbox"
                 checked={resetStreakTimer}
@@ -1027,32 +1027,32 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({
 
             <label
               htmlFor="relapse-note-input"
-              className="mt-4 mb-1.5 block text-xs font-semibold text-[var(--ink)]"
+              className="mt-3.5 mb-1 block text-xs font-semibold text-[var(--ink)]"
             >
               Private reflection / mirror domain to close (optional)
             </label>
             <textarea
               id="relapse-note-input"
-              rows={3}
+              rows={2}
               maxLength={280}
               value={relapseNote}
               onChange={(e) => setRelapseNote(e.target.value)}
               placeholder="e.g. Saw promo link on X after match; moving cash to SafeLock now."
-              className="w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] p-3 text-xs text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+              className="w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] p-2.5 text-xs text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
 
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 onClick={() => setRelapseModalOpen(false)}
-                className="h-11 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="h-10 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 data-testid="confirm-relapse-reset-button"
-                className="h-11 flex-[1.5] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                className="h-10 flex-[1.5] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 Harden Shield &amp; Reset
               </button>

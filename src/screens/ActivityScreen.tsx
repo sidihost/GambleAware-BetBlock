@@ -87,24 +87,24 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
   const pad2 = (n: number) => String(n).padStart(2, '0');
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3.5 px-3.5 pt-3.5 pb-24 sm:px-5 md:px-6 md:pt-5 md:pb-12">
       {/* Header & Betting-Free Hero Card */}
-      <div className="flex items-center justify-between gap-3 px-1">
-        <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+        <div className="min-w-[200px] flex-1">
+          <h1 className="font-display text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl">
             Recovery Progress
           </h1>
           <p className="text-xs text-[var(--ink-muted)]">
             Betting-free streak, wealth simulator, personal goals &amp; intercept history
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={onShareStreak}
             data-testid="share-streak-button"
             aria-label="Share clean streak"
-            className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 py-2 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
+            className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90"
           >
             <Share2 className="h-3.5 w-3.5 shrink-0" />
             <span>Share</span>
@@ -113,7 +113,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             <button
               type="button"
               onClick={onClearHistory}
-              className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] px-3.5 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+              className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
             >
               <Trash2 className="h-3.5 w-3.5" />
               <span>Clear</span>
@@ -122,7 +122,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         </div>
       </div>
 
-      <LiquidGlassCard className="p-4 sm:p-5">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[11px] font-medium tracking-wider text-[var(--ink-muted)]">
@@ -176,7 +176,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           onDeleteGoal={onDeleteGoal}
         />
       ) : (
-        <LiquidGlassCard className="flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center sm:p-5">
+        <LiquidGlassCard className="flex flex-col items-start justify-between gap-2.5 p-3.5 sm:flex-row sm:items-center sm:p-4">
           <div>
             <p className="font-display text-sm font-bold text-[var(--ink)]">
               No personal recovery goal set yet
@@ -188,7 +188,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           <button
             type="button"
             onClick={() => onOpenGoalModal()}
-            className="inline-flex h-10 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
+            className="inline-flex h-9 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:w-auto"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Create Goal</span>
@@ -203,9 +203,9 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       />
 
       {/* Interactive Visual Progress Chart */}
-      <LiquidGlassCard className="p-4 sm:p-5" tourKey="progress_dashboard">
+      <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="progress_dashboard">
         <div>
-          <h2 className="font-display text-base font-semibold text-[var(--ink)]">
+          <h2 className="font-display text-[15px] font-semibold text-[var(--ink)]">
             {selectedChartMode === 0 ? 'Betting-Free Trajectory' : '7-Day Intercepts'}
           </h2>
           <p className="text-xs text-[var(--ink-muted)]">
@@ -215,11 +215,11 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           </p>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setSelectedChartMode(0)}
-            className={`cursor-pointer rounded-full border px-3 py-2.5 text-xs font-medium transition-colors ${
+            className={`cursor-pointer rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
               selectedChartMode === 0
                 ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                 : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -230,7 +230,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           <button
             type="button"
             onClick={() => setSelectedChartMode(1)}
-            className={`cursor-pointer rounded-full border px-3 py-2.5 text-xs font-medium transition-colors ${
+            className={`cursor-pointer rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
               selectedChartMode === 1
                 ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                 : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -240,7 +240,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           </button>
         </div>
 
-        <div className="mt-3.5">
+        <div className="mt-3">
           {selectedChartMode === 0 ? (
             <BettingFreeProgressChart
               cleanDays={state.cleanDays}
@@ -254,9 +254,9 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         </div>
       </LiquidGlassCard>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
         {/* Recovery Milestones */}
-        <LiquidGlassCard className="p-4 sm:p-5">
+        <LiquidGlassCard className="p-3.5 sm:p-4">
           <LiquidSectionHeader
             title="Recovery Milestones"
             subtitle="Milestones unlock automatically as your betting-free days climb"
@@ -288,13 +288,13 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
         </LiquidGlassCard>
 
         {/* Urge Journal & Triggers */}
-        <LiquidGlassCard className="p-4 sm:p-5">
+        <LiquidGlassCard className="p-3.5 sm:p-4">
           <LiquidSectionHeader
             title="Urge Journal & Triggers"
             subtitle={`${state.totalUrgeResistedCount} urge victories recorded`}
           />
           {state.triggerBreakdown.length > 0 ? (
-            <div className="mt-3 divide-y divide-[var(--subtle-border)]/50">
+            <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/50">
               {state.triggerBreakdown.map((item) => (
                 <div
                   key={item.triggerTag}
@@ -306,7 +306,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
               ))}
             </div>
           ) : (
-            <p className="mt-3 text-xs leading-relaxed text-[var(--ink-muted)]">
+            <p className="mt-2.5 text-xs leading-relaxed text-[var(--ink-muted)]">
               When you pass on a betting urge, log what triggered it to recognize patterns and
               protect peak times.
             </p>
@@ -316,7 +316,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             <button
               type="button"
               onClick={onOpenUrgeJournal}
-              className="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+              className="flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
             >
               <NotebookPen className="h-4 w-4 shrink-0" />
               <span>Log Urge Victory</span>
@@ -324,7 +324,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             <button
               type="button"
               onClick={onLaunchCalmReset}
-              className="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-3 text-sm font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+              className="flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] px-3 text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
             >
               <Wind className="h-4 w-4 shrink-0" />
               <span>60s SOS Calm</span>
@@ -335,7 +335,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
 
       {/* Blocked by Category */}
       {state.categoryBreakdown.length > 0 ? (
-        <LiquidGlassCard className="p-4 sm:p-5">
+        <LiquidGlassCard className="p-3.5 sm:p-4">
           <LiquidSectionHeader title="Blocked by Category" subtitle="Recent distribution" />
           <div className="mt-2.5 divide-y divide-[var(--subtle-border)]/50">
             {state.categoryBreakdown.map((entry) => (
@@ -398,7 +398,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
       </div>
 
       {/* Source Filter Buttons */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {SOURCE_FILTERS.map((item) => {
           const selected = selectedSource === item.value;
           return (
@@ -406,7 +406,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
               key={item.value}
               type="button"
               onClick={() => setSelectedSource(item.value)}
-              className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
+              className={`cursor-pointer rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors ${
                 selected
                   ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                   : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -420,11 +420,11 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
 
       {/* Grouped By Site & App (Default DuckDuckGo View) or Timeline Event List */}
       {(logViewMode === 'grouped' ? filteredGroupedSites.length === 0 : filteredEvents.length === 0) ? (
-        <LiquidGlassCard className="p-7 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[var(--muted-fill)]">
-            <BrandGMark className="h-11 w-11" />
+        <LiquidGlassCard className="p-6 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--muted-fill)]">
+            <BrandGMark className="h-9 w-9" />
           </div>
-          <h3 className="mt-3.5 font-display text-base font-semibold text-[var(--ink)]">
+          <h3 className="mt-3 font-display text-sm font-semibold text-[var(--ink)]">
             All Quiet Here
           </h3>
           <p className="mt-1 text-xs leading-relaxed text-[var(--ink-muted)]">
@@ -433,24 +433,24 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           </p>
         </LiquidGlassCard>
       ) : logViewMode === 'grouped' ? (
-        <div className="flex flex-col gap-2.5" data-testid="activity-grouped-sites-list">
+        <div className="flex flex-col gap-2" data-testid="activity-grouped-sites-list">
           {filteredGroupedSites.map((site) => {
             const timeText = formatBlockedTimestamp(site.latestTimestamp, state.currentTimeMs);
             return (
-              <LiquidGlassCard key={site.key} className="rounded-[20px] p-3.5">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <BettingBrandLogo target={site.target} size="md" />
+              <LiquidGlassCard key={site.key} className="rounded-2xl p-3">
+                <div className="flex items-center justify-between gap-2.5">
+                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    <BettingBrandLogo target={site.target} size="sm" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-mono text-sm font-semibold text-[var(--ink)]">
+                      <p className="truncate font-mono text-xs font-semibold text-[var(--ink)] sm:text-sm">
                         {site.target}
                       </p>
-                      <p className="truncate text-xs text-[var(--ink-muted)]">
+                      <p className="truncate text-[11px] text-[var(--ink-muted)]">
                         {site.sources.join(' · ')} · {site.categoryName} · {timeText}
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0 font-mono text-xs font-bold text-[var(--accent-ink)] tabular-nums">
+                  <span className="shrink-0 font-mono text-[11px] font-bold text-[var(--accent-ink)] tabular-nums">
                     {formatAttemptCountLabel(site.attemptCount)}
                   </span>
                 </div>
@@ -459,7 +459,7 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
           })}
         </div>
       ) : (
-        <div className="flex flex-col gap-2.5" data-testid="activity-timeline-events-list">
+        <div className="flex flex-col gap-2" data-testid="activity-timeline-events-list">
           {filteredEvents.map((ev) => {
             const timeText = new Date(ev.timestamp).toLocaleString(undefined, {
               month: 'short',
@@ -469,14 +469,14 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({
             });
 
             return (
-              <LiquidGlassCard key={ev.id} className="rounded-[20px] p-3.5">
-                <div className="flex items-center gap-3">
-                  <BettingBrandLogo target={ev.target} size="md" />
+              <LiquidGlassCard key={ev.id} className="rounded-2xl p-3">
+                <div className="flex items-center gap-2.5">
+                  <BettingBrandLogo target={ev.target} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-sm font-semibold text-[var(--ink)]">
+                    <p className="truncate font-mono text-xs font-semibold text-[var(--ink)] sm:text-sm">
                       {ev.target}
                     </p>
-                    <p className="truncate text-xs text-[var(--ink-muted)]">
+                    <p className="truncate text-[11px] text-[var(--ink-muted)]">
                       {ev.source} · {ev.categoryName} · {timeText}
                     </p>
                   </div>

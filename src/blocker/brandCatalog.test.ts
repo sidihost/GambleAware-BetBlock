@@ -44,5 +44,26 @@ test('generates deterministic stylized monogram fallback for niche domains', () 
   assert.equal(a.isExactCatalogMatch, false);
   assert.equal(a.monogram, 'LU');
   assert.equal(a.bgColor, b.bgColor);
-  assert.ok(BETTING_BRAND_CATALOG.length >= 30);
+  assert.equal(BETTING_BRAND_CATALOG.length, 32);
+});
+
+test('every catalog brand resolves cleanly via primaryDomain and all aliases', () => {
+  const seenIds = new Set<string>();
+  for (const brand of BETTING_BRAND_CATALOG) {
+    assert.ok(!seenIds.has(brand.id), `Duplicate brand id: ${brand.id}`);
+    seenIds.add(brand.id);
+    assert.ok(brand.bgColor.startsWith('#'));
+    assert.ok(brand.accentColor.startsWith('#'));
+    assert.ok(brand.fgColor.startsWith('#'));
+
+    const resolvedPrimary = resolveBettingBrand(brand.primaryDomain);
+    assert.equal(resolvedPrimary.isExactCatalogMatch, true);
+    assert.equal(resolvedPrimary.brand?.id, brand.id);
+
+    for (const alias of brand.aliases) {
+      const resolvedAlias = resolveBettingBrand(`https://m.${alias}/live`);
+      assert.equal(resolvedAlias.isExactCatalogMatch, true, `Alias failed: ${alias}`);
+      assert.equal(resolvedAlias.brand?.id, brand.id);
+    }
+  }
 });

@@ -74,22 +74,22 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     >
       <form
         onSubmit={handleSubmit}
-        className="max-h-[90dvh] w-full max-w-[500px] overflow-y-auto rounded-t-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)] sm:rounded-[28px] sm:p-6"
+        className="max-h-[90dvh] w-full max-w-[460px] overflow-y-auto rounded-t-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:rounded-2xl sm:p-5"
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
               <Target className="h-4 w-4" />
             </div>
-            <h2 className="font-display text-lg font-bold">Create Recovery Goal</h2>
+            <h2 className="font-display text-base font-bold">Create Recovery Goal</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close goal modal"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full hover:bg-[var(--muted-fill)]"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -148,7 +148,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
           </div>
         </div>
 
-        <div className="mt-4 space-y-3.5">
+        <div className="mt-3 space-y-2.5">
           <div>
             <label htmlFor="goal-title" className="mb-1 block text-xs font-semibold text-[var(--ink)]">
               Goal Title
@@ -161,7 +161,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What are you saving or staying clean for?"
-              className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+              className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
           </div>
 
@@ -173,7 +173,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                   key={cat}
                   type="button"
                   onClick={() => setCategory(cat)}
-                  className={`h-10 cursor-pointer rounded-[12px] border text-xs font-semibold capitalize transition-colors ${
+                  className={`h-9 cursor-pointer rounded-xl border text-xs font-semibold capitalize transition-colors ${
                     selected
                       ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                       : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -185,7 +185,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
             })}
           </div>
 
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="goal-days"
@@ -202,7 +202,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 value={targetDays}
                 onChange={(e) => setTargetDays(e.target.value)}
                 placeholder="Number of days"
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+                className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] px-3 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
               />
             </div>
             <div>
@@ -221,7 +221,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 value={targetAmountNgn}
                 onChange={(e) => setTargetAmountNgn(e.target.value)}
                 placeholder="Optional Naira amount"
-                className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+                className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] px-3 font-mono text-sm text-[var(--ink)] placeholder:font-sans placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
               />
             </div>
           </div>
@@ -237,7 +237,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               value={whyNote}
               onChange={(e) => setWhyNote(e.target.value)}
               placeholder="Write a personal reminder to stay betting-free"
-              className="h-11 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+              className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
           </div>
 
@@ -246,13 +246,13 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               <LockKeyhole className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
               <span>Optional: Pair with Commitment Lock</span>
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {[0, 7, 30].map((d) => (
                 <button
                   key={d}
                   type="button"
                   onClick={() => setLockDurationDays(d)}
-                  className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium ${
+                  className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium ${
                     lockDurationDays === d
                       ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                       : 'border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink-muted)]'
@@ -267,7 +267,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
         <button
           type="submit"
-          className="mt-5 h-12 w-full cursor-pointer rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+          className="mt-4 h-10 w-full cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
         >
           Save Personalized Goal
         </button>
@@ -282,15 +282,15 @@ export const GoalReminderBanner: React.FC<{
   onOpenTemplates: () => void;
   onDismiss: () => void;
 }> = ({ firstName, onCreateGoal, onOpenTemplates, onDismiss }) => (
-  <LiquidGlassCard className="p-4 sm:p-5">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-1 items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--active-fill)] text-[var(--active-content)]">
-          <Target className="h-5 w-5" />
+  <LiquidGlassCard className="p-3 sm:px-4 sm:py-3">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
+          <Target className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="font-display text-sm font-bold text-[var(--ink)]">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate font-display text-xs font-bold text-[var(--ink)] sm:text-sm">
               {firstName
                 ? `${firstName}, set your personal recovery goal`
                 : 'Set your personal recovery goal'}
@@ -299,21 +299,21 @@ export const GoalReminderBanner: React.FC<{
               type="button"
               onClick={onDismiss}
               aria-label="Dismiss goal reminder"
-              className="-mt-1 -mr-1 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] sm:hidden"
+              className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] sm:hidden"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
-          <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
-            Writing a concrete Naira or clean-day target keeps you focused whenever urges arise.
+          <p className="truncate text-[11px] text-[var(--ink-muted)]">
+            A concrete Naira or clean-day target keeps you focused during urges.
           </p>
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5">
         <button
           type="button"
           onClick={onCreateGoal}
-          className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+          className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
         >
           <Plus className="h-3.5 w-3.5" />
           <span>Create Goal</span>
@@ -321,18 +321,18 @@ export const GoalReminderBanner: React.FC<{
         <button
           type="button"
           onClick={onOpenTemplates}
-          className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+          className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
         >
           <Compass className="h-3.5 w-3.5 text-[var(--accent-ink)]" />
-          <span>Quick Presets</span>
+          <span>Presets</span>
         </button>
         <button
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss goal reminder"
-          className="hidden h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] sm:flex"
+          className="hidden h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] sm:flex"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
@@ -359,29 +359,29 @@ export const ActiveGoalsCard: React.FC<{
   if (goals.length === 0) return null;
 
   return (
-    <LiquidGlassCard className="p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-3">
+    <LiquidGlassCard className="p-3.5 sm:p-4">
+      <div className="flex items-center justify-between gap-2.5">
         <LiquidSectionHeader
           title="Personal Recovery Goals"
-          subtitle="Tracked automatically against your clean streak and Naira savings"
+          subtitle="Tracked automatically against your streak & savings"
         />
         <button
           type="button"
           onClick={onAddGoal}
-          className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3.5 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+          className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
         >
           <Plus className="h-3.5 w-3.5" />
           <span>New Goal</span>
         </button>
       </div>
 
-      <div className="mt-3.5 space-y-2.5">
+      <div className="mt-3 space-y-2">
         {goals.map((goal) => {
           const progress = calculateGoalProgress(goal, cleanExactDays, estimatedSavedAmount);
           return (
             <div
               key={goal.goalId}
-              className="rounded-[18px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3.5"
+              className="rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] p-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">

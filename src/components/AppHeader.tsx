@@ -138,15 +138,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-[var(--subtle-border)] bg-[var(--glass-fill)] backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4 md:gap-5 md:px-6">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-5 md:px-6">
         {/* Zone 1: Brand G Lockup */}
         <button
           type="button"
           onClick={handleBrandClick}
-          className="flex shrink-0 cursor-pointer items-center gap-2 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] sm:gap-2.5"
+          className="flex shrink-0 cursor-pointer items-center gap-2 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
         >
-          <BrandGMark className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
-          <span className="font-display text-base font-bold tracking-tight text-[var(--ink)] sm:text-lg">
+          <BrandGMark className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
+          <span className="font-display text-sm font-bold tracking-tight text-[var(--ink)] sm:text-base">
             GambleAware
           </span>
         </button>
@@ -177,7 +177,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   key={item.route}
                   type="button"
                   onClick={() => onSelectRoute?.(item.route)}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors ${
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors lg:px-3 ${
                     selected
                       ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                       : 'text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] hover:text-[var(--ink)]'
@@ -192,7 +192,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               <button
                 type="button"
                 onClick={() => onSelectRoute?.('admin')}
-                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors lg:px-3 ${
                   activeRoute === 'admin'
                     ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                     : 'border border-[var(--glass-border)] text-[var(--accent-ink)] hover:bg-[var(--muted-fill)]'
@@ -213,7 +213,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               onClick={onToggleTheme}
               aria-label={isDarkTheme ? 'Switch to White theme' : 'Switch to Black & Pink theme'}
               title={isDarkTheme ? 'Switch to White theme' : 'Switch to Black & Pink theme'}
-              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] sm:h-10 sm:w-10"
+              className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] sm:h-9 sm:w-9"
             >
               {isDarkTheme ? (
                 <Sun className="h-4 w-4 text-[var(--accent-ink)]" />
@@ -227,7 +227,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <button
               type="button"
               onClick={() => onSelectRoute?.('admin')}
-              className={`inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-semibold whitespace-nowrap transition-colors md:hidden ${
+              className={`inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold whitespace-nowrap transition-colors md:hidden ${
                 activeRoute === 'admin'
                   ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                   : 'border border-[var(--glass-border)] bg-[var(--surface)] text-[var(--accent-ink)]'
@@ -243,7 +243,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               type="button"
               onClick={userEmail ? () => onSelectRoute?.(isAdmin ? 'admin' : 'lock') : onSignIn}
               title={userEmail ? `Signed in as ${userEmail}` : 'Sign in with Google for Cloud Sync & Support'}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-10 sm:px-3.5"
+              className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-9 sm:px-3"
             >
               <UserCheck className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
               <span className="hidden sm:inline">
@@ -260,9 +260,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 setMobileMenuOpen(false);
                 onOpenWebApp?.();
               }}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-10 sm:px-4 sm:text-sm"
+              className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-9 sm:px-3.5"
             >
-              <Smartphone className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+              <Smartphone className="h-3.5 w-3.5 shrink-0" />
               <span>Open iPhone App</span>
             </button>
           ) : null}
@@ -274,7 +274,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 setMobileMenuOpen(false);
                 onOpenDownloadPage();
               }}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-10 sm:px-4"
+              className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] sm:h-9 sm:px-3.5"
             >
               <Download className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
               <span className="hidden lg:inline">{isIOS ? 'iPhone Guide & Info' : 'Android APK & Setup'}</span>
@@ -284,9 +284,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <a
               href={ANDROID_APK_DOWNLOAD_URL}
               rel="noopener noreferrer"
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-9 sm:px-3.5"
             >
-              <Download className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+              <Download className="h-3.5 w-3.5 shrink-0" />
               <span className="hidden min-[380px]:inline">Download APK</span>
               <span className="min-[380px]:hidden">APK</span>
             </a>

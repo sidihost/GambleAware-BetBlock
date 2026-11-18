@@ -73,7 +73,7 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
   tourKey,
   muted = false,
 }) => {
-  const baseClass = `rounded-[26px] border backdrop-blur-xl transition-colors duration-150 ${
+  const baseClass = `rounded-2xl border backdrop-blur-xl transition-colors duration-150 ${
     muted
       ? 'bg-[var(--muted-fill)] border-[var(--subtle-border)]'
       : 'bg-[var(--glass-fill)] border-[var(--glass-border)]'
@@ -104,11 +104,11 @@ export const LiquidSectionHeader: React.FC<{
   subtitle?: string;
 }> = ({ title, subtitle }) => (
   <div className="w-full">
-    <h3 className="font-display text-base font-semibold tracking-tight text-[var(--ink)]">
+    <h3 className="font-display text-[15px] font-semibold tracking-tight text-[var(--ink)]">
       {title}
     </h3>
     {subtitle ? (
-      <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">{subtitle}</p>
+      <p className="mt-0.5 text-xs leading-snug text-[var(--ink-muted)]">{subtitle}</p>
     ) : null}
   </div>
 );
@@ -212,7 +212,7 @@ export const LiquidShieldOrb: React.FC<{
       onClick={onClick}
       data-tour-key={tourKey}
       aria-label={isProtected ? 'GambleAware Shield Active — tap to manage' : 'Activate GambleAware Shield'}
-      className="group relative flex h-[180px] w-[180px] cursor-pointer items-center justify-center rounded-full transition-transform duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--active-fill)]"
+      className="group relative flex h-[136px] w-[136px] cursor-pointer items-center justify-center rounded-full transition-transform duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--active-fill)] sm:h-[152px] sm:w-[152px]"
     >
       <svg viewBox="0 0 180 180" className="h-full w-full">
         {/* Outer translucent aura */}
@@ -315,11 +315,11 @@ export const LiquidFloatingNavBar: React.FC<{
 }> = ({ items, selectedRoute, onSelect }) => (
   <nav
     aria-label="Primary navigation"
-    className="fixed bottom-3 left-0 right-0 z-30 flex justify-center px-3 md:hidden"
+    className="fixed bottom-2 left-0 right-0 z-30 flex justify-center px-2.5 md:hidden"
   >
-    <div className="w-full max-w-[540px] rounded-[30px] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-1.5 backdrop-blur-xl">
+    <div className="w-full max-w-[460px] rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-1 shadow-lg backdrop-blur-xl">
       <div
-        className="grid gap-1"
+        className="grid gap-0.5"
         style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
       >
         {items.map((item) => {
@@ -329,7 +329,7 @@ export const LiquidFloatingNavBar: React.FC<{
               key={item.route}
               type="button"
               onClick={() => onSelect(item.route)}
-              className={`flex min-h-[48px] cursor-pointer flex-col items-center justify-center rounded-[24px] px-1.5 py-2 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] ${
+              className={`flex min-h-[44px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] ${
                 selected
                   ? 'bg-[var(--active-fill)] text-[var(--active-content)] font-semibold'
                   : 'text-[var(--ink-muted)] hover:text-[var(--ink)] font-medium'

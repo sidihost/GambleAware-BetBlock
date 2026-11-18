@@ -92,24 +92,24 @@ export const BlockedInterventionModal: React.FC<{
       className="fixed inset-0 z-50 overflow-y-auto"
     >
       <LiquidGlassBackdrop isProtected={true}>
-        <div className="flex min-h-screen items-center justify-center px-5 py-6">
-          <LiquidGlassCard className="w-full max-w-[460px] p-6">
+        <div className="flex min-h-screen items-center justify-center px-3.5 py-5 sm:px-5">
+          <LiquidGlassCard className="w-full max-w-[440px] p-4 sm:p-5">
             <div className="flex flex-col items-center text-center">
-              <span className="text-xs font-semibold text-[var(--ink-muted)]">
+              <span className="text-[11px] font-semibold text-[var(--ink-muted)]">
                 GambleAware · Redirected Safely
               </span>
 
               {payload.isAntiTamper ? (
-                <div className="mt-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[var(--active-fill)] text-[var(--active-content)]">
-                  <LockKeyhole className="h-8 w-8" />
+                <div className="mt-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--active-fill)] text-[var(--active-content)]">
+                  <LockKeyhole className="h-7 w-7" />
                 </div>
               ) : isCalmResetTool ? (
-                <BrandGMark className="mt-4 h-[72px] w-[72px]" />
+                <BrandGMark className="mt-3 h-14 w-14" />
               ) : (
-                <BettingBrandLogo target={payload.target} size="xl" className="mt-4" />
+                <BettingBrandLogo target={payload.target} size="lg" className="mt-3" />
               )}
 
-              <h2 className="mt-4 font-display text-2xl font-bold text-[var(--ink)]">
+              <h2 className="mt-3 font-display text-xl font-bold text-[var(--ink)]">
                 {payload.isAntiTamper
                   ? 'Uninstall & Tamper Locked'
                   : payload.isLoginRedirect
@@ -119,7 +119,7 @@ export const BlockedInterventionModal: React.FC<{
                       : 'Betting Platform Blocked'}
               </h2>
 
-              <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)]">
+              <p className="mt-1.5 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
                 {payload.isAntiTamper
                   ? 'Your GambleAware Device Admin & Commitment Lock prevents uninstalling the app or weakening rules until your timer completes.'
                   : payload.isLoginRedirect
@@ -128,8 +128,8 @@ export const BlockedInterventionModal: React.FC<{
               </p>
 
               {/* Intercept summary */}
-              <div className="mt-5 flex w-full items-center justify-between rounded-[18px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-4 py-3.5 text-left">
-                <div className="flex min-w-0 flex-1 items-center gap-3 pr-3">
+              <div className="mt-4 flex w-full items-center justify-between rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] px-3.5 py-3 text-left">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5 pr-2">
                   {!payload.isAntiTamper && !isCalmResetTool ? (
                     <BettingBrandLogo target={payload.target} size="md" />
                   ) : null}
@@ -144,28 +144,28 @@ export const BlockedInterventionModal: React.FC<{
                             ? '60s Urge Reset'
                             : 'Betting Site Blocked'}
                     </p>
-                    <p className="mt-0.5 truncate text-base font-bold text-[var(--ink)]">
+                    <p className="mt-0.5 truncate text-sm font-bold text-[var(--ink)]">
                       {payload.target}
                     </p>
-                    <p className="mt-0.5 text-xs font-medium text-[var(--ink-muted)]">
+                    <p className="mt-0.5 text-[11px] font-medium text-[var(--ink-muted)]">
                       {payload.source} · {payload.category}
                     </p>
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="font-mono text-lg font-bold tabular-nums text-[var(--accent-ink)]">
+                  <p className="font-mono text-base font-bold tabular-nums text-[var(--accent-ink)]">
                     {cleanDays} d
                   </p>
-                  <p className="text-[11px] text-[var(--ink-muted)]">Streak</p>
+                  <p className="text-[10px] text-[var(--ink-muted)]">Streak</p>
                 </div>
               </div>
 
               {promoInsight ? (
-                <div className="mt-3 w-full rounded-[16px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3.5 py-2.5 text-left">
+                <div className="mt-2.5 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-2 text-left">
                   <p className="font-mono text-[10px] font-bold tracking-wide text-[var(--accent-ink)] uppercase">
                     House-Edge Reality Check
                   </p>
-                  <p className="mt-1 text-xs leading-relaxed text-[var(--ink-muted)]">
+                  <p className="mt-0.5 text-xs leading-relaxed text-[var(--ink-muted)]">
                     {promoInsight.summary}
                   </p>
                 </div>
@@ -180,7 +180,7 @@ export const BlockedInterventionModal: React.FC<{
                     setBankedStakeDone(true);
                   }}
                   data-testid="modal-bank-stake-button"
-                  className="mt-3 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-4 text-xs font-semibold text-[var(--accent-ink)] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-70"
+                  className="mt-2.5 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-4 text-xs font-semibold text-[var(--accent-ink)] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-70"
                 >
                   <PiggyBank className="h-4 w-4 shrink-0" />
                   <span>
@@ -193,7 +193,7 @@ export const BlockedInterventionModal: React.FC<{
 
               {/* Personal Goal Anchor Reminder */}
               {primaryGoal && goalProgress ? (
-                <div className="mt-3 w-full rounded-[18px] border border-[var(--glass-border)] bg-[var(--control-bg)] p-3.5 text-left">
+                <div className="mt-2.5 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--control-bg)] p-3 text-left">
                   <div className="flex items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-ink)]">
                       <Target className="h-3.5 w-3.5" />
@@ -223,10 +223,10 @@ export const BlockedInterventionModal: React.FC<{
                     onClose();
                     onCreateGoal();
                   }}
-                  className="mt-3 flex w-full cursor-pointer items-center justify-between rounded-[18px] border border-[var(--glass-border)] bg-[var(--control-bg)] px-4 py-3 text-left hover:bg-[var(--muted-fill)]"
+                  className="mt-2.5 flex w-full cursor-pointer items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--control-bg)] px-3.5 py-2.5 text-left hover:bg-[var(--muted-fill)]"
                 >
                   <div className="flex items-center gap-2.5">
-                    <Target className="h-4 w-4 text-[var(--accent-ink)]" />
+                    <Target className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
                     <div>
                       <p className="text-xs font-bold text-[var(--ink)]">
                         Create a recovery goal to stay locked in
@@ -243,12 +243,12 @@ export const BlockedInterventionModal: React.FC<{
               <button
                 type="button"
                 onClick={toggleBreathing}
-                className="mt-3.5 w-full cursor-pointer rounded-[20px] border border-[var(--subtle-border)] bg-[var(--control-bg)] p-3.5 text-left transition-colors hover:bg-[var(--muted-fill)]"
+                className="mt-2.5 w-full cursor-pointer rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] p-3 text-left transition-colors hover:bg-[var(--muted-fill)]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Wind className="h-4 w-4 text-[var(--ink)]" />
-                    <span className="text-sm font-semibold text-[var(--ink)]">60s Calm Reset</span>
+                    <span className="text-xs font-semibold text-[var(--ink)] sm:text-sm">60s Calm Reset</span>
                   </div>
                   <span className="font-mono text-xs text-[var(--ink-muted)]">
                     {isBreathingActive
@@ -260,8 +260,8 @@ export const BlockedInterventionModal: React.FC<{
                 </div>
 
                 {isBreathingActive || calmSecondsLeft < 60 ? (
-                  <div className="mt-3 flex flex-col items-center pb-1">
-                    <div className="relative flex h-[108px] w-[108px] items-center justify-center">
+                  <div className="mt-2.5 flex flex-col items-center pb-1">
+                    <div className="relative flex h-24 w-24 items-center justify-center">
                       <svg viewBox="0 0 108 108" className="h-full w-full">
                         <circle
                           cx="54"
@@ -297,7 +297,7 @@ export const BlockedInterventionModal: React.FC<{
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-5 h-12 w-full cursor-pointer rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+                className="mt-4 h-10 w-full cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
               >
                 Return Safely Home
               </button>
@@ -305,12 +305,12 @@ export const BlockedInterventionModal: React.FC<{
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-2.5 h-12 w-full cursor-pointer rounded-full border border-[var(--subtle-border)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                className="mt-2 h-10 w-full cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
               >
                 Back to GambleAware Guard
               </button>
 
-              <p className="mt-3.5 text-xs text-[var(--ink-muted)]">
+              <p className="mt-3 text-[11px] text-[var(--ink-muted)]">
                 A product of Imoogle Technology
               </p>
             </div>

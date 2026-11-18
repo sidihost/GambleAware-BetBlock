@@ -200,22 +200,22 @@ export const SpotlightTourOverlay: React.FC<{
               : 'top-16'
         }`}
       >
-        <div className="pointer-events-auto w-full max-w-[460px] rounded-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--active-fill)] text-[var(--active-content)]">
+        <div className="pointer-events-auto w-full max-w-[420px] rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:p-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--active-fill)] text-[var(--active-content)]">
               {step.icon}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-mono text-[11px] tracking-wider text-[var(--ink-muted)]">
+              <p className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)]">
                 {step.badge}
               </p>
-              <h2 className="font-display text-base font-bold text-[var(--ink)]">{step.title}</h2>
+              <h2 className="font-display text-[15px] font-bold text-[var(--ink)]">{step.title}</h2>
             </div>
           </div>
 
-          <p className="mt-3 text-sm leading-relaxed text-[var(--ink-muted)]">{step.body}</p>
+          <p className="mt-2.5 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">{step.body}</p>
 
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] font-semibold text-[var(--accent-ink)]">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[11px] font-semibold text-[var(--accent-ink)]">
             {step.highlights.map((tag, idx) => (
               <span key={tag}>
                 {idx > 0 ? '· ' : ''}
@@ -225,7 +225,7 @@ export const SpotlightTourOverlay: React.FC<{
           </div>
 
           {/* Step progress indicators */}
-          <div className="mt-4 flex items-center justify-center gap-1.5">
+          <div className="mt-3.5 flex items-center justify-center gap-1.5">
             {SPOTLIGHT_TOUR_STEPS.map((s, idx) => (
               <span
                 key={s.id}
@@ -238,13 +238,13 @@ export const SpotlightTourOverlay: React.FC<{
             ))}
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-3.5 space-y-2">
             {isLastStep ? (
               <>
                 <button
                   type="button"
                   onClick={onFinishAndEnableShield}
-                  className="h-12 w-full cursor-pointer rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90"
+                  className="h-10 w-full cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90 sm:text-sm"
                 >
                   Enable Web & App Shield
                 </button>
@@ -252,14 +252,14 @@ export const SpotlightTourOverlay: React.FC<{
                   <button
                     type="button"
                     onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
-                    className="h-11 cursor-pointer rounded-full border border-[var(--subtle-border)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                    className="h-9 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
                   >
                     Back
                   </button>
                   <button
                     type="button"
                     onClick={onDismissTour}
-                    className="h-11 cursor-pointer rounded-full border border-[var(--subtle-border)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                    className="h-9 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
                   >
                     Finish
                   </button>
@@ -271,7 +271,7 @@ export const SpotlightTourOverlay: React.FC<{
                   <button
                     type="button"
                     onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
-                    className="h-12 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+                    className="h-10 flex-1 cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)] sm:text-sm"
                   >
                     Back
                   </button>
@@ -281,7 +281,7 @@ export const SpotlightTourOverlay: React.FC<{
                   onClick={() =>
                     setStepIndex((i) => Math.min(SPOTLIGHT_TOUR_STEPS.length - 1, i + 1))
                   }
-                  className="h-12 flex-[1.4] cursor-pointer rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+                  className="h-10 flex-[1.4] cursor-pointer rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
                 >
                   Next
                 </button>

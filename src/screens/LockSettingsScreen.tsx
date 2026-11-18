@@ -111,9 +111,9 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-14">
-      <div className="px-1">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3.5 px-3.5 pt-3.5 pb-24 sm:px-5 md:px-6 md:pt-5 md:pb-12">
+      <div className="px-0.5">
+        <h1 className="font-display text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl">
           Lock &amp; Settings
         </h1>
         <p className="text-xs text-[var(--ink-muted)]">
@@ -121,22 +121,22 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="flex flex-col gap-4 lg:col-span-6">
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
+        <div className="flex flex-col gap-3.5 lg:col-span-6">
           {/* Timed Commitment Lock Card */}
-          <LiquidGlassCard className="p-4 sm:p-5" tourKey="lock_timer">
-            <div className="flex items-center gap-3">
+          <LiquidGlassCard className="p-3.5 sm:p-4" tourKey="lock_timer">
+            <div className="flex items-center gap-2.5">
               <div
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
                   isTimeLocked
                     ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                     : 'bg-[var(--muted-fill)] text-[var(--muted-content)]'
                 }`}
               >
-                {isTimeLocked ? <LockKeyhole className="h-5 w-5" /> : <Timer className="h-5 w-5" />}
+                {isTimeLocked ? <LockKeyhole className="h-4 w-4" /> : <Timer className="h-4 w-4" />}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="font-display text-base font-semibold text-[var(--ink)]">
+                <h2 className="font-display text-[15px] font-semibold text-[var(--ink)]">
                   {isTimeLocked ? 'Commitment Lock Active' : 'Timed Commitment Lock'}
                 </h2>
                 <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
@@ -148,13 +148,13 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             </div>
 
             {isTimeLocked ? (
-              <div className="mt-3.5 grid grid-cols-4 gap-2">
+              <div className="mt-3 grid grid-cols-4 gap-2">
                 {state.lockClockQuad.map((q) => (
                   <div
                     key={q.unit}
-                    className="flex flex-col items-center rounded-[16px] border border-[var(--subtle-border)] bg-[var(--muted-fill)] py-2.5"
+                    className="flex flex-col items-center rounded-xl border border-[var(--subtle-border)] bg-[var(--muted-fill)] py-2"
                   >
-                    <span className="font-mono text-xl font-bold tabular-nums text-[var(--ink)]">
+                    <span className="font-mono text-lg font-bold tabular-nums text-[var(--ink)]">
                       {q.digits}
                     </span>
                     <span className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)]">
@@ -165,7 +165,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
               </div>
             ) : null}
 
-            <div className="mt-3.5 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {LOCK_DURATION_PRESETS.map((d) => {
                 const selected = pendingLockDays === d.days;
                 return (
@@ -173,7 +173,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                     key={d.days}
                     type="button"
                     onClick={() => setPendingLockDays(d.days)}
-                      className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
+                      className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                         selected
                           ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                           : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -210,7 +210,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             <button
               type="button"
               onClick={() => setShowConfirmLock(true)}
-              className="mt-4 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+              className="mt-3.5 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:h-11 sm:text-sm"
             >
               <LockKeyhole className="h-4 w-4" />
               <span>
@@ -222,12 +222,12 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           </LiquidGlassCard>
 
           {/* Real Android Device Admin Uninstall Lock */}
-          <LiquidGlassCard className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+          <LiquidGlassCard className="p-3.5 sm:p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                <LockKeyhole className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
                 <div className="min-w-0">
-                  <p className="font-display text-base font-semibold text-[var(--ink)]">
+                  <p className="font-display text-[15px] font-semibold text-[var(--ink)]">
                     {isIOS ? 'Anti-Tamper & Rule Lock' : 'Device Admin Uninstall Lock'}
                   </p>
                   <p className="text-xs text-[var(--ink-muted)]">
@@ -270,16 +270,16 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           />
 
           {/* Accountability PIN Card */}
-          <LiquidGlassCard className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
+          <LiquidGlassCard className="p-3.5 sm:p-4">
+            <div className="flex items-center justify-between gap-2.5">
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 {state.hasPin ? (
-                  <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+                  <LockKeyhole className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
                 ) : (
-                  <LockOpen className="h-5 w-5 shrink-0 text-[var(--ink)]" />
+                  <LockOpen className="h-4 w-4 shrink-0 text-[var(--ink)]" />
                 )}
                 <div className="min-w-0">
-                  <p className="font-display text-base font-semibold text-[var(--ink)]">
+                  <p className="font-display text-[15px] font-semibold text-[var(--ink)]">
                     Accountability PIN
                   </p>
                   <p className="text-xs text-[var(--ink-muted)]">
@@ -315,7 +315,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           </LiquidGlassCard>
         </div>
 
-        <div className="flex flex-col gap-4 lg:col-span-6">
+        <div className="flex flex-col gap-3.5 lg:col-span-6">
           {/* Zero-Loss Recovery Vault */}
           <RecoveryVaultCard
             store={store}
@@ -325,12 +325,12 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           />
 
           {/* Recovery & Lock Alerts */}
-          <LiquidGlassCard className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Bell className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+          <LiquidGlassCard className="p-3.5 sm:p-4">
+            <div className="flex items-center justify-between gap-2.5">
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                <Bell className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
                 <div className="min-w-0">
-                  <p className="font-display text-base font-semibold text-[var(--ink)]">
+                  <p className="font-display text-[15px] font-semibold text-[var(--ink)]">
                     Recovery &amp; Lock Alerts
                   </p>
                   <p className="text-xs text-[var(--ink-muted)]">
@@ -347,10 +347,10 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           </LiquidGlassCard>
 
           {/* Dedicated Download Page CTA */}
-          <LiquidGlassCard className="p-4 sm:p-5" onClick={onOpenDownloadPage}>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--active-fill)] text-[var(--active-content)]">
-                <Download className="h-5 w-5" />
+          <LiquidGlassCard className="p-3.5 sm:p-4" onClick={onOpenDownloadPage}>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--active-fill)] text-[var(--active-content)]">
+                <Download className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[var(--ink)]">
@@ -362,12 +362,12 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                     : 'Download the Play-Protect-safe Android APK with On-Device DNS Shield'}
                 </p>
               </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" />
+              <ChevronRight className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
             </div>
           </LiquidGlassCard>
 
           {/* Optional Advanced Phone Settings */}
-          <LiquidGlassCard className="p-4 sm:p-5">
+          <LiquidGlassCard className="p-3.5 sm:p-4">
             <button
               type="button"
               onClick={() => setShowAdvancedSettings((v) => !v)}
@@ -410,7 +410,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           </LiquidGlassCard>
 
           {/* Personalization, Daily Spend Baseline & Appearance */}
-          <LiquidGlassCard className="p-4 sm:p-5">
+          <LiquidGlassCard className="p-3.5 sm:p-4">
             <LiquidSectionHeader
               title="First Name Greeting"
               subtitle="Optional name shown on your Home shield — saved locally with zero account"
@@ -430,23 +430,23 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
                   placeholder="Your first name"
-                  className="h-10 w-full rounded-[14px] border border-[var(--subtle-border)] bg-[var(--canvas)] pr-3 pl-9 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-[var(--subtle-border)] bg-[var(--canvas)] pr-3 pl-9 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
-                className="h-10 shrink-0 cursor-pointer rounded-[14px] bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+                className="h-10 shrink-0 cursor-pointer rounded-xl bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
               >
                 Save
               </button>
             </form>
 
-            <div className="mt-5">
+            <div className="mt-4">
               <LiquidSectionHeader
                 title="Daily Spend Baseline (₦)"
                 subtitle="Calculates your Naira savings across every betting-free day"
               />
-              <div className="mt-2.5 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {DAILY_SPEND_OPTIONS_NGN.map((amount) => {
                   const selected = state.settings.dailyBetSpendEstimate === amount;
                   return (
@@ -467,12 +467,12 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
               </div>
             </div>
 
-            <div className="mt-5">
+            <div className="mt-4">
               <LiquidSectionHeader
                 title="Appearance Theme"
                 subtitle="Crisp White default or Black & Pink liquid glass finish"
               />
-              <div className="mt-2.5 grid grid-cols-3 gap-2">
+              <div className="mt-2 grid grid-cols-3 gap-1.5">
                 {(Object.values(ThemeMode) as ThemeMode[]).map((mode) => {
                   const selected = state.settings.themeMode === mode;
                   return (
@@ -480,7 +480,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                       key={mode}
                       type="button"
                       onClick={() => onSelectTheme(mode)}
-                      className={`cursor-pointer rounded-[16px] border py-3 text-center text-sm font-medium transition-colors ${
+                      className={`cursor-pointer rounded-xl border px-1.5 py-2 text-center text-xs font-medium transition-colors sm:text-sm ${
                         selected
                           ? 'border-[var(--active-fill)] bg-[var(--active-fill)] font-semibold text-[var(--active-content)]'
                           : 'border-[var(--subtle-border)] bg-[var(--control-bg)] text-[var(--ink)] hover:bg-[var(--muted-fill)]'
@@ -496,16 +496,16 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
             <button
               type="button"
               onClick={onResetStreak}
-              className="mt-4 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+              className="mt-3.5 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="h-3.5 w-3.5" />
               <span>Restart Clean Streak Timer</span>
             </button>
 
             <button
               type="button"
               onClick={onReplayTour}
-              className="mt-2 h-11 w-full cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
+              className="mt-2 h-10 w-full cursor-pointer rounded-full border border-[var(--subtle-border)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--muted-fill)]"
             >
               Replay Guided Tour
             </button>
@@ -526,20 +526,20 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
           aria-label={`Activate ${formatLockDurationAdjective(pendingLockDays)} Lock?`}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
         >
-          <div className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]">
-            <h2 className="font-display text-lg font-bold">
+          <div className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:p-5">
+            <h2 className="font-display text-base font-bold sm:text-lg">
               Activate {formatLockDurationAdjective(pendingLockDays)} Lock?
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)]">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)] sm:text-sm">
               While Commitment Lock is active, GambleAware will not allow uninstalling the app,
               pausing protection, turning off categories, or deleting blocked rules until the timer
               completes.
             </p>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowConfirmLock(false)}
-                className="cursor-pointer rounded-full px-4 py-2 text-sm font-medium text-[var(--ink-muted)] hover:bg-[var(--muted-fill)]"
+                className="cursor-pointer rounded-full px-4 py-2 text-xs font-medium text-[var(--ink-muted)] hover:bg-[var(--muted-fill)] sm:text-sm"
               >
                 Cancel
               </button>
@@ -549,7 +549,7 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
                   onActivateTimeLock(pendingLockDays, includeAntiTamper);
                   setShowConfirmLock(false);
                 }}
-                className="cursor-pointer rounded-full bg-[var(--active-fill)] px-5 py-2 text-sm font-semibold text-[var(--active-content)] hover:opacity-90"
+                className="cursor-pointer rounded-full bg-[var(--active-fill)] px-5 py-2 text-xs font-semibold text-[var(--active-content)] hover:opacity-90 sm:text-sm"
               >
                 Lock Now
               </button>
@@ -568,9 +568,9 @@ export const LockSettingsScreen: React.FC<LockSettingsScreenProps> = ({
         >
           <form
             onSubmit={handleSavePin}
-            className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-5 text-[var(--ink)]"
+            className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-[var(--ink)] sm:p-5"
           >
-            <h2 className="font-display text-lg font-bold">Set 4-Digit Accountability PIN</h2>
+            <h2 className="font-display text-base font-bold sm:text-lg">Set 4-Digit Accountability PIN</h2>
             <p className="mt-1.5 text-xs text-[var(--ink-muted)]">
               Enter a 4-digit PIN required to pause protection or weaken blocklist rules.
             </p>

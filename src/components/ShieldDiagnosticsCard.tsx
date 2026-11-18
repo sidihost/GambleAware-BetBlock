@@ -66,16 +66,16 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
       : '------';
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3.5">
       {/* 5-Layer Leak-Check Diagnostics */}
-      <LiquidGlassCard className="p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-3">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
+        <div className="flex items-start justify-between gap-2.5">
           <LiquidSectionHeader
             title="5-Layer Shield Leak Check"
             subtitle={`${audit.healthyCount} of ${audit.totalCount} anti-bypass layers armed`}
           />
           <div className="shrink-0 text-right">
-            <p className="font-mono text-2xl font-bold tabular-nums text-[var(--accent-ink)]">
+            <p className="font-mono text-xl font-bold tabular-nums text-[var(--accent-ink)]">
               {audit.score}%
             </p>
             <p className="font-mono text-[10px] font-semibold tracking-wider text-[var(--ink-muted)] uppercase">
@@ -84,16 +84,16 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
           </div>
         </div>
 
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)]">
+        <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full border border-[var(--subtle-border)] bg-[var(--muted-fill)]">
           <div
             className="h-full rounded-full bg-[var(--active-fill)] transition-all duration-300"
             style={{ width: `${Math.max(6, audit.score)}%` }}
           />
         </div>
 
-        <div className="mt-3.5 divide-y divide-[var(--subtle-border)]/50">
+        <div className="mt-3 divide-y divide-[var(--subtle-border)]/50">
           {audit.layers.map((layer) => (
-            <div key={layer.id} className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0">
+            <div key={layer.id} className="flex items-start gap-2.5 py-2 first:pt-0 last:pb-0">
               {layer.isHealthy ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
               ) : (
@@ -116,13 +116,13 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
       </LiquidGlassCard>
 
       {/* Trusted Buddy Co-Lock (Zero-Server Offline Challenge/Response) */}
-      <LiquidGlassCard className="p-4 sm:p-5">
+      <LiquidGlassCard className="p-3.5 sm:p-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
-            <Handshake className="h-5 w-5" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--soft-accent-bg)] text-[var(--accent-ink)]">
+            <Handshake className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-base font-semibold text-[var(--ink)]">
+            <h3 className="font-display text-[15px] font-semibold text-[var(--ink)]">
               Trusted Buddy Co-Lock
             </h3>
             <p className="text-xs text-[var(--ink-muted)]">
@@ -203,19 +203,19 @@ export const ShieldDiagnosticsCard: React.FC<ShieldDiagnosticsCardProps> = ({
             </form>
           </div>
         ) : (
-          <form onSubmit={handleArmBuddy} className="mt-3.5 flex flex-col gap-2 sm:flex-row">
+          <form onSubmit={handleArmBuddy} className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               maxLength={40}
               value={partnerDraft}
               onChange={(e) => setPartnerDraft(e.target.value)}
               placeholder="Trusted friend, spouse, or sponsor name"
-              className="h-11 min-w-0 flex-1 rounded-[14px] border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
+              className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--active-fill)] focus:outline-none"
             />
             <button
               type="submit"
               data-testid="arm-buddy-colock-button"
-              className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+              className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
             >
               <LockKeyhole className="h-3.5 w-3.5" />
               <span>Arm Co-Lock</span>
