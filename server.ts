@@ -10,12 +10,28 @@ import {
   buildWelcomePackHtml,
   isValidEmailAddress,
   sanitizeFirstName,
-} from './src/utils/welcomePack.ts';
+} from './src/utils/welcomePackCore.ts';
+
+function readCliArg(flagName: string): string | undefined {
+  const idx = process.argv.indexOf(flagName);
+  if (idx !== -1 && process.argv[idx + 1]) {
+    return process.argv[idx + 1];
+  }
+  const prefixed = process.argv.find((arg) => arg.startsWith(`${flagName}=`));
+  return prefixed ? prefixed.slice(flagName.length + 1) : undefined;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PORT = Number(process.env.PORT) || 3000;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const cliPort = Number(readCliArg('--port'));
+const PORT =
+  Number.isFinite(cliPort) && cliPort > 0
+    ? cliPort
+    : IS_PRODUCTION
+      ? Number(process.env.PORT) || 3000
+      : 3000;
+const HOST = readCliArg('--host') || '0.0.0.0';
 
 const APK_FILENAME = 'GambleAware-Nigeria.apk';
 const GITHUB_APK_URL =
@@ -351,7 +367,7 @@ async function startServer() {
   if (!IS_PRODUCTION) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true, hmr: false },
+      server: { middlewareMode: true, hmr: false, ws: false },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -378,10 +394,17 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`GambleAware server listening on http://0.0.0.0:${PORT}`);
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`GambleAware server listening on http://${HOST}:${PORT}`);
     void ensureApkCached().catch(() => {});
   });
+
+  const shutdown = () => {
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 2000).unref();
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
 }
 
 startServer().catch((err) => {
