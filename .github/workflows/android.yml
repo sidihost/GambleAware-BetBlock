@@ -67,7 +67,7 @@ jobs:
         KEYSTORE_PATH: ${{ github.workspace }}/ci-release.jks
         STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'gambleaware_ci_release_store' }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'gambleaware_ci_release_store' }}
-      run: ./gradlew testDebugUnitTest assembleRelease --stacktrace
+      run: ./gradlew testDebugUnitTest assembleRelease --stacktrace --no-configuration-cache
 
     - name: Verify APK signature and package GambleAware-Nigeria.apk
       run: |

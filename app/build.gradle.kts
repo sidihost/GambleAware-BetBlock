@@ -81,6 +81,11 @@ secrets {
   propertiesFileName = ".env"
   defaultPropertiesFileName = ".env.example"
   ignoreList.add("FIREBASE_APPCHECK_DEBUG_TOKEN")
+  ignoreList.add("RESEND_API_KEY")
+  ignoreList.add("WELCOME_EMAIL_FROM")
+  ignoreList.add("GEMINI_API_KEY")
+  ignoreList.add("PORT")
+  ignoreList.add("NODE_ENV")
 }
 
 googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Download, Menu, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ChevronRight, Download, Menu, X } from 'lucide-react';
 import {
   ANDROID_APK_DOWNLOAD_URL,
   APK_DOWNLOAD_FILENAME,
@@ -61,15 +61,64 @@ export const BrandGIcon: React.FC<{ className?: string }> = ({ className = 'h-4 
 );
 
 const NAV_LINKS = [
-  { href: '#register', label: 'Free Account' },
-  { href: '#live-filter', label: 'Live Filter' },
-  { href: '#coverage', label: 'Coverage' },
-  { href: '#compare', label: 'Compare' },
-  { href: '#install', label: 'Install' },
+  { href: '#register', id: 'register', label: 'Free Account' },
+  { href: '#live-filter', id: 'live-filter', label: 'Live Filter' },
+  { href: '#coverage', id: 'coverage', label: 'Coverage' },
+  { href: '#compare', id: 'compare', label: 'Compare' },
+  { href: '#install', id: 'install', label: 'Install' },
 ];
 
 export const AppHeader: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 12);
+
+      // Determine active section based on scroll position
+      const threshold = scrollY + 120;
+      let current = '';
+      for (const item of NAV_LINKS) {
+        const sectionEl = document.getElementById(item.id);
+        if (sectionEl && sectionEl.offsetTop <= threshold) {
+          current = item.id;
+        }
+      }
+      setActiveSection(current);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handleViewportChange = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        setMobileMenuOpen(false);
+      }
+    };
+    mq.addEventListener('change', handleViewportChange);
+    return () => mq.removeEventListener('change', handleViewportChange);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
 
   const handleBrandClick = () => {
     setMobileMenuOpen(false);
@@ -77,91 +126,129 @@ export const AppHeader: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-[var(--subtle-border)] bg-[var(--glass-fill)] backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        {/* Zone 1: Brand Wordmark */}
-        <button
-          type="button"
-          onClick={handleBrandClick}
-          className="flex shrink-0 cursor-pointer items-center gap-2.5 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
-        >
-          <BrandGMark className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
-          <span className="font-display text-base font-bold tracking-tight text-[var(--ink)]">
-            GambleAware
-          </span>
-        </button>
-
-        {/* Zone 2: Primary Section Navigation */}
-        <nav
-          aria-label="Primary sections"
-          className="hidden items-center gap-7 lg:flex"
-        >
-          {NAV_LINKS.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="shrink-0 text-sm font-medium whitespace-nowrap text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)]"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        {/* Zone 3: Primary CTA */}
-        <div className="flex shrink-0 items-center gap-2">
-          <a
-            href={ANDROID_APK_DOWNLOAD_URL}
-            download={APK_DOWNLOAD_FILENAME}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
-          >
-            <Download className="h-3.5 w-3.5 shrink-0" />
-            <span>Download APK</span>
-          </a>
-
+    <>
+      <header
+        className={`sticky top-0 z-40 w-full border-b transition-[background-color,border-color,box-shadow] duration-200 backdrop-blur-xl ${
+          isScrolled || mobileMenuOpen
+            ? 'border-[var(--subtle-border)] bg-[var(--surface)]/95 shadow-sm'
+            : 'border-[var(--subtle-border)] bg-[var(--glass-fill)]'
+        }`}
+      >
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6 lg:gap-8">
+          {/* Zone 1: Brand Wordmark */}
           <button
             type="button"
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            aria-expanded={mobileMenuOpen}
-            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] lg:hidden"
+            onClick={handleBrandClick}
+            className="flex min-w-0 shrink-0 cursor-pointer items-center gap-2 text-left whitespace-nowrap sm:gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
           >
-            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            <BrandGMark className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
+            <span className="font-display text-[15px] font-bold tracking-tight text-[var(--ink)] sm:text-base">
+              GambleAware
+            </span>
           </button>
-        </div>
-      </div>
 
-      {/* Responsive Mobile Menu Drawer */}
-      {mobileMenuOpen ? (
-        <nav
-          aria-label="Mobile navigation"
-          className="border-t border-[var(--subtle-border)] bg-[var(--surface)] px-4 py-3 lg:hidden"
-        >
-          <div className="flex flex-col gap-1">
-            {NAV_LINKS.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex h-11 items-center rounded-xl px-3 text-sm font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]"
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
+          {/* Zone 2: Primary Section Navigation (Tablet md: 768px+ & Desktop) */}
+          <nav
+            aria-label="Primary sections"
+            className="hidden items-center md:flex md:gap-4 lg:gap-7"
+          >
+            {NAV_LINKS.map((item) => {
+              const isActive = activeSection === item.id;
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? 'location' : undefined}
+                  className={`relative shrink-0 py-1 text-[13px] font-medium whitespace-nowrap transition-colors lg:text-sm ${
+                    isActive
+                      ? 'font-semibold text-[var(--ink)] after:absolute after:right-0 after:bottom-0 after:left-0 after:h-[2px] after:rounded-full after:bg-[var(--active-fill)]'
+                      : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                  }`}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
+          </nav>
 
-          <div className="mt-2 border-t border-[var(--subtle-border)] pt-3">
+          {/* Zone 3: Primary CTA + Responsive Mobile Menu Trigger */}
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <a
               href={ANDROID_APK_DOWNLOAD_URL}
               download={APK_DOWNLOAD_FILENAME}
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] hover:opacity-90"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-10 sm:px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
             >
-              <Download className="h-4 w-4 shrink-0" />
-              <span>Download Android App (APK)</span>
+              <Download className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                Download<span className="hidden min-[380px]:inline"> APK</span>
+              </span>
             </a>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav-drawer"
+              className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] md:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
+            >
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
           </div>
-        </nav>
+        </div>
+
+        {/* Responsive Mobile Menu Drawer Overlay (< 768px) */}
+        {mobileMenuOpen ? (
+          <nav
+            id="mobile-nav-drawer"
+            aria-label="Mobile navigation"
+            className="absolute inset-x-0 top-full z-40 border-b border-[var(--subtle-border)] bg-[var(--surface)] px-4 pt-2 pb-4 shadow-xl md:hidden"
+          >
+            <div className="mx-auto flex max-w-md flex-col gap-1">
+              {NAV_LINKS.map((item) => {
+                const isActive = activeSection === item.id;
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    aria-current={isActive ? 'location' : undefined}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex h-11 items-center justify-between rounded-xl px-3.5 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-[var(--soft-accent-bg)] font-semibold text-[var(--accent-ink)]'
+                        : 'font-medium text-[var(--ink)] hover:bg-[var(--muted-fill)]'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <ChevronRight className="h-4 w-4 opacity-50" />
+                  </a>
+                );
+              })}
+
+              <div className="mt-2 border-t border-[var(--subtle-border)] pt-3">
+                <a
+                  href={ANDROID_APK_DOWNLOAD_URL}
+                  download={APK_DOWNLOAD_FILENAME}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90"
+                >
+                  <Download className="h-4 w-4 shrink-0" />
+                  <span>Download Android App (APK)</span>
+                </a>
+              </div>
+            </div>
+          </nav>
+        ) : null}
+      </header>
+
+      {/* Subtle Backdrop Scrim to Dismiss Mobile Menu on Outside Tap */}
+      {mobileMenuOpen ? (
+        <div
+          aria-hidden="true"
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 top-14 z-30 bg-black/25 backdrop-blur-[2px] sm:top-16 md:hidden"
+        />
       ) : null}
-    </header>
+    </>
   );
 };

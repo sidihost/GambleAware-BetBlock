@@ -6,7 +6,7 @@ export const LiquidGlassBackdrop: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-[var(--canvas)] text-[var(--ink)] transition-colors duration-200">
+    <div className="relative min-h-screen w-full overflow-x-clip bg-[var(--canvas)] text-[var(--ink)] transition-colors duration-200">
       <div className="relative z-10 min-h-screen">{children}</div>
     </div>
   );
