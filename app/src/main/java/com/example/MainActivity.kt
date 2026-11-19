@@ -179,7 +179,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
 
     LaunchedEffect(showPreloader) {
         if (showPreloader) {
-            delay(1000)
+            delay(620)
             showPreloader = false
         }
     }

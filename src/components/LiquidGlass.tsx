@@ -95,7 +95,7 @@ export const LiquidStatusButton: React.FC<{
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1.5 font-mono text-[11px] font-bold tracking-wider uppercase whitespace-nowrap ${
+      className={`inline-flex shrink-0 items-center gap-1.5 font-mono text-[11px] font-semibold tracking-wider uppercase whitespace-nowrap ${
         isActive ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-muted)]'
       }`}
     >
@@ -116,16 +116,16 @@ export const LiquidSwitch: React.FC<{
     aria-checked={checked}
     aria-label={ariaLabel}
     onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] ${
+    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] ${
       checked
-        ? 'bg-[var(--active-fill)] border-[var(--active-fill)]'
-        : 'bg-[var(--muted-fill)] border-[var(--subtle-border)]'
+        ? 'border-[var(--active-fill)] bg-[var(--active-fill)]'
+        : 'border-[var(--subtle-border)] bg-[var(--muted-fill)]'
     }`}
   >
     <span
-      className={`inline-block h-5 w-5 transform rounded-full transition-transform duration-150 ${
+      className={`inline-block h-4 w-4 transform rounded-full transition-transform duration-150 ${
         checked
-          ? 'translate-x-6 bg-[var(--active-content)]'
+          ? 'translate-x-5.5 bg-[var(--active-content)]'
           : 'translate-x-1 bg-[var(--ink-muted)]'
       }`}
     />
@@ -136,8 +136,15 @@ export const LiquidShieldOrb: React.FC<{
   isProtected: boolean;
   isLocked: boolean;
   onClick: () => void;
+  sizeClass?: string;
   tourKey?: string;
-}> = ({ isProtected, isLocked, onClick, tourKey }) => {
+}> = ({
+  isProtected,
+  isLocked,
+  onClick,
+  sizeClass = 'h-[124px] w-[124px]',
+  tourKey,
+}) => {
   const ticks = Array.from({ length: 60 }, (_, i) => {
     const isMajor = i % 5 === 0;
     const angleRad = ((i * 6 - 90) * Math.PI) / 180;
@@ -148,7 +155,7 @@ export const LiquidShieldOrb: React.FC<{
     const opacity = isProtected
       ? isMajor
         ? 0.92
-        : 0.34
+        : 0.32
       : isMajor
         ? 0.35
         : 0.14;
@@ -170,21 +177,19 @@ export const LiquidShieldOrb: React.FC<{
       type="button"
       onClick={onClick}
       data-tour-key={tourKey}
-      aria-label={isProtected ? 'GambleAware Shield Active — tap to manage' : 'Activate GambleAware Shield'}
-      className="group relative flex h-[136px] w-[136px] cursor-pointer items-center justify-center rounded-full transition-transform duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--active-fill)] sm:h-[152px] sm:w-[152px]"
+      aria-label={isProtected ? 'GambleAware Shield Active — tap to inspect' : 'Activate GambleAware Shield'}
+      className={`group relative flex cursor-pointer items-center justify-center rounded-full transition-transform duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--active-fill)] ${sizeClass}`}
     >
       <svg viewBox="0 0 180 180" className="h-full w-full">
-        {/* Outer translucent ring */}
         <circle
           cx="90"
           cy="90"
           r="84"
           fill="var(--active-fill)"
-          fillOpacity={isProtected ? 0.09 : 0.03}
+          fillOpacity={isProtected ? 0.08 : 0.03}
           className={isProtected ? 'animate-orb-pulse origin-center' : ''}
         />
 
-        {/* 60-tick precision chronograph bezel */}
         {ticks.map((t, idx) => (
           <line
             key={idx}
@@ -199,16 +204,14 @@ export const LiquidShieldOrb: React.FC<{
           />
         ))}
 
-        {/* Inner ring */}
         <circle
           cx="90"
           cy="90"
           r="62"
           fill="var(--active-fill)"
-          fillOpacity={isProtected ? 0.14 : 0.05}
+          fillOpacity={isProtected ? 0.13 : 0.05}
         />
 
-        {/* Hardened lock bezel circle */}
         {isLocked ? (
           <circle
             cx="90"
@@ -221,7 +224,6 @@ export const LiquidShieldOrb: React.FC<{
           />
         ) : null}
 
-        {/* Core Medallion */}
         <circle
           cx="90"
           cy="90"
@@ -241,7 +243,6 @@ export const LiquidShieldOrb: React.FC<{
           strokeWidth="0.9"
         />
 
-        {/* GambleAware Geometric G + North-Star Emblem */}
         <g transform="translate(90 90) scale(1.18) translate(-54 -54)">
           <path
             d="M68,36 L63.5,41 L45,41 L41,45 L41,63 L45,67 L63,67 L67.5,71.8 L63.8,74.5 L42,74.5 L33.5,66 L33.5,42 L42,33.5 L64.2,33.5 Z"

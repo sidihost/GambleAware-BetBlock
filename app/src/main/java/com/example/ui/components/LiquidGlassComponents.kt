@@ -77,16 +77,6 @@ fun LiquidGlassBackdrop(
 ) {
     val liquid = LocalLiquidColors.current
     val inkColor = MaterialTheme.colorScheme.onBackground
-    val infiniteTransition = rememberInfiniteTransition(label = "liquid_backdrop")
-    val drift by infiniteTransition.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 10500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "backdrop_drift",
-    )
 
     Box(
         modifier = modifier
@@ -97,56 +87,27 @@ fun LiquidGlassBackdrop(
             val w = size.width
             val h = size.height
 
-            val orb1Center = Offset(
-                x = w * 0.84f + (drift * w * 0.032f),
-                y = h * 0.13f - (drift * h * 0.018f),
-            )
-            drawCircle(
-                color = liquid.blobOne,
-                radius = w * 0.44f,
-                center = orb1Center,
-            )
-
-            val orb2Center = Offset(
-                x = w * 0.11f - (drift * w * 0.028f),
-                y = h * 0.35f + (drift * h * 0.022f),
-            )
-            drawCircle(
-                color = liquid.blobTwo,
-                radius = w * 0.35f,
-                center = orb2Center,
-            )
-
-            val orb3Center = Offset(
-                x = w * 0.68f + (drift * w * 0.024f),
-                y = h * 0.78f - (drift * h * 0.018f),
-            )
-            drawCircle(
-                color = liquid.blobThree,
-                radius = w * 0.47f,
-                center = orb3Center,
-            )
-
-            // Crisp Black & Pink concentric orbital hairline rings
-            val ringCenter = Offset(w * 0.5f, h * 0.24f)
-            val ringAlpha = if (isProtected) 0.14f else 0.06f
+            // Subtle architectural concentric radar rings centered behind the hero shield
+            val ringCenter = Offset(w * 0.5f, h * 0.22f)
+            val ringAlpha = if (isProtected) 0.11f else 0.05f
             val ringColor = liquid.activeFill
             val strokePx = 0.75.dp.toPx()
+
             drawCircle(
                 color = ringColor.copy(alpha = ringAlpha),
-                radius = w * 0.42f,
+                radius = w * 0.40f,
                 center = ringCenter,
                 style = Stroke(width = strokePx),
             )
             drawCircle(
-                color = ringColor.copy(alpha = ringAlpha * 0.75f),
+                color = ringColor.copy(alpha = ringAlpha * 0.65f),
                 radius = w * 0.62f,
                 center = ringCenter,
                 style = Stroke(width = strokePx),
             )
             drawCircle(
-                color = inkColor.copy(alpha = ringAlpha * 0.4f),
-                radius = w * 0.84f,
+                color = inkColor.copy(alpha = ringAlpha * 0.35f),
+                radius = w * 0.86f,
                 center = ringCenter,
                 style = Stroke(width = strokePx),
             )

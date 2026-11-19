@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
-import { AppHeader } from './components/AppHeader';
+import { AppHeader, BrandGMark } from './components/AppHeader';
 import { AppPreloader } from './components/AppPreloader';
 import { LiquidGlassBackdrop } from './components/LiquidGlass';
 import { loadStore, saveStore } from './data/storage';
@@ -46,7 +46,7 @@ export function App() {
     document.documentElement.classList.toggle('dark', isDarkTheme);
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) {
-      themeMeta.setAttribute('content', isDarkTheme ? '#060608' : '#FFFFFF');
+      themeMeta.setAttribute('content', isDarkTheme ? '#090B10' : '#F8F9FB');
     }
   }, [isDarkTheme]);
 
@@ -66,10 +66,6 @@ export function App() {
     }
   }, []);
 
-  const toggleQuickTheme = useCallback(() => {
-    updateTheme(isDarkTheme ? ThemeMode.LIGHT : ThemeMode.DARK);
-  }, [isDarkTheme, updateTheme]);
-
   const dismissPreloader = useCallback(() => {
     setShowPreloader(false);
   }, []);
@@ -77,30 +73,52 @@ export function App() {
   return (
     <LiquidGlassBackdrop isProtected>
       <AppPreloader visible={showPreloader} onDismiss={dismissPreloader} />
-      <AppHeader isDarkTheme={isDarkTheme} onToggleTheme={toggleQuickTheme} />
+      <AppHeader />
 
-      <main className="min-h-[calc(100vh-7rem)]">
+      <main className="min-h-[calc(100vh-8rem)]">
         <DownloadScreen />
       </main>
 
-      <footer className="border-t border-[var(--subtle-border)] px-4 py-6">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row md:px-2">
-          <div className="text-center sm:text-left">
-            <p className="font-display text-sm font-bold text-[var(--ink)]">GambleAware</p>
-            <p className="mt-0.5 text-xs text-[var(--ink-muted)]">
-              By Imoogle Technology · Android App (APK)
-            </p>
+      <footer className="border-t border-[var(--subtle-border)] bg-[var(--surface)] px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
+          <div className="flex items-center gap-3">
+            <BrandGMark className="h-8 w-8 shrink-0" />
+            <div className="text-left">
+              <p className="font-display text-sm font-bold text-[var(--ink)]">GambleAware</p>
+              <p className="text-xs text-[var(--ink-muted)]">
+                Built by Imoogle Technology · On-Device Android Blocker v2.1.1
+              </p>
+            </div>
           </div>
+
+          <nav aria-label="Footer sections" className="flex flex-wrap items-center justify-center gap-5 text-xs font-medium text-[var(--ink-muted)]">
+            <a href="#live-filter" className="hover:text-[var(--ink)]">
+              Live Filter
+            </a>
+            <a href="#coverage" className="hover:text-[var(--ink)]">
+              Coverage
+            </a>
+            <a href="#architecture" className="hover:text-[var(--ink)]">
+              Architecture
+            </a>
+            <a href="#compare" className="hover:text-[var(--ink)]">
+              Compare
+            </a>
+            <a href="#install" className="hover:text-[var(--ink)]">
+              Install
+            </a>
+          </nav>
 
           <div
             role="group"
             aria-label="Theme preference"
-            className="inline-flex items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] p-1"
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] p-1"
           >
             <button
               type="button"
+              data-testid="theme-light-btn"
               onClick={() => updateTheme(ThemeMode.LIGHT)}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                 !isDarkTheme
                   ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                   : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -111,15 +129,16 @@ export function App() {
             </button>
             <button
               type="button"
+              data-testid="theme-dark-btn"
               onClick={() => updateTheme(ThemeMode.DARK)}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                 isDarkTheme
                   ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                   : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
               }`}
             >
               <Moon className="h-3.5 w-3.5" />
-              <span>Black &amp; Pink</span>
+              <span>Obsidian</span>
             </button>
           </div>
         </div>

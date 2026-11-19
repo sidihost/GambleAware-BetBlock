@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { Download, Menu, Moon, Sun, X } from 'lucide-react';
+import { Download, Menu, X } from 'lucide-react';
 import {
   ANDROID_APK_DOWNLOAD_URL,
   APK_DOWNLOAD_FILENAME,
 } from '../utils/platformCompatibility';
 
 /**
- * Architectural GambleAware Geometric G Logo — pure flat Apple/Google vector paths (zero gradients)
+ * Architectural GambleAware Geometric G Logo — crisp vector emblem
  */
 export const BrandGMark: React.FC<{ className?: string }> = ({
   className = 'h-9 w-9',
 }) => (
   <svg viewBox="0 0 108 108" fill="none" aria-hidden="true" className={className}>
-    <rect x="2" y="2" width="104" height="104" rx="24" fill="#0A070B" />
+    <rect x="2" y="2" width="104" height="104" rx="24" fill="#0A0B10" />
     <rect
       x="2.8"
       y="2.8"
@@ -20,25 +20,21 @@ export const BrandGMark: React.FC<{ className?: string }> = ({
       height="102.4"
       rx="23.2"
       stroke="#FF3D9A"
-      strokeOpacity="0.35"
+      strokeOpacity="0.4"
       strokeWidth="1.4"
     />
     <circle cx="54" cy="54" r="38" fill="#260B19" fillOpacity="0.48" />
 
     <g transform="translate(54 54) scale(1.42) translate(-54 -54)">
-      {/* Sovereign Pearl-White Geometric G Body */}
       <path
         d="M68,36 L63.5,41 L45,41 L41,45 L41,63 L45,67 L63,67 L67.5,71.8 L63.8,74.5 L42,74.5 L33.5,66 L33.5,42 L42,33.5 L64.2,33.5 Z"
         fill="#FFFFFF"
       />
-      {/* Luminous Neon Pink Vault Keystone Bolt */}
       <path
         d="M52,50.5 L74.5,50.5 L74.5,65.5 L67.2,72.5 L67.2,57.5 L48.5,57.5 Z"
         fill="#FF3D9A"
       />
-      {/* Deep Pink Bevel Pillar */}
       <path d="M67.2,57.5 L74.5,50.5 L74.5,65.5 L67.2,72.5 Z" fill="#C4116B" />
-      {/* North-Star Beacon */}
       <path
         d="M70.5,34.5 Q70.5,39.8 75.8,39.8 Q70.5,39.8 70.5,45.1 Q70.5,39.8 65.2,39.8 Q70.5,39.8 70.5,34.5 Z"
         fill="#FF72B8"
@@ -50,9 +46,6 @@ export const BrandGMark: React.FC<{ className?: string }> = ({
 
 export const BrandAnchorMark = BrandGMark;
 
-/**
- * Compact geometric GambleAware G glyph for nav tabs, buttons, and status chips
- */
 export const BrandGIcon: React.FC<{ className?: string }> = ({ className = 'h-4 w-4' }) => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
     <path
@@ -68,21 +61,14 @@ export const BrandGIcon: React.FC<{ className?: string }> = ({ className = 'h-4 
 );
 
 const NAV_LINKS = [
-  { href: '#features', label: 'Features' },
-  { href: '#platforms', label: 'Android APK' },
-  { href: '#install-guide', label: 'How to Install' },
-  { href: '#comparison', label: 'vs. Gamban' },
+  { href: '#live-filter', label: 'Live Filter' },
+  { href: '#coverage', label: 'Coverage' },
+  { href: '#architecture', label: 'Architecture' },
+  { href: '#compare', label: 'Compare' },
+  { href: '#install', label: 'Install' },
 ];
 
-interface AppHeaderProps {
-  isDarkTheme?: boolean;
-  onToggleTheme?: () => void;
-}
-
-export const AppHeader: React.FC<AppHeaderProps> = ({
-  isDarkTheme = false,
-  onToggleTheme,
-}) => {
+export const AppHeader: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleBrandClick = () => {
@@ -92,61 +78,44 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-[var(--subtle-border)] bg-[var(--glass-fill)] backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-5 md:px-6">
-        {/* Zone 1: Brand G Lockup */}
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        {/* Zone 1: Brand Wordmark */}
         <button
           type="button"
           onClick={handleBrandClick}
-          className="flex shrink-0 cursor-pointer items-center gap-2 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
+          className="flex shrink-0 cursor-pointer items-center gap-2.5 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
         >
           <BrandGMark className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
-          <span className="font-display text-sm font-bold tracking-tight text-[var(--ink)] sm:text-base">
+          <span className="font-display text-base font-bold tracking-tight text-[var(--ink)]">
             GambleAware
           </span>
         </button>
 
-        {/* Zone 2: Desktop Navigation */}
+        {/* Zone 2: Primary Section Navigation */}
         <nav
           aria-label="Primary sections"
-          className="hidden items-center gap-5 lg:flex lg:gap-7"
+          className="hidden items-center gap-7 lg:flex"
         >
           {NAV_LINKS.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="shrink-0 text-sm font-medium whitespace-nowrap text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] hover:underline hover:underline-offset-4"
+              className="shrink-0 text-sm font-medium whitespace-nowrap text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)]"
             >
               {item.label}
             </a>
           ))}
         </nav>
 
-        {/* Zone 3: Theme & Direct APK Download */}
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {onToggleTheme ? (
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              aria-label={isDarkTheme ? 'Switch to White theme' : 'Switch to Black & Pink theme'}
-              title={isDarkTheme ? 'Switch to White theme' : 'Switch to Black & Pink theme'}
-              className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--muted-fill)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] sm:h-9 sm:w-9"
-            >
-              {isDarkTheme ? (
-                <Sun className="h-4 w-4 text-[var(--accent-ink)]" />
-              ) : (
-                <Moon className="h-4 w-4 text-[var(--accent-ink)]" />
-              )}
-            </button>
-          ) : null}
-
+        {/* Zone 3: Primary CTA */}
+        <div className="flex shrink-0 items-center gap-2">
           <a
             href={ANDROID_APK_DOWNLOAD_URL}
             download={APK_DOWNLOAD_FILENAME}
-            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 sm:h-9 sm:px-3.5"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold whitespace-nowrap text-[var(--active-content)] transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
           >
             <Download className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden min-[380px]:inline">Download APK</span>
-            <span className="min-[380px]:hidden">APK</span>
+            <span>Download APK</span>
           </a>
 
           <button
@@ -161,7 +130,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
       </div>
 
-      {/* Responsive Mobile & Tablet Menu Drawer */}
+      {/* Responsive Mobile Menu Drawer */}
       {mobileMenuOpen ? (
         <nav
           aria-label="Mobile navigation"

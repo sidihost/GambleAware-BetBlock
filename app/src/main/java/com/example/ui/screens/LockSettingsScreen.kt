@@ -1036,12 +1036,26 @@ fun LockSettingsScreen(
         )
     }
 
+    val dialogFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = liquid.activeFill,
+        unfocusedBorderColor = liquid.subtleBorder,
+        focusedLabelColor = liquid.accentInk,
+        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        cursorColor = liquid.activeFill,
+        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+        focusedContainerColor = liquid.mutedFill,
+        unfocusedContainerColor = liquid.mutedFill,
+    )
+
     if (showBuddyPairDialog) {
         var partnerName by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showBuddyPairDialog = false },
             shape = RoundedCornerShape(26.dp),
             containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = {
                 LiquidDialogContent(themeMode = state.settings.themeMode) {
                     Text("Pair Trusted Buddy", color = MaterialTheme.colorScheme.onBackground)
@@ -1062,6 +1076,7 @@ fun LockSettingsScreen(
                             placeholder = { Text("e.g. Tunde, Mum, Coach") },
                             singleLine = true,
                             shape = RoundedCornerShape(16.dp),
+                            colors = dialogFieldColors,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -1083,7 +1098,12 @@ fun LockSettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBuddyPairDialog = false }) { Text("Cancel") }
+                TextButton(
+                    onClick = { showBuddyPairDialog = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = liquid.accentInk),
+                ) {
+                    Text("Cancel")
+                }
             },
         )
     }
@@ -1097,6 +1117,8 @@ fun LockSettingsScreen(
             onDismissRequest = { showBuddyUnlockDialog = false },
             shape = RoundedCornerShape(26.dp),
             containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = {
                 LiquidDialogContent(themeMode = state.settings.themeMode) {
                     Text("Emergency Buddy Approval", color = MaterialTheme.colorScheme.onBackground)
@@ -1116,6 +1138,7 @@ fun LockSettingsScreen(
                             label = { Text("Shared Secret Word") },
                             singleLine = true,
                             shape = RoundedCornerShape(16.dp),
+                            colors = dialogFieldColors,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         OutlinedTextField(
@@ -1130,6 +1153,7 @@ fun LockSettingsScreen(
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             shape = RoundedCornerShape(16.dp),
+                            colors = dialogFieldColors,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         if (unlockErr != null) {
@@ -1161,7 +1185,12 @@ fun LockSettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBuddyUnlockDialog = false }) { Text("Cancel") }
+                TextButton(
+                    onClick = { showBuddyUnlockDialog = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = liquid.accentInk),
+                ) {
+                    Text("Cancel")
+                }
             },
         )
     }
@@ -1179,6 +1208,8 @@ fun LockSettingsScreen(
             onDismissRequest = { showPartnerHelperDialog = false },
             shape = RoundedCornerShape(26.dp),
             containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = {
                 LiquidDialogContent(themeMode = state.settings.themeMode) {
                     Text("Partner Key Generator", color = MaterialTheme.colorScheme.onBackground)
@@ -1198,6 +1229,7 @@ fun LockSettingsScreen(
                             label = { Text("Challenge Code") },
                             singleLine = true,
                             shape = RoundedCornerShape(16.dp),
+                            colors = dialogFieldColors,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         OutlinedTextField(
@@ -1206,6 +1238,7 @@ fun LockSettingsScreen(
                             label = { Text("Shared Secret Word") },
                             singleLine = true,
                             shape = RoundedCornerShape(16.dp),
+                            colors = dialogFieldColors,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Column(

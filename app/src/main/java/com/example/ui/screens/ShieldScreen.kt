@@ -116,11 +116,11 @@ fun ShieldScreen(
         when (activeTourKey) {
             TourTargetKeys.SHIELD_ORB -> listState.animateScrollToItem(0)
             TourTargetKeys.SOS_CALM_BAR -> {
-                val sosIdx = if (showQuickOnboarding) 5 else 4
+                val sosIdx = if (showQuickOnboarding) 6 else 5
                 listState.animateScrollToItem(sosIdx)
             }
             TourTargetKeys.FILTER_TESTER -> {
-                val testerIdx = if (showQuickOnboarding) 7 else 6
+                val testerIdx = if (showQuickOnboarding) 8 else 7
                 listState.animateScrollToItem(testerIdx)
             }
         }
