@@ -47,21 +47,21 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
       <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div className="max-w-2xl">
           <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-            01 · Live On-Device Filter Engine
+            02 · Try the Blocker Live
           </p>
           <h2
             id="live-filter-heading"
             className="mt-2 font-display text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-3xl"
           >
-            Test the Zero-VPN blocker before you install.
+            Test how GambleAware blocks sites before you install.
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)] sm:text-base">
-            Runs the exact TypeScript/Kotlin rule engine shipped in GambleAware Android. Type a partial betting name, cashier link, ad tracker, or recovery helpline.
+            Type any betting brand name, deposit link, gambling ad site, or support helpline below to see instant protection in action.
           </p>
         </div>
 
         <p className="font-mono text-xs text-[var(--ink-muted)]">
-          100% local evaluation · Zero network calls
+          100% private · Runs directly on your device
         </p>
       </div>
 
@@ -167,7 +167,7 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
                 <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-[var(--block-border)] pt-3 text-xs sm:grid-cols-3">
                   <div>
                     <dt className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)] uppercase">
-                      Detection Layer
+                      Protection Type
                     </dt>
                     <dd className="mt-0.5 font-semibold text-[var(--ink)]">
                       {verdict.detectionLayer}
@@ -183,7 +183,7 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
                   </div>
                   <div>
                     <dt className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)] uppercase">
-                      Matched Rule
+                      Blocked Target
                     </dt>
                     <dd className="mt-0.5 truncate font-mono font-semibold text-[var(--ink)]">
                       {verdict.matchedTarget}

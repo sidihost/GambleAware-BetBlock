@@ -61,9 +61,9 @@ export const BrandGIcon: React.FC<{ className?: string }> = ({ className = 'h-4 
 );
 
 const NAV_LINKS = [
+  { href: '#register', label: 'Free Account' },
   { href: '#live-filter', label: 'Live Filter' },
   { href: '#coverage', label: 'Coverage' },
-  { href: '#architecture', label: 'Architecture' },
   { href: '#compare', label: 'Compare' },
   { href: '#install', label: 'Install' },
 ];

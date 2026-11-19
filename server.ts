@@ -4,6 +4,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type NextFunction, type Request, type Response } from 'express';
+import {
+  buildWelcomeEmailHtml,
+  buildWelcomeEmailSubject,
+  buildWelcomePackHtml,
+  isValidEmailAddress,
+  sanitizeFirstName,
+} from './src/utils/welcomePack.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -153,6 +160,100 @@ async function startServer() {
     res.json({ ok: true });
   });
 
+  app.post('/api/welcome-email', async (req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const rawFirstName = typeof body.firstName === 'string' ? body.firstName : '';
+    const rawEmail = typeof body.email === 'string' ? body.email.trim() : '';
+    const dailyStakeNgn =
+      typeof body.dailyStakeNgn === 'number' && Number.isFinite(body.dailyStakeNgn)
+        ? Math.max(0, Math.min(1_000_000, Math.round(body.dailyStakeNgn)))
+        : undefined;
+
+    if (!isValidEmailAddress(rawEmail)) {
+      res.status(400).json({ ok: false, error: 'A valid email address is required.' });
+      return;
+    }
+
+    const firstName = sanitizeFirstName(rawFirstName);
+    const forwardedProto = req.get('x-forwarded-proto')?.split(',')[0]?.trim();
+    const protocol = forwardedProto === 'https' || forwardedProto === 'http' ? forwardedProto : req.protocol || 'http';
+    const host = req.get('x-forwarded-host')?.split(',')[0]?.trim() || req.get('host') || `localhost:${PORT}`;
+    const baseUrl = `${protocol}://${host}`;
+
+    const welcomePackQuery = new URLSearchParams({
+      name: firstName,
+      email: rawEmail,
+    }).toString();
+    const welcomePackUrl = `${baseUrl}/downloads/GambleAware-Welcome-Pack.html?${welcomePackQuery}`;
+    const apkDownloadUrl = `${baseUrl}/downloads/${APK_FILENAME}`;
+    const verificationUrl = `${baseUrl}/?verified=1&welcome=${encodeURIComponent(firstName)}#register`;
+
+    const subject = buildWelcomeEmailSubject(firstName);
+    const fromAddress =
+      process.env.WELCOME_EMAIL_FROM?.trim() || 'GambleAware <welcome@gambleaware.app>';
+    const emailHtml = buildWelcomeEmailHtml({
+      firstName,
+      email: rawEmail,
+      verificationUrl,
+      welcomePackUrl,
+      apkDownloadUrl,
+      dailyStakeNgn,
+    });
+    const sentAtIso = new Date().toISOString();
+
+    const resendApiKey = process.env.RESEND_API_KEY?.trim();
+    let deliveryMode: 'sent_via_resend' | 'instant_preview' = 'instant_preview';
+    let deliveryNote =
+      'Your personalized Welcome Email and printable Welcome Pack are ready right below — download or print your recovery guide anytime.';
+
+    if (resendApiKey) {
+      try {
+        const resendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: fromAddress,
+            to: [rawEmail],
+            subject,
+            html: emailHtml,
+          }),
+        });
+        if (resendRes.ok) {
+          deliveryMode = 'sent_via_resend';
+          deliveryNote = `Welcome email dispatched to ${rawEmail}. You can also preview it or download your Welcome Pack immediately below.`;
+        } else {
+          const errText = await resendRes.text().catch(() => '');
+          console.warn('Resend API rejected welcome email dispatch:', resendRes.status, errText);
+          deliveryNote =
+            'Outbound mail provider returned an error; your personalized Welcome Email & Welcome Pack are ready right below.';
+        }
+      } catch (err) {
+        console.warn('Resend welcome email dispatch failed:', err);
+        deliveryNote =
+          'Outbound mail service is temporarily unreachable; your personalized Welcome Email & Welcome Pack are ready right below.';
+      }
+    }
+
+    res.json({
+      ok: true,
+      deliveryMode,
+      deliveryNote,
+      subject,
+      from: fromAddress,
+      to: rawEmail,
+      firstName,
+      sentAtIso,
+      emailHtml,
+      welcomePackUrl,
+      apkDownloadUrl,
+      verificationUrl,
+    });
+  });
+
   app.all('/api/{*splat}', (_req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-store');
     res.status(404).json({ error: 'API route not found' });
@@ -168,6 +269,29 @@ async function startServer() {
   app.get('/manifest.webmanifest', (_req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-store');
     res.status(410).json({ error: 'Web App removed — download the Android APK instead' });
+  });
+
+  // Printable, standalone GambleAware Welcome Pack (direct download or inline preview)
+  app.get('/downloads/GambleAware-Welcome-Pack.html', (req: Request, res: Response) => {
+    const rawName = typeof req.query.name === 'string' ? req.query.name : undefined;
+    const rawEmail = typeof req.query.email === 'string' ? req.query.email : undefined;
+    const isPreview = req.query.preview === '1';
+
+    const html = buildWelcomePackHtml({
+      firstName: rawName,
+      email: rawEmail && isValidEmailAddress(rawEmail) ? rawEmail : undefined,
+    });
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (!isPreview) {
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename="GambleAware-Welcome-Pack.html"',
+      );
+    }
+    res.send(html);
   });
 
   // Same-origin binary APK streaming with Accept-Ranges & Content-Length (fixes iframe/mobile download failures)

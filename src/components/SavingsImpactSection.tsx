@@ -19,34 +19,34 @@ export const SavingsImpactSection: React.FC = () => {
   const comparisonRows = useMemo(
     () => [
       {
-        feature: 'VPN & Work Network Compatibility',
+        feature: 'Works Without a VPN',
         gambleAware:
-          'Zero-VPN Accessibility Shield (runs alongside ProtonVPN, WARP & banking apps)',
-        competitor: 'Occupies the Android VPN slot; breaks work VPNs and drains battery',
+          'No VPN needed — banking apps, work networks, and your own VPN keep running smoothly',
+        competitor: 'Forces a constant VPN that slows your phone, drains battery, and breaks banking apps',
       },
       {
-        feature: 'Keystroke-Level Interception',
+        feature: 'Instant Typing Protection',
         gambleAware:
-          'Blocks betting brands like "sporty" or "bet9ja" while typing before page load',
-        competitor: 'Waits for DNS resolution after navigation begins',
+          'Stops betting brands like "sporty" or "bet9ja" the moment you start typing',
+        competitor: 'Only reacts after the website has already started loading',
       },
       {
-        feature: 'African & Global Mirror Registry',
-        gambleAware: `${metrics.domainCount.toLocaleString()}+ domains & ${metrics.appCount}+ apps incl. SportyBet, Bet9ja, BetKing, MSport, 1xBet & Stake`,
+        feature: 'Nigerian, African & Global Sites',
+        gambleAware: `${metrics.domainCount.toLocaleString()}+ sites & ${metrics.appCount}+ apps including SportyBet, Bet9ja, BetKing, MSport, 1xBet & Stake`,
         competitor:
-          'Primarily Western-centric lists; regional .ng/.ke/.gh mirrors often slip through',
+          'Mainly Western lists where African betting mirrors often slip through',
       },
       {
-        feature: 'Offline Tamper & Buddy Co-Lock',
+        feature: 'Uninstall & Trusted Buddy Lock',
         gambleAware:
-          'Device Admin uninstall lock + 24h–2y timer + zero-server Buddy Challenge/Response',
-        competitor: 'Cloud subscription required for device lock management',
+          'Uninstall lock + 24h–2y Commitment Timer + Trusted Buddy approval code completely free',
+        competitor: 'Paid subscription required to manage device locks',
       },
       {
-        feature: 'Pricing & Data Privacy',
+        feature: 'Pricing & Privacy',
         gambleAware:
-          '100% Free APK · All filtering stays on-device with zero traffic logging',
-        competitor: 'Paid monthly/annual subscription with cloud account telemetry',
+          '100% Free Forever · Everything stays private on your phone',
+        competitor: 'Paid monthly or annual subscription required',
       },
     ],
     [metrics],
@@ -68,7 +68,7 @@ export const SavingsImpactSection: React.FC = () => {
           {/* Left 5 cols: Interactive Savings & Wealth Projection Calculator */}
           <div className="rounded-3xl border border-[var(--subtle-border)] bg-[var(--surface)] p-6 lg:col-span-5">
             <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-              04 · Recovery Impact Calculator
+              05 · Recovery Impact Calculator
             </p>
             <h2
               id="savings-compare-heading"
@@ -157,24 +157,24 @@ export const SavingsImpactSection: React.FC = () => {
           <div className="flex flex-col justify-between rounded-3xl border border-[var(--subtle-border)] bg-[var(--surface)] p-6 lg:col-span-7">
             <div>
               <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-                05 · Technical Comparison
+                06 · Why GambleAware
               </p>
               <h3 className="mt-2 font-display text-2xl font-bold tracking-tight text-[var(--ink)]">
-                GambleAware vs. Legacy VPN Blockers
+                GambleAware vs. Paid Blockers
               </h3>
               <p className="mt-1.5 text-sm text-[var(--ink-muted)]">
-                Why on-device Accessibility &amp; Device Admin enforcement outperforms traditional VPN-based gambling blockers like Gamban.
+                See why GambleAware delivers stronger everyday protection than paid VPN blockers like Gamban — at zero cost.
               </p>
 
               <div className="mt-6 overflow-x-auto">
                 <table className="w-full min-w-[460px] border-collapse text-left text-xs">
                   <thead>
                     <tr className="border-b border-[var(--subtle-border)] font-mono text-[10px] tracking-wider text-[var(--ink-muted)] uppercase">
-                      <th className="py-2.5 pr-4 font-semibold">Capability</th>
+                      <th className="py-2.5 pr-4 font-semibold">Feature</th>
                       <th className="py-2.5 pr-4 font-semibold text-[var(--accent-ink)]">
-                        GambleAware v2.1
+                        GambleAware (Free)
                       </th>
-                      <th className="py-2.5 font-semibold">Gamban / VPN Apps</th>
+                      <th className="py-2.5 font-semibold">Gamban / Paid Apps</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--subtle-border)]">

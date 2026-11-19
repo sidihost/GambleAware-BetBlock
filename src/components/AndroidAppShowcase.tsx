@@ -326,7 +326,7 @@ export const AndroidAppShowcase: React.FC = () => {
                           GambleAware
                         </p>
                         <p className="mt-0.5 font-mono text-[9px] text-[var(--ink-muted)]">
-                          ZERO-VPN ENGINE · v2.1.1
+                          GAMBLEAWARE SHIELD · FREE
                         </p>
                       </div>
                     </div>

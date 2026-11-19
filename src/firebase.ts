@@ -1,9 +1,13 @@
 import { initializeApp } from 'firebase/app';
 import {
+  createUserWithEmailAndPassword,
   getAuth,
   GoogleAuthProvider,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updateProfile,
   type User,
 } from 'firebase/auth';
 import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
@@ -93,6 +97,37 @@ export async function testConnection(): Promise<boolean> {
 export async function signInWithGoogle(): Promise<User> {
   const cred = await signInWithPopup(auth, googleProvider);
   return cred.user;
+}
+
+export async function registerWithEmailAndPassword(
+  firstName: string,
+  email: string,
+  password: string,
+): Promise<{ user: User; verificationEmailSent: boolean }> {
+  const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+  const trimmedName = firstName.trim().slice(0, 40);
+  if (trimmedName) {
+    await updateProfile(cred.user, { displayName: trimmedName }).catch(() => {});
+  }
+  let verificationEmailSent = false;
+  try {
+    await sendEmailVerification(cred.user);
+    verificationEmailSent = true;
+  } catch {
+    verificationEmailSent = false;
+  }
+  return { user: cred.user, verificationEmailSent };
+}
+
+export async function signInWithEmail(email: string, password: string): Promise<User> {
+  const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+  return cred.user;
+}
+
+export async function resendVerificationEmail(): Promise<boolean> {
+  if (!auth.currentUser) return false;
+  await sendEmailVerification(auth.currentUser);
+  return true;
 }
 
 export async function signOutFirebase(): Promise<void> {

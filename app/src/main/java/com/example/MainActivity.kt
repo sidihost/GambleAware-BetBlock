@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -351,6 +352,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                         state = state,
                         hasNotificationPermission = hasNotificationPermission,
                         onEnableAccessibilityShield = { showShieldDisclosure = true },
+                        onEnableDeviceAdmin = { handleDeviceAdminLockToggle() },
                         onRequestNotifications = { handleToggleNotifications(true) },
                         onCompleteSetup = { name, days ->
                             viewModel.completeInitialSetup(name, days, enableProtection = state.isAccessibilityEnabled)
@@ -1144,6 +1146,7 @@ private fun MandatoryThreeStepSetupScreen(
     state: MainUiState,
     hasNotificationPermission: Boolean,
     onEnableAccessibilityShield: () -> Unit,
+    onEnableDeviceAdmin: () -> Unit,
     onRequestNotifications: () -> Unit,
     onCompleteSetup: (name: String, lockDays: Int) -> Unit,
     onSkipSetup: () -> Unit,
@@ -1151,9 +1154,11 @@ private fun MandatoryThreeStepSetupScreen(
     val liquid = LocalLiquidColors.current
     var setupName by remember { mutableStateOf(state.settings.preferredName) }
     var setupLockDays by remember { mutableIntStateOf(0) }
+    var showVisualGuide by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     val step1Done = state.isAccessibilityEnabled || state.isShieldServiceRunning
+    val stepAdminDone = state.isDeviceAdminEnabled
     val step2Done = hasNotificationPermission
     val step3Ready = setupLockDays > 0
 
@@ -1198,14 +1203,14 @@ private fun MandatoryThreeStepSetupScreen(
                 BrandGEmblem(modifier = Modifier.size(40.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "QUICK SETUP • OPTIONAL",
+                        text = "100% FREE • ZERO-VPN SETUP",
                         style = MaterialTheme.typography.labelSmall,
                         letterSpacing = 1.sp,
                         color = liquid.accentInk,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Choose Your Protection Setup",
+                        text = "Set Up GambleAware Shield",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -1216,7 +1221,7 @@ private fun MandatoryThreeStepSetupScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Zero-VPN protection works across all browsers while allowing your own VPN. Enable Accessibility Shield or alerts now, or skip to explore first.",
+                text = "Blocks 1,035+ betting domains & apps across every browser without using your VPN slot. Complete these quick steps or skip to explore first.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1249,22 +1254,70 @@ private fun MandatoryThreeStepSetupScreen(
             // Step 1 (All-Browser & Ad Shield — Zero VPN)
             MandatorySetupStepCard(
                 step = "1",
-                title = "Turn On All-Browser & Ad Shield",
+                title = "Enable All-Browser Accessibility Shield",
                 subtitle = if (step1Done) {
                     "Active • Blocks sites, popunders & betting apps (VPN-free)"
                 } else {
-                    "Optional: tap to grant Accessibility permission (allows other VPNs)"
+                    "Tap to grant Accessibility permission (no VPN slot required)"
                 },
                 done = step1Done,
                 onClick = onEnableAccessibilityShield,
                 testTag = "onboarding_step_shield",
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Step 2 (Optional Alerts & Install Guard)
+            // Collapsible Visual Accessibility Walkthrough (Surpasses Gamban's visual helper)
+            TextButton(
+                onClick = { showVisualGuide = !showVisualGuide },
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    text = if (showVisualGuide) "Hide Accessibility Step-by-Step Guide" else "How to enable Accessibility (3 quick taps)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = liquid.accentInk,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            if (showVisualGuide) {
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 16.dp,
+                    fillColor = liquid.controlFill,
+                    borderColor = liquid.subtleBorder,
+                    contentPadding = 14.dp,
+                ) {
+                    Text(
+                        text = "1. Open Android Accessibility Settings.\n2. Select Installed Apps → GambleAware.\n3. Switch ON \"Use GambleAware\" and tap Allow.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Device Admin Uninstall Guard
             MandatorySetupStepCard(
                 step = "2",
+                title = "Arm Device Admin Uninstall Lock",
+                subtitle = if (stepAdminDone) {
+                    "Armed • Impulsive uninstalls are blocked during lock periods"
+                } else {
+                    "Optional: tap to prevent impulsive deletion of GambleAware"
+                },
+                done = stepAdminDone,
+                onClick = onEnableDeviceAdmin,
+                testTag = "onboarding_step_device_admin",
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Alerts & Install Guard
+            MandatorySetupStepCard(
+                step = "3",
                 title = "Recovery Alerts & Install Guard",
                 subtitle = if (step2Done) {
                     "Enabled • Alerts on new betting APK installs & milestones"
@@ -1301,7 +1354,7 @@ private fun MandatoryThreeStepSetupScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "3",
+                            text = "4",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (step3Ready) liquid.activeContent else MaterialTheme.colorScheme.onBackground,

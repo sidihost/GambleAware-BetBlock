@@ -48,7 +48,7 @@ export const CoveredBrandsExplorer: React.FC<CoveredBrandsExplorerProps> = ({
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div className="max-w-2xl">
             <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-              02 · Verified Blocking Coverage
+              03 · Verified Blocking Coverage
             </p>
             <h2
               id="coverage-heading"

@@ -86,12 +86,15 @@ export function App() {
             <div className="text-left">
               <p className="font-display text-sm font-bold text-[var(--ink)]">GambleAware</p>
               <p className="text-xs text-[var(--ink-muted)]">
-                Built by Imoogle Technology · On-Device Android Blocker v2.1.1
+                Free Gambling Site &amp; App Blocker · 100% Private
               </p>
             </div>
           </div>
 
           <nav aria-label="Footer sections" className="flex flex-wrap items-center justify-center gap-5 text-xs font-medium text-[var(--ink-muted)]">
+            <a href="#register" className="hover:text-[var(--ink)]">
+              Free Account
+            </a>
             <a href="#live-filter" className="hover:text-[var(--ink)]">
               Live Filter
             </a>
@@ -99,7 +102,7 @@ export function App() {
               Coverage
             </a>
             <a href="#architecture" className="hover:text-[var(--ink)]">
-              Architecture
+              Features
             </a>
             <a href="#compare" className="hover:text-[var(--ink)]">
               Compare

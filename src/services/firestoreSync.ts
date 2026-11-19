@@ -86,6 +86,39 @@ async function ensureUserAnchor(user: User): Promise<void> {
   }
 }
 
+export async function syncFreeAccountAnchor(
+  user: User,
+  preferredName: string,
+): Promise<void> {
+  if (!user.emailVerified || !user.email) return;
+  const privatePath = `users/${user.uid}/private/account`;
+  try {
+    await ensureUserAnchor(user);
+    const safePreferred =
+      sanitizePreferredName(preferredName || user.displayName || '') ||
+      user.email.split('@')[0].slice(0, 30);
+    const privateRef = doc(db, 'users', user.uid, 'private', 'account');
+    const privateSnap = await getDoc(privateRef);
+    const privatePayload = {
+      ownerId: user.uid,
+      email: user.email.slice(0, BLUEPRINT_LIMITS.emailMaxLength),
+      displayName: (user.displayName || '').slice(0, BLUEPRINT_LIMITS.displayNameMaxLength),
+      preferredName: safePreferred,
+      updatedAt: serverTimestamp(),
+    };
+    if (!privateSnap.exists()) {
+      await setDoc(privateRef, {
+        ...privatePayload,
+        createdAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(privateRef, privatePayload);
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, privatePath);
+  }
+}
+
 export async function syncUserRecoveryProfile(
   user: User,
   uiState: DerivedMainState,

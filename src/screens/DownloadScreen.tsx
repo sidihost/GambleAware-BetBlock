@@ -13,6 +13,7 @@ import {
 import { AndroidAppShowcase } from '../components/AndroidAppShowcase';
 import { CoveredBrandsExplorer } from '../components/CoveredBrandsExplorer';
 import { DeploymentHub } from '../components/DeploymentHub';
+import { FreeAccountPortal } from '../components/FreeAccountPortal';
 import { LiveFilterSandbox } from '../components/LiveFilterSandbox';
 import { SavingsImpactSection } from '../components/SavingsImpactSection';
 import { getRegistryMetrics } from '../utils/interactiveDemo';
@@ -27,19 +28,19 @@ const ARCHITECTURE_LAYERS = [
     num: '01',
     span: 'lg:col-span-7',
     icon: Shield,
-    title: 'Zero-VPN All-Browser Shield',
+    title: 'All-Browser Shield Without a VPN',
     summary:
-      'Operates through Android Accessibility without hijacking your VPN slot. Works simultaneously across Chrome, Brave, Opera, Firefox, Samsung Internet, and in-app webviews while ProtonVPN, WARP, and banking apps run uninterrupted.',
-    detail: 'Chrome · Brave · Opera · Firefox · Edge · In-App Browsers',
+      'Protects Chrome, Brave, Opera, Firefox, Samsung Internet, and social app links simultaneously — while your banking apps and personal VPN keep running without interruption.',
+    detail: 'Chrome · Brave · Opera · Firefox · Edge · Social Links',
   },
   {
     num: '02',
     span: 'lg:col-span-5',
     icon: Terminal,
-    title: 'Instant Keystroke & Cashier Guard',
+    title: 'Instant Typing & Deposit Guard',
     summary:
-      'Intercepts known betting stems like "sporty" or "bet9ja", homoglyph lookalikes, booking codes, and cashier deposit redirects before the page even renders.',
-    detail: 'Sub-15ms local match · Redirect unwrapper',
+      'Catches betting sites like SportyBet or Bet9ja, booking codes, and deposit links the moment you type or tap them — before the page ever opens.',
+    detail: 'Instant protection · Deposit & booking code guard',
   },
   {
     num: '03',
@@ -47,17 +48,17 @@ const ARCHITECTURE_LAYERS = [
     icon: Lock,
     title: 'Tamper-Proof Commitment Lock',
     summary:
-      'Lock protection from 24 hours up to 2 years. Paired with Android Device Administrator, GambleAware blocks uninstalls, force-stops, and rule weakening during impulsive moments.',
-    detail: '24h – 2y timer · Device Admin uninstall guard',
+      'Lock your protection from 24 hours up to 2 years. Uninstall protection keeps GambleAware active during tough late-night moments when willpower dips.',
+    detail: '24h – 2y timer · Uninstall protection',
   },
   {
     num: '04',
     span: 'lg:col-span-7',
     icon: KeyRound,
-    title: 'Zero-Server Trusted Buddy Co-Lock',
+    title: 'Trusted Buddy Co-Lock',
     summary:
-      'Pair with a trusted friend or family member using a deterministic offline 6-digit challenge-response key. No central servers, no subscription account, and no way to bypass alone.',
-    detail: 'Deterministic offline 6-digit approval token',
+      'Pair with a trusted friend or family member using a simple 6-digit approval code so protection cannot be weakened alone — completely private and 100% free.',
+    detail: '6-digit friend approval code · Free forever',
   },
   {
     num: '05',
@@ -65,17 +66,17 @@ const ARCHITECTURE_LAYERS = [
     icon: Activity,
     title: 'Tilt Radar & 60-Second Calm Reset',
     summary:
-      'Detects bursts of repeated betting attempts in real time and surfaces a 60-second guided breathing reset plus 1-tap Stake Banking to convert resisted urges into visible savings.',
-    detail: 'Real-time burst detection · 60s guided intervention',
+      'Notices repeated betting attempts in real time and guides you through a 60-second calm reset plus 1-tap Stake Banking to track the money you keep.',
+    detail: 'Instant urge support · 60-second calm reset',
   },
   {
     num: '06',
     span: 'lg:col-span-6',
     icon: Cpu,
-    title: '100% On-Device Privacy & Safe-Support Guard',
+    title: '100% Private & Safe-Support Guard',
     summary:
-      'Your browsing activity never leaves your phone. Verified helplines, therapy services, and recovery portals are permanently allowlisted so help is always reachable.',
-    detail: 'Zero cloud traffic logs · Protected helplines',
+      'Your browsing stays strictly on your phone. Verified helplines and recovery support services are always kept reachable whenever you need someone to talk to.',
+    detail: 'Private on your phone · Protected helplines',
   },
 ];
 
@@ -109,7 +110,7 @@ export const DownloadScreen: React.FC = () => {
             {/* Left 6 Cols: Authoritative Product Positioning */}
             <div className="lg:col-span-6">
               <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-                Android Native Blocker · v2.1.1 · Zero-VPN Architecture
+                100% Free Forever · Android &amp; iPhone Protection
               </p>
 
               <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-[var(--ink)] sm:text-5xl lg:text-[52px] lg:leading-[1.06]">
@@ -134,10 +135,11 @@ export const DownloadScreen: React.FC = () => {
                 </a>
 
                 <a
-                  href="#live-filter"
+                  href="#register"
+                  data-testid="hero-free-account-btn"
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-5 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--glass-border)]"
                 >
-                  <span>Test Live Filter</span>
+                  <span>Create Free Account &amp; Welcome Pack</span>
                   <ArrowRight className="h-4 w-4" />
                 </a>
               </div>
@@ -195,16 +197,19 @@ export const DownloadScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* Section 01: Live On-Device Filter Engine Sandbox */}
+      {/* Section 01: 100% Free Account, Welcome Email & Guided Zero-VPN Setup */}
+      <FreeAccountPortal />
+
+      {/* Section 02: Live On-Device Filter Engine Sandbox */}
       <LiveFilterSandbox
         externalQuery={sandboxExternalQuery}
         externalQuerySeq={sandboxExternalSeq}
       />
 
-      {/* Section 02: Searchable & Filterable Covered Brands Explorer */}
+      {/* Section 03: Searchable & Filterable Covered Brands Explorer */}
       <CoveredBrandsExplorer onTestDomain={handleTestDomainFromDirectory} />
 
-      {/* Section 03: Asymmetric Security Architecture Bento */}
+      {/* Section 04: Asymmetric Security Architecture Bento */}
       <section
         id="architecture"
         aria-labelledby="architecture-heading"
@@ -212,13 +217,13 @@ export const DownloadScreen: React.FC = () => {
       >
         <div className="mb-8 max-w-2xl">
           <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-            03 · Defense-in-Depth Architecture
+            04 · Built to Protect You
           </p>
           <h2
             id="architecture-heading"
             className="mt-2 font-display text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-3xl"
           >
-            Six layers engineered to hold when willpower dips.
+            Six layers designed to hold when urges hit.
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)] sm:text-base">
             Every loophole people use during late-night urges — incognito tabs, mirror domains, booking links, popunder ads, or uninstalling the blocker — is closed on-device.

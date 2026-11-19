@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import {
   ANDROID_APK_DOWNLOAD_URL,
-  ANDROID_APK_GITHUB_URL,
   APK_DOWNLOAD_FILENAME,
   buildApkShareUrl,
   ClientPlatform,
@@ -118,7 +117,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
     >
       <div className="mb-8 max-w-2xl">
         <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-          06 · Platform Deployment &amp; Setup
+          07 · Download &amp; Setup Guide
         </p>
         <h2
           id="install-heading"
@@ -127,7 +126,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
           Install in under two minutes.
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)] sm:text-base">
-          Direct native APK distribution for Android 7.0+, plus a free Screen Time domain guide for iPhone and iPad users.
+          Direct Android app download, plus a free Screen Time setup guide for iPhone and iPad users.
         </p>
       </div>
 
@@ -145,14 +144,14 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                     GambleAware for Android
                   </h3>
                   <p className="font-mono text-[11px] text-[var(--ink-muted)]">
-                    v2.1.1 · com.imoogle.gambleaware · Android 7.0+
+                    100% Free App · Android 7.0+
                   </p>
                 </div>
               </div>
             </div>
 
             <p className="mt-4 text-sm leading-relaxed text-[var(--ink-muted)]">
-              Full native app with Zero-VPN All-Browser Shield, instant keystroke blocking, Device Admin uninstall guard, Commitment Lock timer, and offline Buddy Co-Lock.
+              Full Android protection covering all browsers, betting apps, popunder ads, uninstall protection, Commitment Lock timer, and Trusted Buddy Co-Lock.
             </p>
 
             {downloadStarted ? (
@@ -165,7 +164,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                 <div>
                   <p className="font-semibold">Download started: {APK_DOWNLOAD_FILENAME}</p>
                   <p className="mt-0.5 opacity-90">
-                    Open your browser Downloads bar to install. If your connection paused, use the GitHub Release mirror below.
+                    Open your browser Downloads bar and tap the file to install GambleAware on your phone.
                   </p>
                 </div>
               </div>
@@ -183,40 +182,29 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                 <span>Download Android App (APK)</span>
               </a>
 
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={ANDROID_APK_GITHUB_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 text-xs font-semibold text-[var(--ink)] transition-colors hover:border-[var(--glass-border)]"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  <span>GitHub Mirror</span>
-                </a>
-                <button
-                  type="button"
-                  data-testid="copy-apk-link-btn"
-                  onClick={handleCopyApkLink}
-                  className="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 text-xs font-semibold text-[var(--ink)] transition-colors hover:border-[var(--glass-border)]"
-                >
-                  {copiedApkLink ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-[var(--safe-ink)]" />
-                      <span>Link Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" />
-                      <span>Copy APK Link</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                data-testid="copy-apk-link-btn"
+                onClick={handleCopyApkLink}
+                className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-4 text-xs font-semibold text-[var(--ink)] transition-colors hover:border-[var(--glass-border)]"
+              >
+                {copiedApkLink ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-[var(--safe-ink)]" />
+                    <span>Download Link Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copy Download Link to Share</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
           <p className="mt-6 border-t border-[var(--subtle-border)] pt-4 font-mono text-[11px] text-[var(--ink-muted)]">
-            Free forever · No account required · Signed release build
+            Free forever · Ready to install · 100% private on your phone
           </p>
         </div>
 
