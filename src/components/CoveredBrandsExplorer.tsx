@@ -42,13 +42,13 @@ export const CoveredBrandsExplorer: React.FC<CoveredBrandsExplorerProps> = ({
     <section
       id="coverage"
       aria-labelledby="coverage-heading"
-      className="border-y border-[var(--subtle-border)] bg-[var(--surface)]/50 py-14 lg:py-20"
+      className="border-y border-[var(--subtle-border)] bg-[var(--surface)]/50 py-12 sm:py-16 lg:py-20"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div className="max-w-2xl">
             <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-              03 · Verified Blocking Coverage
+              02 · Verified Blocking Coverage
             </p>
             <h2
               id="coverage-heading"
@@ -115,7 +115,7 @@ export const CoveredBrandsExplorer: React.FC<CoveredBrandsExplorerProps> = ({
               </button>
             );
           })}
-          <span className="ml-auto font-mono text-xs text-[var(--ink-muted)] tabular-nums">
+          <span className="w-full pt-1 font-mono text-xs text-[var(--ink-muted)] tabular-nums sm:ml-auto sm:w-auto sm:pt-0">
             Showing {visibleBrands.length} of {filteredBrands.length} featured operators
           </span>
         </div>

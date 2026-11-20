@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -76,7 +77,6 @@ import com.example.ui.components.BrandGEmblem
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidSectionHeader
 import com.example.ui.components.LiquidShieldOrb
-import com.example.ui.components.LiquidStatusPill
 import com.example.ui.components.TourTargetKeys
 import com.example.ui.components.tourTarget
 import com.example.ui.formatAttemptCountLabel
@@ -185,18 +185,35 @@ fun ShieldScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                            if (isLocked) {
-                                LiquidStatusPill(
-                                    label = "Locked",
-                                    isActive = true,
-                                    icon = Icons.Rounded.Lock,
-                                    onClick = onNavigateToLock,
+                            Row(
+                                modifier = if (isLocked) {
+                                    Modifier.clickable(onClick = onNavigateToLock)
+                                } else {
+                                    Modifier
+                                },
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = when {
+                                        isLocked -> Icons.Rounded.Lock
+                                        isArmed -> Icons.Rounded.VerifiedUser
+                                        else -> Icons.Rounded.Shield
+                                    },
+                                    contentDescription = null,
+                                    tint = if (isLocked || isArmed) liquid.accentInk else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(15.dp),
                                 )
-                            } else {
-                                LiquidStatusPill(
-                                    label = if (isArmed) "Armed" else "Setup",
-                                    isActive = isArmed,
-                                    icon = if (isArmed) Icons.Rounded.VerifiedUser else Icons.Rounded.Shield,
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = when {
+                                        isLocked -> "Locked"
+                                        isArmed -> "Armed"
+                                        else -> "Setup"
+                                    },
+                                    fontFamily = MonoFontFamily,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isLocked || isArmed) liquid.accentInk else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -498,23 +515,17 @@ fun ShieldScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(
-                                    if (radar.level == TiltRiskLevel.CALM) liquid.softAccentFill
-                                    else liquid.activeFill,
-                                )
-                                .border(1.dp, liquid.glassBorder, RoundedCornerShape(50))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                        ) {
-                            Text(
-                                text = radarLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (radar.level == TiltRiskLevel.CALM) liquid.accentInk else liquid.activeContent,
-                            )
-                        }
+                        Text(
+                            text = radarLabel,
+                            fontFamily = MonoFontFamily,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (radar.level == TiltRiskLevel.CALM) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                liquid.accentInk
+                            },
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -629,20 +640,13 @@ fun ShieldScreen(
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(50))
-                                            .background(liquid.softAccentFill)
-                                            .border(1.dp, liquid.glassBorder, RoundedCornerShape(50))
-                                            .padding(horizontal = 9.dp, vertical = 4.dp),
-                                    ) {
-                                        Text(
-                                            text = formatAttemptCountLabel(site.attemptCount),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = liquid.accentInk,
-                                        )
-                                    }
+                                    Text(
+                                        text = formatAttemptCountLabel(site.attemptCount),
+                                        fontFamily = MonoFontFamily,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = liquid.accentInk,
+                                    )
                                 }
                             }
                         }
@@ -673,20 +677,20 @@ fun ShieldScreen(
                         sampleBlockedSites.forEach { domain ->
                             val resolved = BrandCatalog.resolve(domain)
                             LiquidGlassCard(
-                                cornerRadius = 50.dp,
+                                cornerRadius = 12.dp,
                                 fillColor = liquid.controlFill,
                                 borderColor = liquid.subtleBorder,
                                 contentPadding = 0.dp,
                                 onClick = { onTestQueryChanged(domain) },
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(start = 6.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
+                                    modifier = Modifier.padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     BettingBrandLogo(
                                         target = domain,
                                         size = 28.dp,
-                                        cornerRadius = 8.dp,
+                                        cornerRadius = 7.dp,
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
@@ -996,35 +1000,14 @@ fun ShieldScreen(
                         testTag = "layer_private_dns_row",
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        LiquidStatusPill(
-                            label = "${state.builtInDomainCount}+ Domains",
-                            isActive = isArmed,
-                            icon = Icons.Rounded.Language,
-                        )
-                        LiquidStatusPill(
-                            label = "Play Store Guard",
-                            isActive = isArmed && state.settings.playStoreGuardEnabled,
-                            icon = Icons.Rounded.Shop,
-                            onClick = onNavigateToBlocklist,
-                        )
-                        LiquidStatusPill(
-                            label = "Other VPNs OK",
-                            isActive = true,
-                            icon = Icons.Rounded.VerifiedUser,
-                        )
-                        LiquidStatusPill(
-                            label = if (isLocked) "Timer Locked" else "Timer Lock",
-                            isActive = isLocked && state.settings.antiTamperLockEnabled && isArmed,
-                            icon = if (isLocked) Icons.Rounded.Lock else Icons.Rounded.Timer,
-                            onClick = onNavigateToLock,
-                        )
-                    }
+                    Text(
+                        text = "${state.builtInDomainCount}+ domains  •  Play Store guard  •  Other VPNs OK  •  ${if (isLocked) "Timer locked" else "Timer ready"}",
+                        fontFamily = MonoFontFamily,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 

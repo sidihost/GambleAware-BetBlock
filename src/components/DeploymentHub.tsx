@@ -160,51 +160,41 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
       aria-labelledby="install-heading"
       className="border-t border-[var(--subtle-border)] bg-[var(--canvas)]"
     >
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-24">
         {/* Section Editorial Header */}
-        <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div className="mb-8 flex flex-col justify-between gap-3 sm:mb-10 sm:gap-4 md:flex-row md:items-end">
           <div className="max-w-2xl">
             <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-              07 · Download &amp; Setup Guide
+              06 · Download &amp; Setup Guide
             </p>
             <h2
               id="install-heading"
-              className="mt-2.5 text-balance font-display text-3xl font-bold tracking-tight text-[var(--ink)] sm:text-4xl"
+              className="mt-2 text-balance font-display text-2xl font-bold tracking-tight text-[var(--ink)] sm:mt-2.5 sm:text-4xl"
             >
               Install in under two minutes.
             </h2>
-            <p className="mt-2.5 text-sm leading-relaxed text-[var(--ink-muted)] sm:text-base">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)] sm:mt-2.5 sm:text-base">
               Get the full native Android app free forever, or follow our 3-step Screen Time guide for iPhone and iPad.
             </p>
           </div>
 
-          <p className="font-mono text-xs text-[var(--ink-muted)] md:text-right">
-            Android 7.0+ &amp; iOS · Free forever · No credit card
+          <p className="font-mono text-[11px] text-[var(--ink-muted)] sm:text-xs md:text-right">
+            Android 7.0+ &amp; iOS · Free forever · No sign-up
           </p>
         </div>
 
         {/* Main Asymmetric 2-Column Install Stage */}
-        <div className="grid items-stretch gap-6 lg:grid-cols-12">
-          {/* Left 5 Cols: Flagship Obsidian Android Download Showcase */}
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-[#0B0E14] p-7 text-white shadow-[0_28px_64px_-28px_rgba(11,14,20,0.48)] sm:p-8 lg:col-span-5 dark:border-[#232938] dark:bg-[#111520]">
-            {/* Subtle brand pink ambient highlight behind emblem */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[#D81B78]/22 blur-3xl"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-28 -left-20 h-56 w-56 rounded-full bg-[#FF3D9A]/12 blur-3xl"
-            />
-
-            <div className="relative z-10">
+        <div className="grid items-stretch gap-5 sm:gap-6 lg:grid-cols-12">
+          {/* Left 5 Cols: Flat Obsidian Android Download Card (Zero Gradients, Zero Shadows) */}
+          <div className="flex min-w-0 flex-col justify-between rounded-2xl border border-white/12 bg-[#0B0E14] p-5 text-white sm:rounded-[28px] sm:p-7 lg:col-span-5 lg:p-8 dark:border-[#232938] dark:bg-[#111520]">
+            <div>
               {/* Brand Emblem Lockup */}
               <div className="flex items-center gap-3.5">
-                <div className="relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.04] shadow-[0_0_24px_rgba(216,27,120,0.28)]">
-                  <BrandGMark className="h-9 w-9" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-[#121622] sm:h-13 sm:w-13">
+                  <BrandGMark className="h-8 w-8 sm:h-9 sm:w-9" />
                 </div>
-                <div>
-                  <h3 className="font-display text-xl font-bold tracking-tight text-white">
+                <div className="min-w-0">
+                  <h3 className="font-display text-lg font-bold tracking-tight text-white sm:text-xl">
                     GambleAware for Android
                   </h3>
                   <p className="mt-0.5 font-mono text-[11px] text-slate-400">
@@ -217,37 +207,37 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                 Full on-device blocking for betting websites, Google Play Store downloads, APK sideloaders, installed betting apps, and popunder ads — while letting any VPN and all everyday apps run freely.
               </p>
 
-              {/* 4-Point Architectural Guarantee Grid (Hairline Dividers, Zero Nested Cards) */}
-              <dl className="mt-6 grid grid-cols-2 border-y border-white/10">
-                <div className="border-r border-b border-white/10 py-3.5 pr-4">
+              {/* 4-Point Architectural Guarantee Grid (Flat Hairline Dividers) */}
+              <dl className="mt-6 grid grid-cols-2 border-y border-white/12">
+                <div className="min-w-0 border-r border-b border-white/12 py-3.5 pr-3 sm:pr-4">
                   <dt className="font-mono text-[10px] tracking-wider text-slate-400 uppercase">
                     Domains &amp; Mirrors
                   </dt>
-                  <dd className="mt-1 font-mono text-lg font-bold text-white tabular-nums">
+                  <dd className="mt-1 font-mono text-base font-bold text-white tabular-nums sm:text-lg">
                     {metrics.domainCount.toLocaleString()}+
                   </dd>
                 </div>
-                <div className="border-b border-white/10 py-3.5 pl-4">
+                <div className="min-w-0 border-b border-white/12 py-3.5 pl-3 sm:pl-4">
                   <dt className="font-mono text-[10px] tracking-wider text-slate-400 uppercase">
                     Betting Apps
                   </dt>
-                  <dd className="mt-1 font-mono text-lg font-bold text-white tabular-nums">
+                  <dd className="mt-1 font-mono text-base font-bold text-white tabular-nums sm:text-lg">
                     {metrics.appCount}+
                   </dd>
                 </div>
-                <div className="border-r border-white/10 py-3.5 pr-4">
+                <div className="min-w-0 border-r border-white/12 py-3.5 pr-3 sm:pr-4">
                   <dt className="font-mono text-[10px] tracking-wider text-slate-400 uppercase">
                     VPN Conflict
                   </dt>
-                  <dd className="mt-1 font-mono text-lg font-bold text-[#FF6BB4] tabular-nums">
-                    0% · Any VPN OK
+                  <dd className="mt-1 font-mono text-base font-bold text-[#FF6BB4] tabular-nums sm:text-lg">
+                    0% · Any VPN
                   </dd>
                 </div>
-                <div className="py-3.5 pl-4">
+                <div className="min-w-0 py-3.5 pl-3 sm:pl-4">
                   <dt className="font-mono text-[10px] tracking-wider text-slate-400 uppercase">
                     Commitment Lock
                   </dt>
-                  <dd className="mt-1 font-mono text-lg font-bold text-white tabular-nums">
+                  <dd className="mt-1 font-mono text-base font-bold text-white tabular-nums sm:text-lg">
                     24h – 2y
                   </dd>
                 </div>
@@ -258,15 +248,15 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                 <div
                   role="status"
                   data-testid="apk-download-feedback"
-                  className="mt-5 flex items-start gap-2.5 rounded-2xl border border-[#FF3D9A]/35 bg-[#FF3D9A]/12 p-3.5 text-xs text-pink-100"
+                  className="mt-5 flex items-start gap-2.5 rounded-2xl border border-[#FF3D9A]/40 bg-[#260E1C] p-3.5 text-xs text-pink-100"
                 >
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#FF6BB4]" />
-                  <div>
-                    <p className="font-semibold text-white">
+                  <div className="min-w-0">
+                    <p className="font-semibold break-words text-white">
                       Download started: {APK_DOWNLOAD_FILENAME}
                     </p>
                     <p className="mt-0.5 text-pink-100/85">
-                      Open your browser Downloads notification and follow Steps 02 &amp; 03 beside this card.
+                      Open your browser Downloads notification and follow Steps 02 &amp; 03 in the Setup Guide.
                     </p>
                   </div>
                 </div>
@@ -279,26 +269,26 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                   download={APK_DOWNLOAD_FILENAME}
                   data-testid="install-hub-download-btn"
                   onClick={handleDownloadClick}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D81B78] px-5 text-sm font-semibold text-white shadow-[0_12px_28px_-8px_rgba(216,27,120,0.65)] transition-all duration-150 hover:bg-[#C3166B] active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6BB4]"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D81B78] px-4 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#C3166B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6BB4]"
                 >
                   <Download className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap">Download Android App (APK)</span>
+                  <span>Download Android App (APK)</span>
                 </a>
 
                 <button
                   type="button"
                   data-testid="copy-apk-link-btn"
                   onClick={handleCopyApkLink}
-                  className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/14 bg-white/[0.05] px-4 text-xs font-semibold text-slate-200 transition-colors hover:border-white/25 hover:bg-white/[0.09] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/15 bg-[#141824] px-4 text-xs font-semibold text-slate-200 transition-colors hover:border-white/30 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   {copiedApkLink ? (
                     <>
-                      <Check className="h-3.5 w-3.5 text-[#FF6BB4]" />
+                      <Check className="h-3.5 w-3.5 shrink-0 text-[#FF6BB4]" />
                       <span>Download Link Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="h-3.5 w-3.5 text-slate-400" />
+                      <Copy className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                       <span>Copy Download Link to Share</span>
                     </>
                   )}
@@ -307,22 +297,22 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
             </div>
 
             {/* Quiet Verification Footer */}
-            <div className="relative z-10 mt-7 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-4 text-[11px] text-slate-400">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-white/12 pt-4 text-[11px] text-slate-400">
               <span className="inline-flex items-center gap-1.5 font-mono">
-                <Lock className="h-3.5 w-3.5 text-[#FF6BB4]" />
+                <Lock className="h-3.5 w-3.5 shrink-0 text-[#FF6BB4]" />
                 <span>Private on-device · Zero cloud logs</span>
               </span>
               <span className="font-mono text-slate-500">Signed Release</span>
             </div>
           </div>
 
-          {/* Right 7 Cols: Clean Interactive Guided Timeline (Zero Nested Cards) */}
-          <div className="flex flex-col justify-between rounded-[28px] border border-[var(--subtle-border)] bg-[var(--surface)] p-7 sm:p-8 lg:col-span-7">
+          {/* Right 7 Cols: Clean Interactive Guided Timeline (Flat, Responsive) */}
+          <div className="flex min-w-0 flex-col justify-between rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-5 sm:rounded-[28px] sm:p-7 lg:col-span-7 lg:p-8">
             <div>
               {/* Guide Header & Platform Switcher */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--subtle-border)] pb-5 sm:flex-nowrap">
+              <div className="flex flex-col justify-between gap-4 border-b border-[var(--subtle-border)] pb-5 sm:flex-row sm:items-center">
                 <div className="min-w-0">
-                  <h3 className="font-display text-xl font-bold tracking-tight text-[var(--ink)]">
+                  <h3 className="font-display text-lg font-bold tracking-tight text-[var(--ink)] sm:text-xl">
                     Step-by-Step Setup Guide
                   </h3>
                   <p className="mt-1 font-mono text-xs text-[var(--ink-muted)] tabular-nums">
@@ -333,7 +323,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                 <div
                   role="tablist"
                   aria-label="Platform setup guide"
-                  className="inline-flex items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] p-1"
+                  className="grid w-full grid-cols-2 items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] p-1 sm:inline-flex sm:w-auto"
                 >
                   <button
                     type="button"
@@ -341,7 +331,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                     aria-selected={guideTab === 'android'}
                     data-testid="guide-tab-android"
                     onClick={() => setGuideTab('android')}
-                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+                    className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors sm:px-3.5 ${
                       guideTab === 'android'
                         ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                         : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -356,13 +346,13 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                     aria-selected={guideTab === 'ios'}
                     data-testid="guide-tab-ios"
                     onClick={() => setGuideTab('ios')}
-                    className={`cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+                    className={`inline-flex cursor-pointer items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors sm:px-3.5 ${
                       guideTab === 'ios'
                         ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                         : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
                     }`}
                   >
-                    iPhone Screen Time
+                    iPhone Guide
                   </button>
                 </div>
               </div>
@@ -378,17 +368,17 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                 />
               </div>
 
-              {/* Vertical Guided Timeline (No Nested Boxes) */}
+              {/* Vertical Guided Timeline */}
               <div
                 className="mt-6"
                 data-testid={guideTab === 'android' ? 'guide-panel-android' : 'guide-panel-ios'}
               >
-                <ol className="relative space-y-6">
+                <ol className="relative space-y-5 sm:space-y-6">
                   {activeSteps.map((item, idx) => {
                     const isDone = Boolean(completedMap[item.step]);
                     const isLast = idx === activeSteps.length - 1;
                     return (
-                      <li key={item.step} className="relative flex items-start gap-4">
+                      <li key={item.step} className="relative flex items-start gap-3.5 sm:gap-4">
                         {/* Vertical connector hairline */}
                         {!isLast ? (
                           <span
@@ -406,7 +396,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                           aria-pressed={isDone}
                           aria-label={`Mark step ${item.step}: ${item.title} as ${isDone ? 'incomplete' : 'complete'}`}
                           data-testid={`install-step-${guideTab}-${item.step}`}
-                          className={`relative z-10 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border font-mono text-xs font-bold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] ${
+                          className={`relative z-10 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border font-mono text-xs font-bold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)] ${
                             isDone
                               ? 'border-[var(--active-fill)] bg-[var(--active-fill)] text-[var(--active-content)]'
                               : 'border-[var(--subtle-border)] bg-[var(--canvas)] text-[var(--accent-ink)] hover:border-[var(--active-fill)]'
@@ -415,13 +405,13 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                           {isDone ? <Check className="h-4 w-4" /> : item.step}
                         </button>
 
-                        {/* Step Copy (Clean Typography, Unboxed Path Metadata) */}
+                        {/* Step Copy */}
                         <div className="min-w-0 flex-1 pt-0.5">
-                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
                             <button
                               type="button"
                               onClick={() => toggleStepCompletion(item.step)}
-                              className={`cursor-pointer text-left font-display text-base font-bold tracking-tight transition-colors ${
+                              className={`cursor-pointer text-left font-display text-[15px] font-bold tracking-tight transition-colors sm:text-base ${
                                 isDone
                                   ? 'text-[var(--ink-muted)] line-through decoration-[var(--active-fill)]/60'
                                   : 'text-[var(--ink)] hover:text-[var(--accent-ink)]'
@@ -429,14 +419,14 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                             >
                               {item.title}
                             </button>
-                            <span className="font-mono text-[11px] text-[var(--ink-muted)] tabular-nums">
+                            <span className="shrink-0 font-mono text-[11px] text-[var(--ink-muted)] tabular-nums">
                               {isDone ? 'Done' : item.duration}
                             </span>
                           </div>
                           <p className="mt-1 text-sm leading-relaxed text-[var(--ink-muted)]">
                             {item.detail}
                           </p>
-                          <p className="mt-2 font-mono text-[11px] text-[var(--accent-ink)]">
+                          <p className="mt-2 font-mono text-[11px] break-words text-[var(--accent-ink)]">
                             {item.pathHint}
                           </p>
                         </div>
@@ -445,7 +435,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                   })}
                 </ol>
 
-                {/* Tab-Specific Footer Utility (Hairline Separated, No Heavy Card Nesting) */}
+                {/* Tab-Specific Footer Utility */}
                 {guideTab === 'android' ? (
                   <div className="mt-7 border-t border-[var(--subtle-border)] pt-5">
                     <button
@@ -455,9 +445,9 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                       onClick={() => setTroubleshootOpen((open) => !open)}
                       className="flex w-full cursor-pointer items-center justify-between gap-3 py-1 text-left text-xs font-semibold text-[var(--ink)] transition-colors hover:text-[var(--accent-ink)]"
                     >
-                      <span className="inline-flex items-center gap-2">
-                        <HelpCircle className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
-                        <span>
+                      <span className="inline-flex min-w-0 items-start gap-2 sm:items-center">
+                        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-ink)] sm:mt-0" />
+                        <span className="leading-snug">
                           Seeing &ldquo;File might be harmful&rdquo; or Android Restricted Settings?
                         </span>
                       </span>
@@ -494,8 +484,8 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                   </div>
                 ) : (
                   <div className="mt-7 border-t border-[var(--subtle-border)] pt-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
+                    <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                      <div className="min-w-0">
                         <p className="font-display text-sm font-bold text-[var(--ink)]">
                           Top {TOP_BETTING_DOMAINS_FOR_IOS.length} Betting Domains for iPhone
                         </p>
@@ -507,7 +497,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                         type="button"
                         data-testid="copy-ios-domains-btn"
                         onClick={handleCopyIosDomains}
-                        className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] whitespace-nowrap transition-opacity hover:opacity-90"
+                        className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] px-4 text-xs font-semibold text-[var(--active-content)] whitespace-nowrap transition-opacity hover:opacity-90 sm:w-auto"
                       >
                         {copiedIosList ? (
                           <>
@@ -522,7 +512,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
                         )}
                       </button>
                     </div>
-                    <p className="mt-3 font-mono text-[11px] leading-relaxed text-[var(--ink-muted)]">
+                    <p className="mt-3 font-mono text-[11px] leading-relaxed break-words text-[var(--ink-muted)]">
                       {TOP_BETTING_DOMAINS_FOR_IOS.join(' · ')}
                     </p>
                   </div>
@@ -532,8 +522,8 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
           </div>
         </div>
 
-        {/* Confidential Recovery Helplines — Full-Width Hairline Directory (Zero Nested Cards) */}
-        <div className="mt-14 border-t border-[var(--subtle-border)] pt-10">
+        {/* Confidential Recovery Helplines — Full-Width Hairline Directory */}
+        <div className="mt-12 border-t border-[var(--subtle-border)] pt-10 sm:mt-14">
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div>
               <p className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
@@ -553,7 +543,7 @@ export const DeploymentHub: React.FC<DeploymentHubProps> = ({
             {helplines.map((item, index) => (
               <div
                 key={item.id}
-                className={`flex flex-col justify-between ${
+                className={`flex min-w-0 flex-col justify-between ${
                   index === 0 ? 'lg:pr-6' : index === helplines.length - 1 ? 'lg:pl-6' : 'lg:px-6'
                 }`}
               >

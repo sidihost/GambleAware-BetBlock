@@ -277,7 +277,7 @@ export const LiquidFloatingNavBar: React.FC<{
     aria-label="Primary navigation"
     className="fixed right-0 bottom-2 left-0 z-30 flex justify-center px-2.5 md:hidden"
   >
-    <div className="w-full max-w-[460px] rounded-2xl border border-[var(--subtle-border)] bg-[var(--glass-fill)] p-1 shadow-md backdrop-blur-md">
+    <div className="w-full max-w-[460px] rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-1">
       <div
         className="grid gap-0.5"
         style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}

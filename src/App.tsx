@@ -91,10 +91,7 @@ export function App() {
             </div>
           </div>
 
-          <nav aria-label="Footer sections" className="flex flex-wrap items-center justify-center gap-5 text-xs font-medium text-[var(--ink-muted)]">
-            <a href="#register" className="hover:text-[var(--ink)]">
-              Free Account
-            </a>
+          <nav aria-label="Footer sections" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-[var(--ink-muted)]">
             <a href="#live-filter" className="hover:text-[var(--ink)]">
               Live Filter
             </a>

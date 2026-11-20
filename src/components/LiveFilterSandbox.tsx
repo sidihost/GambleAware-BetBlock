@@ -42,12 +42,12 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
     <section
       id="live-filter"
       aria-labelledby="live-filter-heading"
-      className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20"
+      className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20"
     >
-      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div className="mb-7 flex flex-col justify-between gap-3 sm:mb-8 sm:gap-4 md:flex-row md:items-end">
         <div className="max-w-2xl">
           <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-            02 · Try the Blocker Live
+            01 · Try the Blocker Live
           </p>
           <h2
             id="live-filter-heading"
@@ -65,7 +65,7 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
         </p>
       </div>
 
-      <div className="rounded-3xl border border-[var(--subtle-border)] bg-[var(--surface)] p-5 sm:p-7">
+      <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 sm:rounded-3xl sm:p-7">
         {/* Search Input Row */}
         <div className="relative">
           <Search
@@ -137,14 +137,14 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
 
           {verdict.status === 'BLOCKED' ? (
             <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
-              <div>
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
                   {verdict.brandIdentity ? (
                     <BettingBrandLogo target={verdict.matchedTarget} size="md" />
                   ) : null}
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <ShieldAlert className="h-4 w-4 text-[var(--block-ink)]" />
+                      <ShieldAlert className="h-4 w-4 shrink-0 text-[var(--block-ink)]" />
                       <span
                         data-testid="sandbox-verdict-label"
                         className="font-mono text-xs font-bold tracking-wider text-[var(--block-ink)] uppercase"
@@ -152,7 +152,7 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
                         BLOCKED · {verdict.latencyLabel}
                       </span>
                     </div>
-                    <h3 className="mt-0.5 font-display text-lg font-bold text-[var(--ink)]">
+                    <h3 className="mt-0.5 font-display text-base font-bold break-words text-[var(--ink)] sm:text-lg">
                       {verdict.brandIdentity?.isExactCatalogMatch
                         ? `${verdict.brandIdentity.displayName} intercepted`
                         : `Matched "${verdict.matchedTarget}"`}
@@ -164,8 +164,8 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
                   {verdict.reason}
                 </p>
 
-                <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-[var(--block-border)] pt-3 text-xs sm:grid-cols-3">
-                  <div>
+                <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-[var(--block-border)] pt-3 text-xs min-[420px]:grid-cols-2 sm:grid-cols-3">
+                  <div className="min-w-0">
                     <dt className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)] uppercase">
                       Protection Type
                     </dt>
@@ -173,7 +173,7 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
                       {verdict.detectionLayer}
                     </dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)] uppercase">
                       Category
                     </dt>
@@ -181,11 +181,11 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
                       {verdict.categoryLabel}
                     </dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="font-mono text-[10px] tracking-wider text-[var(--ink-muted)] uppercase">
                       Blocked Target
                     </dt>
-                    <dd className="mt-0.5 truncate font-mono font-semibold text-[var(--ink)]">
+                    <dd className="mt-0.5 font-mono font-semibold break-all text-[var(--ink)]">
                       {verdict.matchedTarget}
                     </dd>
                   </div>

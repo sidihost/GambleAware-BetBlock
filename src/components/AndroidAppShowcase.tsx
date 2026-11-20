@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   ShoppingBag,
   SlidersHorizontal,
-  Sparkles,
   TrendingUp,
   Unlock,
   Wind,
@@ -209,7 +208,7 @@ export const AndroidAppShowcase: React.FC = () => {
       </div>
 
       {/* Android Titanium Device Frame */}
-      <div className="relative w-full max-w-[336px] rounded-[42px] border-[3px] border-slate-800 bg-[#0B0E14] p-2.5 shadow-[0_24px_60px_-24px_rgba(9,11,16,0.45)] dark:border-slate-700 dark:ring-1 dark:ring-white/10 dark:shadow-[0_28px_72px_-24px_rgba(255,61,154,0.18)]">
+      <div className="relative w-full max-w-[332px] rounded-[40px] border-[3px] border-slate-800 bg-[#0B0E14] p-2.5 dark:border-slate-700">
         {/* Inner Viewport */}
         <div className="relative flex h-[600px] flex-col overflow-hidden rounded-[32px] border border-[var(--subtle-border)] bg-[var(--canvas)] text-[var(--ink)]">
           {/* Android Status Bar + Camera Punch */}
@@ -315,7 +314,7 @@ export const AndroidAppShowcase: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <ShieldCheck className="h-3.5 w-3.5" />
                       <span>Bank {formatNaira(dailyStakeNgn)} Stake as Saved</span>
                     </>
                   )}
@@ -345,7 +344,7 @@ export const AndroidAppShowcase: React.FC = () => {
                         className="absolute inset-0 rounded-full border border-[var(--active-fill)]/30 bg-[var(--soft-accent-bg)]"
                         aria-hidden="true"
                       />
-                      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] shadow-sm">
+                      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)]">
                         <BrandGMark className="h-9 w-9" />
                       </div>
                     </div>
@@ -426,7 +425,7 @@ export const AndroidAppShowcase: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setActiveTab('lock')}
-                      className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 py-1 font-mono text-[10px] font-semibold text-[var(--accent-ink)]"
+                      className="inline-flex cursor-pointer items-center gap-1 font-mono text-[10px] font-semibold text-[var(--accent-ink)] hover:underline"
                     >
                       {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
                       <span>{isLocked ? `${lockDays}d Lock` : 'Unlocked'}</span>

@@ -171,7 +171,7 @@ val SPOTLIGHT_TOUR_STEPS = listOf(
         targetKey = TourTargetKeys.PROGRESS_DASHBOARD,
         badge = "5 OF 6 • VISUAL PROGRESS",
         title = "Betting-Free Days Chart",
-        body = "Scrub across the interactive Black & Pink chart to inspect your betting-free days, money saved in ₦, and milestone badges.",
+        body = "Scrub across the interactive Black & Pink chart to inspect your betting-free days, money saved in ₦, and recovery milestones.",
         icon = Icons.Rounded.Insights,
         highlights = listOf("Days Clean", "Milestones", "Est. Saved"),
     ),
@@ -422,26 +422,12 @@ fun SpotlightTourOverlay(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        current.highlights.forEach { tag ->
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(liquid.mutedFill)
-                                    .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50))
-                                    .padding(horizontal = 10.dp, vertical = 5.dp),
-                            ) {
-                                Text(
-                                    text = tag,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            }
-                        }
-                    }
+                    Text(
+                        text = current.highlights.joinToString("  •  "),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = liquid.accentInk,
+                    )
                 }
             }
 

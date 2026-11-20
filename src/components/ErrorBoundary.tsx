@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-[var(--canvas)] px-4 text-[var(--ink)]">
-          <div className="w-full max-w-[420px] rounded-[26px] border border-[var(--glass-border)] bg-[var(--glass-fill)] p-6 text-center backdrop-blur-xl">
+          <div className="w-full max-w-[420px] rounded-[26px] border border-[var(--subtle-border)] bg-[var(--surface)] p-6 text-center">
             <h1 className="font-display text-lg font-bold">Protection State Interrupted</h1>
             <p className="mt-2 text-xs leading-relaxed text-[var(--ink-muted)]">
               {this.state.message}

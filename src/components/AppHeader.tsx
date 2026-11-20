@@ -61,9 +61,9 @@ export const BrandGIcon: React.FC<{ className?: string }> = ({ className = 'h-4 
 );
 
 const NAV_LINKS = [
-  { href: '#register', id: 'register', label: 'Free Account' },
   { href: '#live-filter', id: 'live-filter', label: 'Live Filter' },
   { href: '#coverage', id: 'coverage', label: 'Coverage' },
+  { href: '#architecture', id: 'architecture', label: 'Features' },
   { href: '#compare', id: 'compare', label: 'Compare' },
   { href: '#install', id: 'install', label: 'Install' },
 ];
@@ -80,7 +80,6 @@ export const AppHeader: React.FC = () => {
       const scrollY = window.scrollY;
       setIsScrolled(scrollY > 12);
 
-      // Determine active section based on scroll position
       const threshold = scrollY + 120;
       let current = '';
       for (const item of NAV_LINKS) {
@@ -128,10 +127,10 @@ export const AppHeader: React.FC = () => {
   return (
     <>
       <header
-        className={`sticky top-0 z-40 w-full border-b transition-[background-color,border-color,box-shadow] duration-200 backdrop-blur-xl ${
+        className={`sticky top-0 z-40 w-full border-b transition-colors duration-150 ${
           isScrolled || mobileMenuOpen
-            ? 'border-[var(--subtle-border)] bg-[var(--surface)]/95 shadow-sm'
-            : 'border-[var(--subtle-border)] bg-[var(--glass-fill)]'
+            ? 'border-[var(--subtle-border)] bg-[var(--surface)]'
+            : 'border-[var(--subtle-border)] bg-[var(--surface)]/95'
         }`}
       >
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6 lg:gap-8">
@@ -202,7 +201,7 @@ export const AppHeader: React.FC = () => {
           <nav
             id="mobile-nav-drawer"
             aria-label="Mobile navigation"
-            className="absolute inset-x-0 top-full z-40 border-b border-[var(--subtle-border)] bg-[var(--surface)] px-4 pt-2 pb-4 shadow-xl md:hidden"
+            className="absolute inset-x-0 top-full z-40 border-b border-[var(--subtle-border)] bg-[var(--surface)] px-4 pt-2 pb-4 md:hidden"
           >
             <div className="mx-auto flex max-w-md flex-col gap-1">
               {NAV_LINKS.map((item) => {
@@ -241,12 +240,12 @@ export const AppHeader: React.FC = () => {
         ) : null}
       </header>
 
-      {/* Subtle Backdrop Scrim to Dismiss Mobile Menu on Outside Tap */}
+      {/* Flat Backdrop Scrim to Dismiss Mobile Menu on Outside Tap */}
       {mobileMenuOpen ? (
         <div
           aria-hidden="true"
           onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 top-14 z-30 bg-black/25 backdrop-blur-[2px] sm:top-16 md:hidden"
+          className="fixed inset-0 top-14 z-30 bg-black/30 sm:top-16 md:hidden"
         />
       ) : null}
     </>

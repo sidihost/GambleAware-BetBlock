@@ -27,20 +27,13 @@ function renderAuthenticBrandSvg(
   brandId: string,
   accentColor: string,
   fgColor: string,
-  uid: string,
 ): React.ReactNode {
   switch (brandId) {
     case 'sportybet':
       // Official SportyBet crimson app icon: bold curved italic 'S' ribbon + upper-right & lower-left ball dots
       return (
         <g>
-          <defs>
-            <linearGradient id={`${uid}-sbCrimson`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#F01E2E" />
-              <stop offset="100%" stopColor="#B80D1B" />
-            </linearGradient>
-          </defs>
-          <rect width="32" height="32" fill={`url(#${uid}-sbCrimson)`} />
+          <rect width="32" height="32" fill="#E41B23" />
           <g transform="translate(7.6 5.4) scale(0.0605)">
             <path
               d="M164 86c-14 0-25-2-33 2-9 6-19 17-20 27-2 5 13 15 23 19 7 3 17 1 25 1 72 1 114 63 90 130-18 48-63 77-119 76l-17-76c12-1 24 1 32-4 10-6 16-17 24-26-10-6-18-14-28-19-6-3-15-1-23-1-62-3-99-43-96-101C25 58 79 4 132 7c6 1 16 8 17 14 7 20 10 41 15 65z"
@@ -53,16 +46,10 @@ function renderAuthenticBrandSvg(
       );
 
     case 'bet9ja':
-      // Bet9ja: Official deep emerald green tile, vibrant gold tilted '9', crisp white 'ja', crimson pitch arc
+      // Bet9ja: Flat emerald green tile, vibrant gold tilted '9', crisp white 'ja', crimson pitch arc
       return (
         <g>
-          <defs>
-            <linearGradient id={`${uid}-b9jGreen`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#148F4B" />
-              <stop offset="100%" stopColor="#0A5E2F" />
-            </linearGradient>
-          </defs>
-          <rect width="32" height="32" fill={`url(#${uid}-b9jGreen)`} />
+          <rect width="32" height="32" fill="#107C41" />
           <path
             d="M6 24.4c5.8 2.1 14 2 20-.6"
             fill="none"
@@ -98,16 +85,10 @@ function renderAuthenticBrandSvg(
       );
 
     case 'betking':
-      // BetKing: Deep royal navy shield with golden 3-peak jewel crown & crisp white 'BK'
+      // BetKing: Deep royal navy shield with golden 3-peak crown & crisp white 'BK'
       return (
         <g>
-          <defs>
-            <linearGradient id={`${uid}-bkNavy`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#0E387A" />
-              <stop offset="100%" stopColor="#061D42" />
-            </linearGradient>
-          </defs>
-          <rect width="32" height="32" fill={`url(#${uid}-bkNavy)`} />
+          <rect width="32" height="32" fill="#0B2C5F" />
           <path
             d="M8.5 13.5h15l1.3-5.6-3.9 2.9L16 6.2l-4.9 4.6-3.9-2.9 1.3 5.6z"
             fill="#F6A800"
@@ -129,16 +110,10 @@ function renderAuthenticBrandSvg(
       );
 
     case '1xbet':
-      // 1xBet: Cobalt royal blue with geometric crisp white '1' & iconic sky-blue athletic 'X'
+      // 1xBet: Flat cobalt blue with geometric crisp white '1' & iconic sky-blue athletic 'X'
       return (
         <g>
-          <defs>
-            <linearGradient id={`${uid}-xbBlue`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#1D64EC" />
-              <stop offset="100%" stopColor="#1240A8" />
-            </linearGradient>
-          </defs>
-          <rect width="32" height="32" fill={`url(#${uid}-xbBlue)`} />
+          <rect width="32" height="32" fill="#1A56DB" />
           <path d="M5.6 10.6L10.6 7.6V24.4H7.1V12.3l-2.3 1.3.8-3z" fill="#FFFFFF" />
           <path
             d="M13.5 8.5h4l3.3 5.2 3.7-5.2h3.9l-5.5 7.4 5.6 8.5h-4l-3.6-5.5-3.9 5.5h-3.7l5.8-8.1-5.6-7.8z"
@@ -148,16 +123,10 @@ function renderAuthenticBrandSvg(
       );
 
     case 'bet365':
-      // Bet365: Iconic British emerald green tile, clean lowercase white 'bet' over bold yellow '365'
+      // Bet365: Flat British emerald green tile, clean lowercase white 'bet' over bold yellow '365'
       return (
         <g>
-          <defs>
-            <linearGradient id={`${uid}-b365Green`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#038C68" />
-              <stop offset="100%" stopColor="#026148" />
-            </linearGradient>
-          </defs>
-          <rect width="32" height="32" fill={`url(#${uid}-b365Green)`} />
+          <rect width="32" height="32" fill="#027B5B" />
           <text
             x="16"
             y="14.2"
@@ -767,16 +736,14 @@ function renderAuthenticBrandSvg(
 export const BettingBrandLogo: React.FC<{
   target: string;
   size?: BrandLogoSize;
-  showSubBadge?: boolean;
   className?: string;
-}> = ({ target, size = 'md', showSubBadge = false, className = '' }) => {
-  const uid = React.useId();
+}> = ({ target, size = 'md', className = '' }) => {
   const identity: ResolvedBrandIdentity = resolveBettingBrand(target);
   const dims = SIZE_CLASSES[size];
 
   return (
     <span
-      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden border border-black/15 shadow-xs select-none dark:border-white/20 ${dims.box} ${dims.radius} ${className}`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden border border-black/15 select-none dark:border-white/20 ${dims.box} ${dims.radius} ${className}`}
       style={{
         backgroundColor: identity.bgColor,
         color: identity.fgColor,
@@ -786,21 +753,13 @@ export const BettingBrandLogo: React.FC<{
     >
       {identity.brand ? (
         <svg viewBox="0 0 32 32" className={dims.svg} aria-hidden="true">
-          {renderAuthenticBrandSvg(identity.brand.id, identity.accentColor, identity.fgColor, uid)}
+          {renderAuthenticBrandSvg(identity.brand.id, identity.accentColor, identity.fgColor)}
         </svg>
       ) : (
         <span className={`font-mono font-extrabold tracking-tight ${dims.mono}`}>
           {identity.monogram}
         </span>
       )}
-
-      {showSubBadge && identity.isExactCatalogMatch ? (
-        <span
-          className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full"
-          style={{ backgroundColor: identity.accentColor }}
-          aria-hidden="true"
-        />
-      ) : null}
     </span>
   );
 };

@@ -13,7 +13,6 @@ import {
 import { AndroidAppShowcase } from '../components/AndroidAppShowcase';
 import { CoveredBrandsExplorer } from '../components/CoveredBrandsExplorer';
 import { DeploymentHub } from '../components/DeploymentHub';
-import { FreeAccountPortal } from '../components/FreeAccountPortal';
 import { LiveFilterSandbox } from '../components/LiveFilterSandbox';
 import { SavingsImpactSection } from '../components/SavingsImpactSection';
 import { getRegistryMetrics } from '../utils/interactiveDemo';
@@ -102,87 +101,87 @@ export const DownloadScreen: React.FC = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-clip">
       {/* Executive Split Hero Section */}
       <section className="relative border-b border-[var(--subtle-border)] bg-[var(--canvas)]">
-        <div className="mx-auto max-w-6xl px-4 pt-10 pb-14 sm:px-6 md:pt-14 lg:pt-16 lg:pb-20">
-          <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
+        <div className="mx-auto max-w-6xl px-4 pt-8 pb-12 sm:px-6 md:pt-12 lg:pt-16 lg:pb-20">
+          <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-10">
             {/* Left 6 Cols: Authoritative Product Positioning */}
-            <div className="lg:col-span-6">
-              <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
+            <div className="min-w-0 lg:col-span-6">
+              <p className="font-mono text-[11px] font-semibold tracking-wider text-[var(--accent-ink)] uppercase sm:text-xs">
                 100% Free Forever · Android &amp; iPhone Protection
               </p>
 
-              <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-[var(--ink)] sm:text-5xl lg:text-[52px] lg:leading-[1.06]">
+              <h1 className="mt-3.5 font-display text-[32px] leading-[1.08] font-bold tracking-tight text-[var(--ink)] sm:mt-4 sm:text-5xl lg:text-[52px] lg:leading-[1.06]">
                 Stop betting sites and apps before they open.
               </h1>
 
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--ink-muted)] sm:text-lg">
+              <p className="mt-4 max-w-xl text-sm leading-relaxed text-[var(--ink-muted)] sm:mt-5 sm:text-base lg:text-lg">
                 GambleAware blocks betting websites, Play Store downloads, installed betting apps, and popunder ads on-device — while letting you use any VPN freely, leaving everyday apps untouched, and enforcing an unbreakable Commitment Lock.
               </p>
 
               {/* Primary & Secondary CTAs */}
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center">
                 <a
                   href={ANDROID_APK_DOWNLOAD_URL}
                   download={APK_DOWNLOAD_FILENAME}
                   data-testid="hero-download-apk-btn"
                   onClick={() => setDownloadStarted(true)}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-6 text-sm font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--active-fill)] px-6 text-sm font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--active-fill)]"
                 >
                   <Download className="h-4 w-4 shrink-0" />
                   <span>Download Android App (APK)</span>
                 </a>
 
                 <a
-                  href="#register"
-                  data-testid="hero-free-account-btn"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-5 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--glass-border)]"
+                  href="#live-filter"
+                  data-testid="hero-try-filter-btn"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-5 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--glass-border)] sm:w-auto"
                 >
-                  <span>Create Free Account &amp; Welcome Pack</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <span>Try Live Blocker</span>
+                  <ArrowRight className="h-4 w-4 shrink-0" />
                 </a>
               </div>
 
               {downloadStarted ? (
                 <p
                   role="status"
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--safe-ink)]"
+                  className="mt-3 inline-flex items-start gap-1.5 text-xs font-medium text-[var(--safe-ink)]"
                 >
-                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
                     Downloading {APK_DOWNLOAD_FILENAME} — scroll to Install Guide for setup tips.
                   </span>
                 </p>
               ) : (
-                <p className="mt-3 font-mono text-xs text-[var(--ink-muted)]">
-                  Free forever · Android 7.0+ · No account or subscription required
+                <p className="mt-3 font-mono text-[11px] leading-relaxed text-[var(--ink-muted)] sm:text-xs">
+                  Free forever · Android 7.0+ · No account or sign-up required
                 </p>
               )}
 
-              {/* Crisp 3-Column Live Registry Metrics Strip (No Pills, No Borders) */}
-              <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-[var(--subtle-border)] pt-6">
-                <div>
-                  <dt className="font-mono text-[11px] text-[var(--ink-muted)] uppercase">
+              {/* Crisp 3-Column Live Registry Metrics Strip */}
+              <dl className="mt-8 grid grid-cols-3 gap-3 border-t border-[var(--subtle-border)] pt-5 sm:mt-10 sm:gap-6 sm:pt-6">
+                <div className="min-w-0">
+                  <dt className="font-mono text-[10px] leading-tight text-[var(--ink-muted)] uppercase sm:text-[11px]">
                     Blocked Domains
                   </dt>
-                  <dd className="mt-1 font-mono text-2xl font-bold tracking-tight text-[var(--ink)] tabular-nums sm:text-3xl">
+                  <dd className="mt-1 font-mono text-xl font-bold tracking-tight text-[var(--ink)] tabular-nums sm:text-2xl lg:text-3xl">
                     {metrics.domainCount.toLocaleString()}+
                   </dd>
                 </div>
-                <div>
-                  <dt className="font-mono text-[11px] text-[var(--ink-muted)] uppercase">
+                <div className="min-w-0">
+                  <dt className="font-mono text-[10px] leading-tight text-[var(--ink-muted)] uppercase sm:text-[11px]">
                     Betting Apps
                   </dt>
-                  <dd className="mt-1 font-mono text-2xl font-bold tracking-tight text-[var(--ink)] tabular-nums sm:text-3xl">
+                  <dd className="mt-1 font-mono text-xl font-bold tracking-tight text-[var(--ink)] tabular-nums sm:text-2xl lg:text-3xl">
                     {metrics.appCount}+
                   </dd>
                 </div>
-                <div>
-                  <dt className="font-mono text-[11px] text-[var(--ink-muted)] uppercase">
+                <div className="min-w-0">
+                  <dt className="font-mono text-[10px] leading-tight text-[var(--ink-muted)] uppercase sm:text-[11px]">
                     VPN Required
                   </dt>
-                  <dd className="mt-1 font-mono text-2xl font-bold tracking-tight text-[var(--accent-ink)] tabular-nums sm:text-3xl">
+                  <dd className="mt-1 font-mono text-xl font-bold tracking-tight text-[var(--accent-ink)] tabular-nums sm:text-2xl lg:text-3xl">
                     0%
                   </dd>
                 </div>
@@ -190,34 +189,31 @@ export const DownloadScreen: React.FC = () => {
             </div>
 
             {/* Right 6 Cols: Live Interactive Android Device Walkthrough */}
-            <div className="lg:col-span-6">
+            <div className="min-w-0 lg:col-span-6">
               <AndroidAppShowcase />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 01: 100% Free Account, Welcome Email & Guided Zero-VPN Setup */}
-      <FreeAccountPortal />
-
-      {/* Section 02: Live On-Device Filter Engine Sandbox */}
+      {/* Section 01: Live On-Device Filter Engine Sandbox */}
       <LiveFilterSandbox
         externalQuery={sandboxExternalQuery}
         externalQuerySeq={sandboxExternalSeq}
       />
 
-      {/* Section 03: Searchable & Filterable Covered Brands Explorer */}
+      {/* Section 02: Searchable & Filterable Covered Brands Explorer */}
       <CoveredBrandsExplorer onTestDomain={handleTestDomainFromDirectory} />
 
-      {/* Section 04: Asymmetric Security Architecture Bento */}
+      {/* Section 03: Asymmetric Security Architecture Bento */}
       <section
         id="architecture"
         aria-labelledby="architecture-heading"
-        className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20"
+        className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20"
       >
         <div className="mb-8 max-w-2xl">
           <p className="font-mono text-xs font-semibold tracking-wider text-[var(--accent-ink)] uppercase">
-            04 · Built to Protect You
+            03 · Built to Protect You
           </p>
           <h2
             id="architecture-heading"
@@ -230,13 +226,13 @@ export const DownloadScreen: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-12">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
           {ARCHITECTURE_LAYERS.map((layer) => {
             const IconComponent = layer.icon;
             return (
               <article
                 key={layer.num}
-                className={`flex flex-col justify-between rounded-3xl border border-[var(--subtle-border)] bg-[var(--surface)] p-6 ${layer.span}`}
+                className={`flex min-w-0 flex-col justify-between rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-5 sm:rounded-3xl sm:p-6 ${layer.span}`}
               >
                 <div>
                   <div className="flex items-center justify-between">
@@ -245,7 +241,7 @@ export const DownloadScreen: React.FC = () => {
                     </span>
                     <IconComponent className="h-5 w-5 text-[var(--ink-muted)]" />
                   </div>
-                  <h3 className="mt-4 font-display text-lg font-bold tracking-tight text-[var(--ink)]">
+                  <h3 className="mt-3.5 font-display text-base font-bold tracking-tight text-[var(--ink)] sm:mt-4 sm:text-lg">
                     {layer.title}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)]">

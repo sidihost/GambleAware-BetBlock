@@ -405,7 +405,7 @@ fun ActivityScreen(
                 }
             }
 
-            // Item 2: Recovery Milestone Badges
+            // Item 2: Recovery Milestones (Clean Flat List — Zero Pill Badges)
             item {
                 LiquidGlassCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -413,38 +413,50 @@ fun ActivityScreen(
                 ) {
                     LiquidSectionHeader(
                         title = "Recovery Milestones",
-                        subtitle = "Badges unlock automatically as your betting-free days climb",
+                        subtitle = "Progress updates automatically as your betting-free days climb",
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         RECOVERY_MILESTONES.forEach { milestone ->
                             val unlocked = state.cleanDays >= milestone.days
                             Row(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(if (unlocked) liquid.activeFill else liquid.mutedFill)
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (unlocked) liquid.softAccentFill else liquid.controlFill)
                                     .border(
                                         1.dp,
-                                        if (unlocked) liquid.activeFill else liquid.subtleBorder,
-                                        RoundedCornerShape(50),
+                                        if (unlocked) liquid.glassBorder else liquid.subtleBorder,
+                                        RoundedCornerShape(12.dp),
                                     )
-                                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Icon(
-                                    imageVector = if (unlocked) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
-                                    contentDescription = null,
-                                    tint = if (unlocked) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(14.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (unlocked) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
+                                        contentDescription = null,
+                                        tint = if (unlocked) liquid.accentInk else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = milestone.title,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = if (unlocked) FontWeight.SemiBold else FontWeight.Medium,
+                                        color = if (unlocked) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                                 Text(
-                                    text = "${milestone.label} • ${milestone.title}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (unlocked) liquid.activeContent else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    text = milestone.label,
+                                    fontFamily = MonoFontFamily,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (unlocked) liquid.accentInk else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -464,17 +476,19 @@ fun ActivityScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     if (state.triggerBreakdown.isNotEmpty()) {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             state.triggerBreakdown.forEach { item ->
                                 Row(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(50))
-                                        .background(liquid.mutedFill)
-                                        .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50))
-                                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(liquid.controlFill)
+                                        .border(1.dp, liquid.subtleBorder, RoundedCornerShape(12.dp))
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
@@ -482,13 +496,12 @@ fun ActivityScreen(
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onBackground,
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "${item.count}",
+                                        text = "${item.count} logged",
                                         fontFamily = MonoFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onBackground,
+                                        color = liquid.accentInk,
                                     )
                                 }
                             }
@@ -563,30 +576,32 @@ fun ActivityScreen(
                             subtitle = "Recent distribution",
                         )
                         Spacer(modifier = Modifier.height(10.dp))
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             state.categoryBreakdown.forEach { entry ->
                                 Row(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(50))
-                                        .background(liquid.mutedFill)
-                                        .border(1.dp, liquid.subtleBorder, RoundedCornerShape(50))
-                                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(liquid.controlFill)
+                                        .border(1.dp, liquid.subtleBorder, RoundedCornerShape(12.dp))
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
-                                        text = entry.category.displayName.substringBefore(" "),
+                                        text = entry.category.displayName,
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onBackground,
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "${entry.count}",
+                                        fontFamily = MonoFontFamily,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onBackground,
+                                        color = liquid.accentInk,
                                     )
                                 }
                             }
@@ -842,20 +857,13 @@ private fun GroupedBlockedTargetRow(
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(liquid.softAccentFill)
-                    .border(1.dp, liquid.glassBorder, RoundedCornerShape(50))
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-            ) {
-                Text(
-                    text = formatAttemptCountLabel(site.attemptCount),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = liquid.accentInk,
-                )
-            }
+            Text(
+                text = formatAttemptCountLabel(site.attemptCount),
+                fontFamily = MonoFontFamily,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = liquid.accentInk,
+            )
         }
     }
 }
