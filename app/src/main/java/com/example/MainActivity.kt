@@ -48,12 +48,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.rounded.AdminPanelSettings
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -62,8 +65,10 @@ import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Shop
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -174,6 +179,7 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
     var showUrgeJournalSheet by remember { mutableStateOf(false) }
     var showSafeSupportSheet by remember { mutableStateOf(false) }
     var showPreloader by rememberSaveable { mutableStateOf(true) }
+    var showWelcomeHero by rememberSaveable { mutableStateOf(true) }
     var hasNotificationPermission by remember {
         mutableStateOf(GambleAwareNotifications.hasNotificationPermission(context))
     }
@@ -348,17 +354,25 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
         CompositionLocalProvider(LocalTourTargets provides tourRegistry) {
             LiquidGlassBackdrop(isProtected = state.isFullyArmed) {
                 if (!state.settings.hasCompletedInitialSetup) {
-                    MandatoryThreeStepSetupScreen(
-                        state = state,
-                        hasNotificationPermission = hasNotificationPermission,
-                        onEnableAccessibilityShield = { showShieldDisclosure = true },
-                        onEnableDeviceAdmin = { handleDeviceAdminLockToggle() },
-                        onRequestNotifications = { handleToggleNotifications(true) },
-                        onCompleteSetup = { name, days ->
-                            viewModel.completeInitialSetup(name, days, enableProtection = state.isAccessibilityEnabled)
-                        },
-                        onSkipSetup = { viewModel.skipInitialSetup() },
-                    )
+                    if (showWelcomeHero) {
+                        WelcomeHeroScreen(
+                            onGetStarted = { showWelcomeHero = false },
+                            onExploreFirst = { viewModel.skipInitialSetup() },
+                        )
+                    } else {
+                        MandatoryThreeStepSetupScreen(
+                            state = state,
+                            hasNotificationPermission = hasNotificationPermission,
+                            onBackToWelcome = { showWelcomeHero = true },
+                            onEnableAccessibilityShield = { showShieldDisclosure = true },
+                            onEnableDeviceAdmin = { handleDeviceAdminLockToggle() },
+                            onRequestNotifications = { handleToggleNotifications(true) },
+                            onCompleteSetup = { name, days ->
+                                viewModel.completeInitialSetup(name, days, enableProtection = state.isAccessibilityEnabled)
+                            },
+                            onSkipSetup = { viewModel.skipInitialSetup() },
+                        )
+                    }
                 } else {
                     Box(modifier = Modifier.fillMaxSize()) {
                         Box(
@@ -414,6 +428,15 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                         onOpenUrgeJournal = { showUrgeJournalSheet = true },
                                         onOpenSafeSupport = { showSafeSupportSheet = true },
                                         onBankUrgeStake = { stakeNgn -> viewModel.bankUrgeStake(stakeNgn) },
+                                        onUninstallApp = { pkgToDelete ->
+                                            runCatching {
+                                                val uninstallIntent = Intent(
+                                                    Intent.ACTION_DELETE,
+                                                    Uri.parse("package:$pkgToDelete"),
+                                                )
+                                                context.startActivity(uninstallIntent)
+                                            }
+                                        },
                                         activeTourKey = activeTourKey,
                                         bottomContentPadding = navBarReserve,
                                     )
@@ -469,6 +492,13 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                             viewModel.setDepositGuardEnabled(true)
                                         } else {
                                             guardRestrictedAction { viewModel.setDepositGuardEnabled(false) }
+                                        }
+                                    },
+                                    onTogglePlayStoreGuard = { enabled ->
+                                        if (enabled) {
+                                            viewModel.setPlayStoreGuardEnabled(true)
+                                        } else {
+                                            guardRestrictedAction { viewModel.setPlayStoreGuardEnabled(false) }
                                         }
                                     },
                                     onAddCustomDomain = { domain, isAllowlist ->
@@ -881,10 +911,10 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                         LiquidDialogContent(themeMode = state.settings.themeMode) {
                             Text(
                                 text = "GambleAware uses Android AccessibilityService (with zero VPN required, so ProtonVPN, Mullvad, NordVPN & WARP still work normally) to:\n\n" +
-                                    "1. Detect SportyBet, Bet9ja, Bet365, 1xBet, Stake & 820+ gambling brands while typing across 20+ browsers & social WebViews.\n" +
-                                    "2. Block gambling apps, popunder ads & affiliate redirect links in real time.\n" +
-                                    "3. Block Uninstall, Force Stop & Device Admin deactivation screens while your Commitment Lock is active.\n\n" +
-                                    "All inspection stays strictly on-device — never logging messages, passwords, or banking apps.",
+                                    "1. Detect SportyBet, Bet9ja, Bet365, 1xBet, Stake & 1,035+ gambling brands while typing across 20+ browsers & social WebViews.\n" +
+                                    "2. Block betting app downloads in Google Play Store & APK installers, and stop installed betting apps automatically.\n" +
+                                    "3. Lock Uninstall, Force Stop, Device Admin & Date/Time tampering while your Commitment Lock is active.\n\n" +
+                                    "Only betting apps and apps you explicitly add are blocked — banking, messaging, VPN & everyday apps stay untouched.",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -1140,11 +1170,244 @@ private fun AppPreloaderOverlay(
     }
 }
 
+@Composable
+private fun WelcomeHeroScreen(
+    onGetStarted: () -> Unit,
+    onExploreFirst: () -> Unit,
+) {
+    val liquid = LocalLiquidColors.current
+    val scrollState = rememberScrollState()
+    val infiniteTransition = rememberInfiniteTransition(label = "welcome_halo")
+    val pulseProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "welcome_pulse",
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .safeDrawingPadding()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        LiquidGlassCard(
+            modifier = Modifier
+                .widthIn(max = 500.dp)
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+                .testTag("welcome_hero_screen"),
+            cornerRadius = 30.dp,
+            contentPadding = 24.dp,
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier.size(116.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val maxR = size.minDimension / 2f
+                        val ring1 = maxR * (0.64f + pulseProgress * 0.34f)
+                        val alpha1 = (1f - pulseProgress) * 0.36f
+                        drawCircle(
+                            color = liquid.activeFill.copy(alpha = alpha1),
+                            radius = ring1,
+                            style = Stroke(width = 1.6.dp.toPx()),
+                        )
+                        drawCircle(
+                            color = liquid.activeFill.copy(alpha = 0.14f),
+                            radius = maxR * 0.72f,
+                        )
+                    }
+                    LiquidGlassCard(
+                        cornerRadius = 24.dp,
+                        borderColor = liquid.activeFill.copy(alpha = 0.35f),
+                        contentPadding = 12.dp,
+                    ) {
+                        BrandGEmblem(modifier = Modifier.size(54.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "100% FREE • ZERO-VPN SHIELD",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    color = liquid.accentInk,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Welcome to GambleAware",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Your calm, unbreakable barrier against betting sites and apps — engineered to protect your recovery without touching your everyday life.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    WelcomeFeatureRow(
+                        icon = Icons.Rounded.VpnKey,
+                        title = "Use Any VPN Freely",
+                        subtitle = "ProtonVPN, Mullvad, NordVPN & WARP run normally without weakening your lock.",
+                    )
+                    WelcomeFeatureRow(
+                        icon = Icons.Rounded.Shop,
+                        title = "Play Store & Install Blocker",
+                        subtitle = "Automatically stops betting app downloads in Play Store & detects installed ones.",
+                    )
+                    WelcomeFeatureRow(
+                        icon = Icons.Rounded.Lock,
+                        title = "Unbreakable Commitment Lock",
+                        subtitle = "Blocks uninstall, Force Stop & clock tampering until your chosen timer ends.",
+                    )
+                    WelcomeFeatureRow(
+                        icon = Icons.Rounded.Apps,
+                        title = "Only Betting Apps Blocked",
+                        subtitle = "Banking, messaging, work & social apps stay completely unaffected.",
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                Button(
+                    onClick = onGetStarted,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .testTag("welcome_get_started_button"),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = liquid.activeFill,
+                        contentColor = liquid.activeContent,
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                ) {
+                    Text(
+                        text = "Get Started — Set Up Shield",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = onExploreFirst,
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, liquid.subtleBorder),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .testTag("welcome_explore_first_button"),
+                ) {
+                    Text(
+                        text = "Explore App First",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Free forever • 100% private on-device • Imoogle Technology",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WelcomeFeatureRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+) {
+    val liquid = LocalLiquidColors.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(liquid.controlFill)
+            .border(1.dp, liquid.subtleBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(liquid.softAccentFill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = liquid.accentInk,
+                modifier = Modifier.size(19.dp),
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MandatoryThreeStepSetupScreen(
     state: MainUiState,
     hasNotificationPermission: Boolean,
+    onBackToWelcome: () -> Unit,
     onEnableAccessibilityShield: () -> Unit,
     onEnableDeviceAdmin: () -> Unit,
     onRequestNotifications: () -> Unit,
@@ -1196,6 +1459,40 @@ private fun MandatoryThreeStepSetupScreen(
             cornerRadius = 28.dp,
             contentPadding = 22.dp,
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TextButton(
+                    onClick = onBackToWelcome,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Back to Welcome",
+                        tint = liquid.accentInk,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Welcome",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = liquid.accentInk,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Text(
+                    text = "SHIELD SETUP",
+                    style = MaterialTheme.typography.labelSmall,
+                    letterSpacing = 1.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),

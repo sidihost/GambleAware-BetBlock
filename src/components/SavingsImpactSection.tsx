@@ -19,10 +19,16 @@ export const SavingsImpactSection: React.FC = () => {
   const comparisonRows = useMemo(
     () => [
       {
-        feature: 'Works Without a VPN',
+        feature: 'Use Any VPN Freely',
         gambleAware:
-          'No VPN needed — banking apps, work networks, and your own VPN keep running smoothly',
-        competitor: 'Forces a constant VPN that slows your phone, drains battery, and breaks banking apps',
+          'Zero VPN conflict — ProtonVPN, Mullvad, NordVPN, WARP & banking apps run untouched while your lock stays armed',
+        competitor: 'Hijacks Android’s VPN slot, blocks other VPNs, drains battery, and breaks banking apps',
+      },
+      {
+        feature: 'Play Store & Install Blocker',
+        gambleAware:
+          'Automatically blocks betting app downloads in Play Store & APK sideloaders, and flags installed betting apps',
+        competitor: 'Still lets you search and download betting apps from Google Play Store',
       },
       {
         feature: 'Instant Typing Protection',
@@ -37,15 +43,15 @@ export const SavingsImpactSection: React.FC = () => {
           'Mainly Western lists where African betting mirrors often slip through',
       },
       {
-        feature: 'Uninstall & Trusted Buddy Lock',
+        feature: 'Unbreakable Commitment Lock',
         gambleAware:
-          'Uninstall lock + 24h–2y Commitment Timer + Trusted Buddy approval code completely free',
-        competitor: 'Paid subscription required to manage device locks',
+          'Blocks uninstall, Force Stop & Date/Time clock tampering + Trusted Buddy approval code completely free',
+        competitor: 'Paid subscription required and vulnerable to VPN/clock workarounds',
       },
       {
-        feature: 'Pricing & Privacy',
+        feature: 'Pricing & Everyday App Safety',
         gambleAware:
-          '100% Free Forever · Everything stays private on your phone',
+          '100% Free Forever · Only betting & user-selected apps blocked · 100% private on-device',
         competitor: 'Paid monthly or annual subscription required',
       },
     ],

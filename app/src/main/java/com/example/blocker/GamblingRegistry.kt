@@ -310,6 +310,45 @@ object GamblingRegistry {
         "com.dream11.fantasy.cricket.app", "com.mpl.androidapp", "com.winzo.gold",
     )
 
+    /**
+     * Explicit non-betting packages — including third-party VPNs, Nigerian & global banking apps,
+     * messaging, and everyday utilities — that GambleAware must NEVER block unless explicitly
+     * added by the user to Custom Blocked Apps (VPN & core system packages remain protected).
+     */
+    val safeVpnAppPackages: Set<String> = setOf(
+        "ch.protonvpn.android",
+        "net.mullvad.mullvadvpn",
+        "com.nordvpn.android",
+        "com.expressvpn.vpn",
+        "com.surfshark.vpnclient.android",
+        "com.cloudflare.onedotonedotonedotone",
+        "com.wireguard.android",
+        "net.openvpn.openvpn",
+        "com.tailscale.ipn",
+        "com.psiphon3",
+        "com.windscribe.vpn",
+        "com.privateinternetaccess.android",
+        "com.cyberghostvpn.android",
+        "com.ixolit.ipvanish",
+        "com.adguard.vpn",
+        "com.tunnelbear.android",
+        "com.hotspotshield.aff.android",
+        "com.fast.free.unblock.secure.vpn",
+        "com.jrzheng.supervpnfree",
+        "org.torproject.android",
+    )
+
+    val safeEverydayAppPackages: Set<String> = setOf(
+        "com.whatsapp", "com.whatsapp.w4b", "org.telegram.messenger", "org.telegram.plus",
+        "com.instagram.android", "com.facebook.katana", "com.twitter.android", "com.zhiliaoapp.musically",
+        "com.spotify.music", "com.netflix.mediaclient", "com.google.android.youtube",
+        "team.opay.pay", "com.kudabank.app", "com.transsnet.palmpay", "com.moniepoint.personal",
+        "com.gtbank.gtworldv1", "com.zenithbank.eazymoney", "com.firstbank.firstmobile",
+        "com.accessbank.nextgen", "com.uba.mobile", "com.fcmb.mobile", "com.alat.app",
+        "com.paypal.android.p2pmobile", "com.revolut.revolut", "com.transferwise.android",
+        "com.android.vending", "com.sec.android.app.samsungapps", "com.huawei.appmarket",
+    )
+
     val gamblingPackageKeywords: List<String> = listOf(
         "sportsbook", "bet365", "draftkings", "fanduel", "betmgm", "caesarssports",
         "espnbet", "betrivers", "prizepicks", "underdogfantasy", "williamhill",

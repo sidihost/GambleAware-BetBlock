@@ -22,23 +22,45 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
-  // Do not remove or modify these signingConfigs. They are necessary for building, installing,
-  // and updating Android apps in AI Studio.
+  // Read signing variables safely from environment variables or Gradle properties.
+  // Blank values are treated as missing so CI/CD builds without secrets never crash.
+  fun readBuildVar(name: String): String? =
+    providers.environmentVariable(name).orNull?.takeIf { it.isNotBlank() }
+      ?: (findProperty(name) as? String)?.takeIf { it.isNotBlank() }
+
+  val releaseKeystorePath = readBuildVar("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+  val releaseKeystoreFile = file(releaseKeystorePath)
+  val releaseStorePassword = readBuildVar("STORE_PASSWORD")
+  val releaseKeyPassword = readBuildVar("KEY_PASSWORD")
+  val releaseKeyAlias = readBuildVar("KEY_ALIAS") ?: "upload"
+  val hasReleaseSigning =
+    releaseKeystoreFile.exists() &&
+      releaseStorePassword != null &&
+      releaseKeyPassword != null
+
+  val customDebugKeystoreFile = file("${rootDir}/debug.keystore")
+  val hasCustomDebugKeystore = customDebugKeystoreFile.exists()
+
+  // Signing configs stay defined for AI Studio & CI builds while guarding against
+  // missing environment variables or keystore files on local/forked builds.
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      if (hasReleaseSigning) {
+        storeFile = releaseKeystoreFile
+        storePassword = releaseStorePassword
+        keyAlias = releaseKeyAlias
+        keyPassword = releaseKeyPassword
+      }
       enableV1Signing = true
       enableV2Signing = true
     }
     create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
-      storePassword = "android"
-      keyAlias = "androiddebugkey"
-      keyPassword = "android"
+      if (hasCustomDebugKeystore) {
+        storeFile = customDebugKeystoreFile
+        storePassword = readBuildVar("DEBUG_STORE_PASSWORD") ?: "android"
+        keyAlias = readBuildVar("DEBUG_KEY_ALIAS") ?: "androiddebugkey"
+        keyPassword = readBuildVar("DEBUG_KEY_PASSWORD") ?: "android"
+      }
       enableV1Signing = true
       enableV2Signing = true
     }
@@ -50,14 +72,18 @@ android {
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
-      // AI Studio.
-      signingConfig = signingConfigs.getByName("release")
+      signingConfig = when {
+        hasReleaseSigning -> signingConfigs.getByName("release")
+        hasCustomDebugKeystore -> signingConfigs.getByName("debugConfig")
+        else -> signingConfigs.getByName("debug")
+      }
     }
     debug {
-      // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
-      // AI Studio.
-      signingConfig = signingConfigs.getByName("debugConfig")
+      signingConfig = if (hasCustomDebugKeystore) {
+        signingConfigs.getByName("debugConfig")
+      } else {
+        signingConfigs.getByName("debug")
+      }
     }
   }
   compileOptions {

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.example.blocker.BlocklistMatcher
 import com.example.data.AnchorRepository
+import com.example.ui.BlockedInterventionActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,8 +51,19 @@ class PackageInstallReceiver : BroadcastReceiver() {
                             category = match.category,
                         )
                     }
+                    runCatching {
+                        val blockIntent = Intent(appContext, BlockedInterventionActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                            putExtra(BlockedInterventionActivity.EXTRA_TARGET, targetLabel)
+                            putExtra(BlockedInterventionActivity.EXTRA_SOURCE, "Install Guard")
+                            putExtra(BlockedInterventionActivity.EXTRA_CATEGORY, match.category.displayName)
+                            putExtra(BlockedInterventionActivity.EXTRA_PACKAGE_NAME, pkgName)
+                        }
+                        appContext.startActivity(blockIntent)
+                    }
                 }
             }
         }
     }
 }
+

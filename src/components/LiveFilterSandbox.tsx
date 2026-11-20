@@ -56,7 +56,7 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
             Test how GambleAware blocks sites before you install.
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[var(--ink-muted)] sm:text-base">
-            Type any betting brand name, deposit link, gambling ad site, or support helpline below to see instant protection in action.
+            Type any betting brand, Play Store download query (e.g. <span className="font-mono text-xs text-[var(--ink)]">playstore: SportyBet</span>), third-party VPN, deposit link, or support helpline below to see instant protection in action.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export const LiveFilterSandbox: React.FC<LiveFilterSandboxProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             data-testid="sandbox-input"
-            placeholder="Try sporty, bet9ja.com/deposit?code=AB99X, popads.net, or gamcare.org.uk..."
+            placeholder="Try sporty, playstore: SportyBet, protonvpn.com, bet9ja.com/deposit?code=AB99X, or gamcare.org.uk..."
             aria-label="Test a betting domain, URL, or prefix"
             className="h-12 w-full rounded-2xl border border-[var(--subtle-border)] bg-[var(--control-bg)] pr-11 pl-11 font-mono text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)]/70 focus:border-[var(--active-fill)] focus:outline-none"
           />

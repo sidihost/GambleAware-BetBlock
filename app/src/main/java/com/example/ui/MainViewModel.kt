@@ -233,6 +233,7 @@ data class MainUiState(
     val categoryBreakdown: List<CategoryBreakdown> = emptyList(),
     val triggerBreakdown: List<TriggerBreakdown> = emptyList(),
     val installedApps: List<InstalledAppInfo> = emptyList(),
+    val detectedBettingApps: List<InstalledAppInfo> = emptyList(),
     val isLoadingApps: Boolean = false,
     val testQueryInput: String = "",
     val testMatchResult: BlockMatchResult? = null,
@@ -329,6 +330,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = AnchorRepository.getInstance(application)
     private val installedAppsFlow = MutableStateFlow<List<InstalledAppInfo>>(emptyList())
+    private val detectedBettingAppsFlow = MutableStateFlow<List<InstalledAppInfo>>(emptyList())
     private val loadingAppsFlow = MutableStateFlow(false)
     private val accessibilityEnabledFlow = MutableStateFlow(
         GambleAwareAccessibilityService.isEnabled(application),
@@ -342,6 +344,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val testQueryFlow = MutableStateFlow("")
     private val testResultFlow = MutableStateFlow<BlockMatchResult?>(null)
     private val bannerFlow = MutableStateFlow<String?>(null)
+
+    init {
+        scanInstalledBettingApps()
+    }
 
     private val tickerFlow = flow {
         while (true) {
@@ -391,8 +397,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         bannerFlow,
         tickerFlow,
         urgeFlow,
-    ) { banner, nowMs, urges ->
-        Triple(banner, nowMs, urges)
+        detectedBettingAppsFlow,
+    ) { banner, nowMs, urges, detectedApps ->
+        Tuple4(banner, nowMs, urges, detectedApps)
     }
 
     val uiState: StateFlow<MainUiState> = combine(
@@ -408,6 +415,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val nowMs = meta.second
         val urgeLogs = meta.third.first
         val totalUrges = meta.third.second
+        val detectedBettingApps = meta.fourth
 
         val state = MainUiState(
             settings = settings,
@@ -428,6 +436,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             categoryBreakdown = buildCategoryBreakdown(data.third),
             triggerBreakdown = buildTriggerBreakdown(urgeLogs),
             installedApps = interactive.second,
+            detectedBettingApps = detectedBettingApps,
             isLoadingApps = interactive.third,
             testQueryInput = interactive.fourth,
             testMatchResult = interactive.fifth,
@@ -466,6 +475,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.setShieldRunning(accessibilityReady)
         deviceAdminActiveFlow.value = checkDeviceAdminActive(ctx)
         privateDnsFlow.value = PrivateDnsInspector.inspect(ctx)
+        scanInstalledBettingApps()
+    }
+
+    fun scanInstalledBettingApps() {
+        viewModelScope.launch {
+            detectedBettingAppsFlow.value = repository.scanInstalledBettingApps()
+        }
     }
 
     fun deactivateDeviceAdmin(): Boolean {
@@ -604,6 +620,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             "Gambling Ad & Popunder Blocker enabled"
         } else {
             "Gambling Ad Blocker paused"
+        }
+    }
+
+    fun setPlayStoreGuardEnabled(enabled: Boolean) {
+        repository.prefs.setPlayStoreGuardEnabled(enabled)
+        bannerFlow.value = if (enabled) {
+            "Play Store & APK Download Blocker active"
+        } else {
+            "Play Store Download Guard paused"
         }
     }
 
@@ -819,6 +844,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .map { (tag, count) -> TriggerBreakdown(tag, count) }
             .sortedByDescending { it.count }
     }
+
+    private data class Tuple4<A, B, C, D>(
+        val first: A,
+        val second: B,
+        val third: C,
+        val fourth: D,
+    )
 
     private data class Tuple5<A, B, C, D, E>(
         val first: A,

@@ -134,3 +134,60 @@ test('unwraps social redirect links and catches Cyrillic homoglyph spoofing whil
   }
 });
 
+test('blocks Play Store searches and APK sideloads for betting apps while allowing VPNs and everyday apps', () => {
+  const config: BlockFilterConfig = {
+    ...defaultConfig,
+    playStoreGuardEnabled: true,
+    customBlockedAppNames: new Set(['LuckySpinPro']),
+  };
+
+  assert.equal(
+    BlocklistMatcher.matchAppStoreOrInstaller(false, ['SportyBet'], ['SportyBet', 'Install'], config).isBlocked,
+    true,
+  );
+  assert.equal(
+    BlocklistMatcher.matchAppStoreOrInstaller(true, [], ['Do you want to install this app?', '1xBet', 'Install'], config).isBlocked,
+    true,
+  );
+  assert.equal(
+    BlocklistMatcher.matchAppStoreOrInstaller(false, ['LuckySpinPro'], ['LuckySpinPro', 'Install'], config).isBlocked,
+    true,
+  );
+
+  // Third-party VPNs and everyday apps must stay allowed
+  assert.equal(
+    BlocklistMatcher.matchAppStoreOrInstaller(false, ['ProtonVPN'], ['Proton VPN: Fast & Secure', 'Install'], config).isBlocked,
+    false,
+  );
+  assert.equal(
+    BlocklistMatcher.matchAppStoreOrInstaller(false, ['WhatsApp'], ['WhatsApp Messenger', 'Install'], config).isBlocked,
+    false,
+  );
+});
+
+test('allows third-party VPN packages and everyday apps in App Shield while blocking betting and custom apps', () => {
+  const config: BlockFilterConfig = {
+    ...defaultConfig,
+    customBlockedPackages: new Set(['com.custom.triggerapp']),
+  };
+
+  for (const safePkg of [
+    'ch.protonvpn.android',
+    'net.mullvad.mullvadvpn',
+    'com.nordvpn.android',
+    'com.cloudflare.onedotonedotonedotone',
+    'com.whatsapp',
+    'com.android.vending',
+  ]) {
+    assert.equal(
+      BlocklistMatcher.matchAppPackage(safePkg, config).isBlocked,
+      false,
+      `Expected ${safePkg} to remain untouched`,
+    );
+  }
+
+  assert.equal(BlocklistMatcher.matchAppPackage('com.sportybet.android', config, 'SportyBet').isBlocked, true);
+  assert.equal(BlocklistMatcher.matchAppPackage('com.custom.triggerapp', config, 'Trigger App').isBlocked, true);
+});
+
+

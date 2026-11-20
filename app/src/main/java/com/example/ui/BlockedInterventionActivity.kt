@@ -1,6 +1,7 @@
 package com.example.ui
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.Button
@@ -86,6 +88,7 @@ class BlockedInterventionActivity : ComponentActivity() {
         val category = intent.getStringExtra(EXTRA_CATEGORY) ?: "Protected"
         val isAntiTamper = intent.getBooleanExtra(EXTRA_IS_ANTI_TAMPER, false)
         val autoStartBreathing = intent.getBooleanExtra(EXTRA_START_BREATHING, false)
+        val blockedPackageName = intent.getStringExtra(EXTRA_PACKAGE_NAME).orEmpty()
 
         val prefsManager = ProtectionPreferences.getInstance(this)
         val prefs = prefsManager.currentSnapshot()
@@ -105,10 +108,24 @@ class BlockedInterventionActivity : ComponentActivity() {
                     category = category,
                     isAntiTamper = isAntiTamper,
                     autoStartBreathing = autoStartBreathing,
+                    blockedPackageName = blockedPackageName,
                     cleanDays = days,
                     stakeNgn = stakeNgn,
                     onBankUrgeStake = {
                         prefsManager.bankUrgeStake(stakeNgn)
+                    },
+                    onUninstallBlockedApp = { pkgToDelete ->
+                        if (pkgToDelete.isNotBlank()) {
+                            runCatching {
+                                val uninstallIntent = Intent(
+                                    Intent.ACTION_DELETE,
+                                    Uri.parse("package:$pkgToDelete"),
+                                ).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(uninstallIntent)
+                            }
+                        }
                     },
                     onGoHome = {
                         val homeIntent = Intent(Intent.ACTION_MAIN).apply {
@@ -133,6 +150,7 @@ class BlockedInterventionActivity : ComponentActivity() {
         const val EXTRA_CATEGORY = "extra_category"
         const val EXTRA_IS_ANTI_TAMPER = "extra_is_anti_tamper"
         const val EXTRA_START_BREATHING = "extra_start_breathing"
+        const val EXTRA_PACKAGE_NAME = "extra_package_name"
     }
 }
 
@@ -143,9 +161,11 @@ private fun InterventionScreen(
     category: String,
     isAntiTamper: Boolean,
     autoStartBreathing: Boolean,
+    blockedPackageName: String,
     cleanDays: Int,
     stakeNgn: Int,
     onBankUrgeStake: () -> Unit,
+    onUninstallBlockedApp: (String) -> Unit,
     onGoHome: () -> Unit,
     onOpenGambleAware: () -> Unit,
 ) {
@@ -273,8 +293,10 @@ private fun InterventionScreen(
 
                         val statusEyebrow = when {
                             isAntiTamper -> "LOCKED BY COMMITMENT TIMER"
-                            source.contains("App", ignoreCase = true) ||
-                                source.contains("Install", ignoreCase = true) -> "BETTING APP BLOCKED"
+                            source.contains("Play Store", ignoreCase = true) -> "PLAY STORE DOWNLOAD BLOCKED"
+                            source.contains("APK", ignoreCase = true) -> "APK INSTALL BLOCKED"
+                            source.contains("Install Guard", ignoreCase = true) -> "BETTING APP DETECTED & BLOCKED"
+                            source.contains("App", ignoreCase = true) -> "BETTING APP BLOCKED"
                             else -> "BETTING SITE BLOCKED"
                         }
                         val cleanDisplayName = if (isAntiTamper || isCalmResetLaunch) {
@@ -470,6 +492,35 @@ private fun InterventionScreen(
 
                     // Pinned action footer — always visible above fold
                     Spacer(modifier = Modifier.height(12.dp))
+
+                    if (!isAntiTamper && blockedPackageName.isNotBlank()) {
+                        OutlinedButton(
+                            onClick = { onUninstallBlockedApp(blockedPackageName) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .testTag("intervention_uninstall_app_button"),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, liquid.activeFill),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = liquid.softAccentFill,
+                                contentColor = liquid.accentInk,
+                            ),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.DeleteOutline,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Uninstall Detected Betting App",
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
                     if (!isAntiTamper) {
                         OutlinedButton(

@@ -5,13 +5,15 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.core.content.ContextCompat
 import com.example.blocker.BlockMatchResult
 import com.example.blocker.BlocklistMatcher
-import com.example.blocker.GamblingCategory
+import com.example.blocker.CommitmentClockGuard
 import com.example.data.AnchorRepository
 import com.example.ui.BlockedInterventionActivity
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +28,7 @@ class GambleAwareAccessibilityService : AccessibilityService() {
     private val repository by lazy { AnchorRepository.getInstance(applicationContext) }
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val recentInterventions = ConcurrentHashMap<String, Long>()
+    private var dynamicInstallReceiver: PackageInstallReceiver? = null
     @Volatile
     private var lastAntiTamperTriggerMs: Long = 0L
 
@@ -41,19 +44,47 @@ class GambleAwareAccessibilityService : AccessibilityService() {
                 AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
             notificationTimeout = 100L
         }
+        registerDynamicInstallReceiver()
         repository.setShieldRunning(true)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        unregisterDynamicInstallReceiver()
         activeInstance.compareAndSet(this, null)
         repository.setShieldRunning(false)
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
+        unregisterDynamicInstallReceiver()
         activeInstance.compareAndSet(this, null)
         repository.setShieldRunning(false)
         super.onDestroy()
+    }
+
+    private fun registerDynamicInstallReceiver() {
+        if (dynamicInstallReceiver != null) return
+        val receiver = PackageInstallReceiver()
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+        runCatching {
+            ContextCompat.registerReceiver(
+                this,
+                receiver,
+                filter,
+                ContextCompat.RECEIVER_EXPORTED,
+            )
+            dynamicInstallReceiver = receiver
+        }
+    }
+
+    private fun unregisterDynamicInstallReceiver() {
+        val receiver = dynamicInstallReceiver ?: return
+        dynamicInstallReceiver = null
+        runCatching { unregisterReceiver(receiver) }
     }
 
     override fun onInterrupt() = Unit
@@ -69,23 +100,68 @@ class GambleAwareAccessibilityService : AccessibilityService() {
         val config = repository.getCurrentFilterConfig()
         val root = rootInActiveWindow
 
-        // 1. Settings & Installer Anti-Tamper Lock (blocks Uninstall / Force Stop / Clear Data / Deactivate)
+        // 1. Settings & Installer Anti-Tamper Lock (blocks Uninstall / Force Stop / Clear Data / Deactivate / Date & Time Manipulation)
         if (pkg in SETTINGS_GUARD_PACKAGES &&
             (settings.isTimeLocked() || (settings.isProtectionEnabled && settings.antiTamperLockEnabled))
         ) {
-            if (root != null && isTamperingGambleAwareSettings(root)) {
-                triggerAntiTamperIntervention()
-                return
+            if (root != null) {
+                val collected = ArrayList<String>(40)
+                collectPlainTexts(root, collected, depth = 0, limit = 40)
+                if (isTamperingGambleAwareSettings(collected)) {
+                    triggerAntiTamperIntervention("Settings Anti-Tamper Lock")
+                    return
+                }
+                if (settings.isTimeLocked() && CommitmentClockGuard.isDateTimeTamperScreen(collected)) {
+                    triggerAntiTamperIntervention("Date & Time Lock")
+                    return
+                }
             }
         }
 
         if (!settings.isProtectionEnabled) return
 
-        // 2. Native Betting App Shield
+        // 1.5 Play Store, OEM App Store & APK Sideload Download Blocker
+        val isAppStore = pkg in APP_STORE_PACKAGES
+        val isApkInstaller = pkg in APK_INSTALLER_PACKAGES
+        if (settings.playStoreGuardEnabled && (isAppStore || isApkInstaller) && root != null) {
+            val searchCandidates = LinkedHashSet<String>()
+            event.text?.forEach { cs ->
+                val t = cs?.toString()?.trim().orEmpty()
+                if (t.length in 3..160) {
+                    searchCandidates.add(t)
+                }
+            }
+            val storeVisibleTexts = ArrayList<String>(44)
+            collectWindowSignals(
+                node = root,
+                addressCandidates = searchCandidates,
+                visibleTexts = storeVisibleTexts,
+                depth = 0,
+            )
+            val storeMatch = BlocklistMatcher.matchAppStoreOrInstaller(
+                isApkInstaller = isApkInstaller,
+                searchTexts = searchCandidates.toList(),
+                visibleTexts = storeVisibleTexts,
+                config = config,
+            )
+            if (storeMatch.isBlocked) {
+                performGlobalAction(GLOBAL_ACTION_BACK)
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                triggerBlockIntervention(
+                    match = storeMatch,
+                    source = if (isApkInstaller) "APK Install Guard" else "Play Store Guard",
+                )
+                return
+            }
+        }
+
+        // 2. Native Betting App Shield (never touches VPNs, banking, messaging, or everyday apps)
         if (settings.appShieldEnabled &&
             pkg !in BROWSER_PACKAGES &&
             pkg !in SOCIAL_WEBVIEW_PACKAGES &&
-            pkg !in SETTINGS_GUARD_PACKAGES
+            pkg !in SETTINGS_GUARD_PACKAGES &&
+            pkg !in APP_STORE_PACKAGES &&
+            pkg !in APK_INSTALLER_PACKAGES
         ) {
             val appLabel = runCatching {
                 val ai = packageManager.getApplicationInfo(pkg, 0)
@@ -97,6 +173,7 @@ class GambleAwareAccessibilityService : AccessibilityService() {
                 triggerBlockIntervention(
                     match = appMatch,
                     source = "App Shield",
+                    blockedPackageName = pkg,
                 )
                 return
             }
@@ -156,9 +233,7 @@ class GambleAwareAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun isTamperingGambleAwareSettings(root: AccessibilityNodeInfo): Boolean {
-        val collected = ArrayList<String>(36)
-        collectPlainTexts(root, collected, depth = 0, limit = 36)
+    private fun isTamperingGambleAwareSettings(collected: List<String>): Boolean {
         if (collected.isEmpty()) return false
         val joined = collected.joinToString(" ").lowercase()
         val mentionsApp = joined.contains("gambleaware") || joined.contains(packageName.lowercase())
@@ -194,31 +269,35 @@ class GambleAwareAccessibilityService : AccessibilityService() {
         visibleTexts: MutableList<String>,
         depth: Int,
     ): Boolean {
-        if (depth > 14 || visibleTexts.size >= 40) return false
+        if (depth > 14 || visibleTexts.size >= 44) return false
         var hasWebView = node.className?.toString()?.contains("WebView", ignoreCase = true) == true
         val viewId = node.viewIdResourceName?.lowercase().orEmpty()
         val className = node.className?.toString().orEmpty()
         val txt = node.text?.toString()?.trim().orEmpty()
+        val desc = node.contentDescription?.toString()?.trim().orEmpty()
 
-        val isUrlField = node.isEditable ||
+        val isUrlOrSearchField = node.isEditable ||
             className.endsWith("EditText") ||
             viewId.contains("url") ||
             viewId.contains("location") ||
             viewId.contains("address") ||
             viewId.contains("omnibox") ||
-            viewId.contains("search_box")
+            viewId.contains("search_box") ||
+            viewId.contains("search")
 
         if (txt.isNotEmpty() && txt.length <= 320) {
-            if (isUrlField) {
+            if (isUrlOrSearchField) {
                 addressCandidates.add(txt)
             }
-            if (visibleTexts.size < 40 && txt.length <= 160) {
+            if (visibleTexts.size < 44 && txt.length <= 160) {
                 visibleTexts.add(txt)
             }
+        } else if (desc.isNotEmpty() && desc.length <= 160 && visibleTexts.size < 44) {
+            visibleTexts.add(desc)
         }
 
         for (i in 0 until node.childCount) {
-            if (visibleTexts.size >= 40) break
+            if (visibleTexts.size >= 44) break
             val child = node.getChild(i) ?: continue
             if (collectWindowSignals(child, addressCandidates, visibleTexts, depth + 1)) {
                 hasWebView = true
@@ -227,7 +306,7 @@ class GambleAwareAccessibilityService : AccessibilityService() {
         return hasWebView
     }
 
-    private fun triggerAntiTamperIntervention() {
+    private fun triggerAntiTamperIntervention(targetLabel: String = "Settings Anti-Tamper Lock") {
         val now = System.currentTimeMillis()
         if (now - lastAntiTamperTriggerMs < 1500L) return
         lastAntiTamperTriggerMs = now
@@ -237,7 +316,7 @@ class GambleAwareAccessibilityService : AccessibilityService() {
 
         val intent = Intent(this, BlockedInterventionActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(BlockedInterventionActivity.EXTRA_TARGET, "Settings Anti-Tamper Lock")
+            putExtra(BlockedInterventionActivity.EXTRA_TARGET, targetLabel)
             putExtra(BlockedInterventionActivity.EXTRA_SOURCE, "Lock Guard")
             putExtra(BlockedInterventionActivity.EXTRA_CATEGORY, "Commitment Lock")
             putExtra(BlockedInterventionActivity.EXTRA_IS_ANTI_TAMPER, true)
@@ -248,6 +327,7 @@ class GambleAwareAccessibilityService : AccessibilityService() {
     private fun triggerBlockIntervention(
         match: BlockMatchResult,
         source: String,
+        blockedPackageName: String = "",
     ) {
         val rawTarget = match.matchedTarget.ifBlank { "Gambling site" }
         val normalizedKey = (BlocklistMatcher.normalizeDomain(rawTarget).ifEmpty { rawTarget }).lowercase()
@@ -269,6 +349,9 @@ class GambleAwareAccessibilityService : AccessibilityService() {
             putExtra(BlockedInterventionActivity.EXTRA_TARGET, rawTarget)
             putExtra(BlockedInterventionActivity.EXTRA_SOURCE, source)
             putExtra(BlockedInterventionActivity.EXTRA_CATEGORY, match.category.displayName)
+            if (blockedPackageName.isNotBlank()) {
+                putExtra(BlockedInterventionActivity.EXTRA_PACKAGE_NAME, blockedPackageName)
+            }
         }
         startActivity(intent)
     }
@@ -335,23 +418,58 @@ class GambleAwareAccessibilityService : AccessibilityService() {
             "com.reddit.frontpage",
         )
 
+        val APP_STORE_PACKAGES: Set<String> = setOf(
+            "com.android.vending",
+            "com.sec.android.app.samsungapps",
+            "com.huawei.appmarket",
+            "com.xiaomi.mipicks",
+            "com.transsion.palmstore",
+            "com.apkpure.aegon",
+            "cm.aptoide.pt",
+            "com.uptodown",
+            "com.aurora.store",
+        )
+
+        val APK_INSTALLER_PACKAGES: Set<String> = setOf(
+            "com.google.android.packageinstaller",
+            "com.android.packageinstaller",
+            "com.miui.packageinstaller",
+            "com.samsung.android.packageinstaller",
+        )
+
         val SETTINGS_GUARD_PACKAGES: Set<String> = setOf(
             "com.android.settings",
             "com.google.android.packageinstaller",
             "com.android.packageinstaller",
+            "com.miui.packageinstaller",
+            "com.samsung.android.packageinstaller",
             "com.miui.securitycenter",
             "com.samsung.android.lool",
+            "com.transsion.phonemaster",
+            "com.coloros.safecenter",
+            "com.oplus.safecenter",
+            "com.iqoo.secure",
+            "com.huawei.systemmanager",
+            "com.oneplus.security",
         )
 
         private val ANTI_TAMPER_KEYWORDS = listOf(
             "uninstall",
             "force stop",
+            "force close",
             "clear data",
             "clear storage",
             "deactivate",
             "device admin",
             "turn off",
             "stop service",
+            "use gambleaware",
+            "disable",
+            "revoke",
+            "stop",
+            "remove",
+            "delete",
         )
     }
 }
+

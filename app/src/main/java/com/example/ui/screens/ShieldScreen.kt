@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.rounded.PhonelinkLock
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Shop
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.VerifiedUser
@@ -101,6 +103,7 @@ fun ShieldScreen(
     onOpenUrgeJournal: () -> Unit,
     onOpenSafeSupport: () -> Unit,
     onBankUrgeStake: (Int) -> Unit = {},
+    onUninstallApp: (String) -> Unit = {},
     activeTourKey: String?,
     bottomContentPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
@@ -110,18 +113,18 @@ fun ShieldScreen(
     val isLocked = state.isTimeLockedNow
     val keyboard = LocalSoftwareKeyboardController.current
     val showQuickOnboarding = !state.isAccessibilityEnabled || !state.isShieldServiceRunning || !isLocked
+    val hasDetectedBettingApps = state.detectedBettingApps.isNotEmpty()
     val listState = rememberLazyListState()
 
-    LaunchedEffect(activeTourKey, showQuickOnboarding) {
+    LaunchedEffect(activeTourKey, showQuickOnboarding, hasDetectedBettingApps) {
+        val dynamicOffset = (if (showQuickOnboarding) 1 else 0) + (if (hasDetectedBettingApps) 1 else 0)
         when (activeTourKey) {
             TourTargetKeys.SHIELD_ORB -> listState.animateScrollToItem(0)
             TourTargetKeys.SOS_CALM_BAR -> {
-                val sosIdx = if (showQuickOnboarding) 6 else 5
-                listState.animateScrollToItem(sosIdx)
+                listState.animateScrollToItem(5 + dynamicOffset)
             }
             TourTargetKeys.FILTER_TESTER -> {
-                val testerIdx = if (showQuickOnboarding) 8 else 7
-                listState.animateScrollToItem(testerIdx)
+                listState.animateScrollToItem(7 + dynamicOffset)
             }
         }
     }
@@ -352,6 +355,83 @@ fun ShieldScreen(
                             onClick = onNavigateToLock,
                             testTag = "onboarding_step_timer",
                         )
+                    }
+                }
+            }
+
+            // Conditional: Detected Installed Betting Apps Alert Card with 1-Tap Uninstall
+            if (state.detectedBettingApps.isNotEmpty()) {
+                item {
+                    LiquidGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("detected_betting_apps_card"),
+                        borderColor = liquid.activeFill,
+                        contentPadding = 18.dp,
+                    ) {
+                        LiquidSectionHeader(
+                            title = "Installed Betting Apps Detected (${state.detectedBettingApps.size})",
+                            subtitle = "Blocked from opening automatically. Tap Uninstall to remove them permanently.",
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            state.detectedBettingApps.take(6).forEach { app ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(liquid.softAccentFill)
+                                        .border(1.dp, liquid.glassBorder, RoundedCornerShape(16.dp))
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    BettingBrandLogo(
+                                        target = app.label,
+                                        size = 36.dp,
+                                        cornerRadius = 10.dp,
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = app.label,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Text(
+                                            text = "Detected & blocked on launch",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = liquid.accentInk,
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Button(
+                                        onClick = { onUninstallApp(app.packageName) },
+                                        shape = RoundedCornerShape(50),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = liquid.activeFill,
+                                            contentColor = liquid.activeContent,
+                                        ),
+                                        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.DeleteOutline,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(15.dp),
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Uninstall",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -889,14 +969,29 @@ fun ShieldScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     EngineStatusRow(
-                        icon = Icons.Rounded.Dns,
-                        title = "Private DNS & VPN Coexistence",
-                        subtitle = if (state.privateDnsStatus.isActive) {
-                            "Private DNS Active (${state.privateDnsStatus.serverHost ?: "Automatic"}) • Your VPN apps work normally"
+                        icon = Icons.Rounded.Shop,
+                        title = "Play Store & APK Download Guard",
+                        subtitle = if (isArmed && state.settings.playStoreGuardEnabled) {
+                            "Active • Blocks betting app downloads in Play Store & sideloaders automatically"
                         } else {
-                            "Optional OS Private DNS • Third-party VPNs (Proton, Mullvad, WARP) supported"
+                            "Enable Accessibility Shield to block betting app downloads"
                         },
-                        isReady = state.privateDnsStatus.isActive,
+                        isReady = isArmed && state.settings.playStoreGuardEnabled,
+                        onClick = onNavigateToBlocklist,
+                        testTag = "layer_play_store_guard_row",
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    EngineStatusRow(
+                        icon = Icons.Rounded.Dns,
+                        title = "VPN Coexistence & Private DNS",
+                        subtitle = if (state.privateDnsStatus.isActive) {
+                            "Private DNS Active (${state.privateDnsStatus.serverHost ?: "Automatic"}) • ProtonVPN, Mullvad & WARP run freely"
+                        } else {
+                            "Other VPNs work freely without weakening GambleAware or your Commitment Lock"
+                        },
+                        isReady = true,
                         onClick = onOpenPrivateDnsSettings,
                         testTag = "layer_private_dns_row",
                     )
@@ -913,9 +1008,15 @@ fun ShieldScreen(
                             icon = Icons.Rounded.Language,
                         )
                         LiquidStatusPill(
-                            label = "Install Guard",
-                            isActive = isArmed && state.settings.appShieldEnabled,
-                            icon = Icons.Rounded.Search,
+                            label = "Play Store Guard",
+                            isActive = isArmed && state.settings.playStoreGuardEnabled,
+                            icon = Icons.Rounded.Shop,
+                            onClick = onNavigateToBlocklist,
+                        )
+                        LiquidStatusPill(
+                            label = "Other VPNs OK",
+                            isActive = true,
+                            icon = Icons.Rounded.VerifiedUser,
                         )
                         LiquidStatusPill(
                             label = if (isLocked) "Timer Locked" else "Timer Lock",

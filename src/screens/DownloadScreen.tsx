@@ -28,28 +28,28 @@ const ARCHITECTURE_LAYERS = [
     num: '01',
     span: 'lg:col-span-7',
     icon: Shield,
-    title: 'All-Browser Shield Without a VPN',
+    title: 'Works Freely Alongside Any VPN',
     summary:
-      'Protects Chrome, Brave, Opera, Firefox, Samsung Internet, and social app links simultaneously — while your banking apps and personal VPN keep running without interruption.',
-    detail: 'Chrome · Brave · Opera · Firefox · Edge · Social Links',
+      'Protects Chrome, Brave, Opera, Firefox, Samsung Internet, and social links without using Android’s VPN slot — so ProtonVPN, Mullvad, NordVPN, WARP, and banking apps keep running untouched.',
+    detail: 'Zero VPN conflict · Banking, social & work apps untouched',
   },
   {
     num: '02',
     span: 'lg:col-span-5',
     icon: Terminal,
-    title: 'Instant Typing & Deposit Guard',
+    title: 'Play Store & Install Guard',
     summary:
-      'Catches betting sites like SportyBet or Bet9ja, booking codes, and deposit links the moment you type or tap them — before the page ever opens.',
-    detail: 'Instant protection · Deposit & booking code guard',
+      'Automatically blocks searching or downloading betting apps in Google Play Store and APK sideloaders, and immediately detects installed betting apps with 1-tap removal.',
+    detail: 'Play Store blocker · APK sideload guard · Instant install scan',
   },
   {
     num: '03',
     span: 'lg:col-span-5',
     icon: Lock,
-    title: 'Tamper-Proof Commitment Lock',
+    title: 'Unbreakable Commitment Lock',
     summary:
-      'Lock your protection from 24 hours up to 2 years. Uninstall protection keeps GambleAware active during tough late-night moments when willpower dips.',
-    detail: '24h – 2y timer · Uninstall protection',
+      'Lock your shield from 24 hours up to 2 years. Blocks uninstall, Force Stop, Device Admin revocation, and Date & Time clock tampering until your timer finishes.',
+    detail: '24h – 2y timer · Clock-tamper & uninstall protection',
   },
   {
     num: '04',
@@ -64,18 +64,18 @@ const ARCHITECTURE_LAYERS = [
     num: '05',
     span: 'lg:col-span-6',
     icon: Activity,
-    title: 'Tilt Radar & 60-Second Calm Reset',
+    title: 'Instant Typing, Tilt Radar & Calm Reset',
     summary:
-      'Notices repeated betting attempts in real time and guides you through a 60-second calm reset plus 1-tap Stake Banking to track the money you keep.',
-    detail: 'Instant urge support · 60-second calm reset',
+      'Stops SportyBet, Bet9ja, booking codes, and deposit pages as you type, detects urge bursts, and opens a 60-second Calm Reset plus 1-tap Stake Banking.',
+    detail: 'Keystroke blocking · 60-second calm reset · Stake vault',
   },
   {
     num: '06',
     span: 'lg:col-span-6',
     icon: Cpu,
-    title: '100% Private & Safe-Support Guard',
+    title: 'Only Betting Apps Blocked · 100% Private',
     summary:
-      'Your browsing stays strictly on your phone. Verified helplines and recovery support services are always kept reachable whenever you need someone to talk to.',
+      'Never slows down or blocks everyday apps — only betting platforms and extra apps you explicitly choose. Verified helplines always stay reachable.',
     detail: 'Private on your phone · Protected helplines',
   },
 ];
@@ -118,7 +118,7 @@ export const DownloadScreen: React.FC = () => {
               </h1>
 
               <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--ink-muted)] sm:text-lg">
-                GambleAware enforces on-device blocking across every Android browser, native betting app, and popunder ad network — without a VPN, without draining your battery, and backed by an unbreakable Commitment Lock.
+                GambleAware blocks betting websites, Play Store downloads, installed betting apps, and popunder ads on-device — while letting you use any VPN freely, leaving everyday apps untouched, and enforcing an unbreakable Commitment Lock.
               </p>
 
               {/* Primary & Secondary CTAs */}

@@ -80,9 +80,11 @@ class AnchorRepository private constructor(context: Context) {
             strictKeywordFilter = settingsState.strictKeywordFilter,
             searchGuardEnabled = settingsState.searchGuardEnabled,
             adBlockerEnabled = settingsState.adBlockerEnabled,
+            playStoreGuardEnabled = settingsState.playStoreGuardEnabled,
             customBlockedDomains = domains.filter { !it.isAllowlisted }.map { it.domain }.toSet(),
             allowlistedDomains = domains.filter { it.isAllowlisted }.map { it.domain }.toSet(),
             customBlockedPackages = apps.map { it.packageName.lowercase() }.toSet(),
+            customBlockedAppNames = apps.map { it.appLabel.lowercase() }.toSet(),
         ).also { cachedConfig.set(it) }
     }.stateIn(scope, SharingStarted.Eagerly, BlockFilterConfig())
 
@@ -166,6 +168,18 @@ class AnchorRepository private constructor(context: Context) {
             }
             .distinctBy { it.packageName }
             .sortedBy { it.label.lowercase() }
+    }
+
+    /**
+     * Scans installed launchable apps against GambleAware's betting app registry so any
+     * already-installed sportsbook or casino apps are flagged immediately on launch/resume.
+     */
+    suspend fun scanInstalledBettingApps(): List<InstalledAppInfo> = withContext(Dispatchers.IO) {
+        val config = getCurrentFilterConfig()
+        val apps = loadLaunchableUserApps()
+        apps.filter { app ->
+            BlocklistMatcher.matchAppPackage(app.packageName, config, app.label).isBlocked
+        }
     }
 
     companion object {

@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
+  ArrowRight,
   Ban,
   Check,
   Clock,
+  KeyRound,
   Lock,
   Shield,
   ShieldAlert,
   ShieldCheck,
+  ShoppingBag,
   SlidersHorizontal,
   Sparkles,
   TrendingUp,
@@ -24,7 +27,8 @@ import {
   LOCK_DURATION_PRESETS,
 } from '../utils/lockDurations';
 
-type PhoneTab = 'shield' | 'rules' | 'progress' | 'lock';
+type PhoneTab = 'welcome' | 'shield' | 'rules' | 'progress' | 'lock';
+type SimulationMode = 'browser' | 'playstore';
 
 interface RuleToggleItem {
   id: string;
@@ -34,6 +38,7 @@ interface RuleToggleItem {
 }
 
 const INITIAL_RULES: RuleToggleItem[] = [
+  { id: 'playstore', label: 'Play Store & APK Guard', detail: 'Stops betting app downloads & flags installs', enabled: true },
   { id: 'sportsbooks', label: 'Sportsbooks & Odds', detail: 'SportyBet, Bet9ja, BetKing, 1xBet', enabled: true },
   { id: 'casinos', label: 'Casinos, Slots & Crash', detail: 'Aviator, live tables, instant slots', enabled: true },
   { id: 'crypto', label: 'Crypto & Offshore', detail: 'Stake, Roobet, Rollbit, BC.Game', enabled: true },
@@ -74,6 +79,7 @@ export const AndroidAppShowcase: React.FC = () => {
 
   // Live Blocked Intervention simulation state
   const [interventionOpen, setInterventionOpen] = useState(false);
+  const [simulationMode, setSimulationMode] = useState<SimulationMode>('browser');
   const [breathingActive, setBreathingActive] = useState(false);
   const [breathingSecLeft, setBreathingSecLeft] = useState(60);
   const [stakeBankedThisSession, setStakeBankedThisSession] = useState(false);
@@ -138,7 +144,8 @@ export const AndroidAppShowcase: React.FC = () => {
     );
   };
 
-  const handleOpenSimulation = () => {
+  const handleOpenSimulation = (mode: SimulationMode = 'browser') => {
+    setSimulationMode(mode);
     setBlockedCount((c) => c + 1);
     setStakeBankedThisSession(false);
     setBreathingActive(false);
@@ -152,11 +159,19 @@ export const AndroidAppShowcase: React.FC = () => {
     setStakeBankedThisSession(true);
   };
 
-  const tabs: Array<{ id: PhoneTab; num: string; label: string; icon: React.ReactNode }> = [
-    { id: 'shield', num: '01', label: 'Shield', icon: <Shield className="h-3.5 w-3.5" /> },
-    { id: 'rules', num: '02', label: 'Rules', icon: <SlidersHorizontal className="h-3.5 w-3.5" /> },
-    { id: 'progress', num: '03', label: 'Progress', icon: <Activity className="h-3.5 w-3.5" /> },
-    { id: 'lock', num: '04', label: 'Lock', icon: <Lock className="h-3.5 w-3.5" /> },
+  const selectorTabs: Array<{ id: PhoneTab; num: string; label: string }> = [
+    { id: 'welcome', num: '00', label: 'Welcome' },
+    { id: 'shield', num: '01', label: 'Shield' },
+    { id: 'rules', num: '02', label: 'Rules' },
+    { id: 'progress', num: '03', label: 'Progress' },
+    { id: 'lock', num: '04', label: 'Lock' },
+  ];
+
+  const bottomNavTabs: Array<{ id: Exclude<PhoneTab, 'welcome'>; label: string; icon: React.ReactNode }> = [
+    { id: 'shield', label: 'Shield', icon: <Shield className="h-3.5 w-3.5" /> },
+    { id: 'rules', label: 'Rules', icon: <SlidersHorizontal className="h-3.5 w-3.5" /> },
+    { id: 'progress', label: 'Progress', icon: <Activity className="h-3.5 w-3.5" /> },
+    { id: 'lock', label: 'Lock', icon: <Lock className="h-3.5 w-3.5" /> },
   ];
 
   return (
@@ -165,9 +180,9 @@ export const AndroidAppShowcase: React.FC = () => {
       <div
         role="tablist"
         aria-label="Interactive Android app screens"
-        className="mb-4 inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] p-1"
+        className="mb-4 inline-flex flex-wrap items-center justify-center gap-1 rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-1 sm:rounded-full"
       >
-        {tabs.map((tab) => {
+        {selectorTabs.map((tab) => {
           const selected = activeTab === tab.id && !interventionOpen;
           return (
             <button
@@ -180,7 +195,7 @@ export const AndroidAppShowcase: React.FC = () => {
                 setInterventionOpen(false);
                 setActiveTab(tab.id);
               }}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-colors sm:rounded-full sm:px-3 ${
                 selected
                   ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
                   : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
@@ -226,7 +241,7 @@ export const AndroidAppShowcase: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-wider text-[var(--block-ink)] uppercase">
                     <ShieldAlert className="h-3.5 w-3.5" />
-                    Intercepted in 11ms
+                    {simulationMode === 'playstore' ? 'Play Store Blocked · 9ms' : 'Intercepted in 11ms'}
                   </span>
                   <button
                     type="button"
@@ -241,10 +256,14 @@ export const AndroidAppShowcase: React.FC = () => {
                 <div className="mt-4 flex flex-col items-center rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-4 text-center">
                   <BettingBrandLogo target="sportybet.com" size="lg" />
                   <h4 className="mt-3 font-display text-base font-bold text-[var(--ink)]">
-                    SportyBet Blocked
+                    {simulationMode === 'playstore'
+                      ? 'Play Store Download Blocked'
+                      : 'SportyBet Blocked'}
                   </h4>
                   <p className="mt-1 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-                    Keystroke prefix matched before page load. No DNS leak, no VPN conflict.
+                    {simulationMode === 'playstore'
+                      ? 'Stopped SportyBet download inside Google Play Store automatically. Your VPN and everyday apps stay untouched.'
+                      : 'Keystroke prefix matched before page load. Your own VPN and everyday apps keep running normally.'}
                   </p>
                 </div>
 
@@ -315,6 +334,80 @@ export const AndroidAppShowcase: React.FC = () => {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto px-3.5 pt-1 pb-2">
+              {activeTab === 'welcome' ? (
+                <div
+                  className="flex h-full flex-col justify-between py-2 text-center"
+                  data-testid="phone-screen-welcome"
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="relative mt-2 flex h-20 w-20 items-center justify-center">
+                      <span
+                        className="absolute inset-0 rounded-full border border-[var(--active-fill)]/30 bg-[var(--soft-accent-bg)]"
+                        aria-hidden="true"
+                      />
+                      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] shadow-sm">
+                        <BrandGMark className="h-9 w-9" />
+                      </div>
+                    </div>
+
+                    <p className="mt-3 font-mono text-[9px] font-bold tracking-widest text-[var(--accent-ink)] uppercase">
+                      100% Free · Zero-VPN Shield
+                    </p>
+                    <h4 className="mt-1 font-display text-lg font-bold tracking-tight text-[var(--ink)]">
+                      Welcome to GambleAware
+                    </h4>
+                    <p className="mt-1 px-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+                      Calm, unbreakable protection against betting sites and apps — without slowing down your phone.
+                    </p>
+
+                    <div className="mt-4 w-full space-y-2 text-left">
+                      <div className="flex items-start gap-2.5 rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2.5">
+                        <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
+                        <div>
+                          <p className="text-[11px] font-semibold text-[var(--ink)]">Use Any VPN Freely</p>
+                          <p className="text-[10px] leading-snug text-[var(--ink-muted)]">
+                            ProtonVPN, Mullvad, NordVPN &amp; WARP work without affecting your lock.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5 rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2.5">
+                        <ShoppingBag className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
+                        <div>
+                          <p className="text-[11px] font-semibold text-[var(--ink)]">Play Store &amp; Install Guard</p>
+                          <p className="text-[10px] leading-snug text-[var(--ink-muted)]">
+                            Automatically blocks betting downloads &amp; detects installed betting apps.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5 rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] p-2.5">
+                        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />
+                        <div>
+                          <p className="text-[11px] font-semibold text-[var(--ink)]">Unbreakable Commitment Lock</p>
+                          <p className="text-[10px] leading-snug text-[var(--ink-muted)]">
+                            Stops uninstall, Force Stop &amp; clock jumps while banking apps stay untouched.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 space-y-1.5">
+                    <button
+                      type="button"
+                      data-testid="phone-welcome-start-btn"
+                      onClick={() => setActiveTab('shield')}
+                      className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--active-fill)] py-2.5 text-xs font-semibold text-[var(--active-content)] transition-opacity hover:opacity-90"
+                    >
+                      <span>Get Started — Set Up Shield</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                    <p className="font-mono text-[9px] text-[var(--ink-muted)]">
+                      Only betting apps blocked · Free forever
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
               {activeTab === 'shield' ? (
                 <div className="space-y-3" data-testid="phone-screen-shield">
                   {/* Top App Bar inside Phone */}
@@ -326,7 +419,7 @@ export const AndroidAppShowcase: React.FC = () => {
                           GambleAware
                         </p>
                         <p className="mt-0.5 font-mono text-[9px] text-[var(--ink-muted)]">
-                          GAMBLEAWARE SHIELD · FREE
+                          ZERO-VPN SHIELD · FREE
                         </p>
                       </div>
                     </div>
@@ -341,31 +434,42 @@ export const AndroidAppShowcase: React.FC = () => {
                   </div>
 
                   {/* Hero Orb Card */}
-                  <div className="flex flex-col items-center rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-4 text-center">
+                  <div className="flex flex-col items-center rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-3.5 text-center">
                     <LiquidShieldOrb
                       isProtected={isProtected}
                       isLocked={isLocked}
                       onClick={handleOrbToggle}
-                      sizeClass="h-[118px] w-[118px]"
+                      sizeClass="h-[112px] w-[112px]"
                     />
-                    <p className="mt-2.5 font-display text-sm font-bold text-[var(--ink)]">
+                    <p className="mt-2 font-display text-sm font-bold text-[var(--ink)]">
                       {isProtected ? 'Device Shield Armed' : 'Shield Paused'}
                     </p>
                     <p className="mt-0.5 text-[11px] text-[var(--ink-muted)]">
                       {isProtected
-                        ? `${activeRuleCount}/5 engines active · Browsers, Ads & Apps`
+                        ? `${activeRuleCount}/${rules.length} guards active · Other VPNs run freely`
                         : 'Tap orb to re-arm instant protection'}
                     </p>
 
-                    <button
-                      type="button"
-                      data-testid="simulate-block-btn"
-                      onClick={handleOpenSimulation}
-                      className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-3.5 py-1.5 text-[11px] font-semibold text-[var(--accent-ink)] transition-colors hover:opacity-90"
-                    >
-                      <Ban className="h-3 w-3" />
-                      <span>Simulate Live Block</span>
-                    </button>
+                    <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5">
+                      <button
+                        type="button"
+                        data-testid="simulate-block-btn"
+                        onClick={() => handleOpenSimulation('browser')}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[var(--glass-border)] bg-[var(--soft-accent-bg)] px-3 py-1.5 text-[10px] font-semibold text-[var(--accent-ink)] transition-colors hover:opacity-90"
+                      >
+                        <Ban className="h-3 w-3" />
+                        <span>Simulate Site Block</span>
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="simulate-playstore-btn"
+                        onClick={() => handleOpenSimulation('playstore')}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-3 py-1.5 text-[10px] font-semibold text-[var(--ink)] transition-colors hover:border-[var(--glass-border)]"
+                      >
+                        <ShoppingBag className="h-3 w-3 text-[var(--accent-ink)]" />
+                        <span>Play Store Block</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* 3-Column Metrics Trio */}
@@ -409,7 +513,7 @@ export const AndroidAppShowcase: React.FC = () => {
                       <span className="font-semibold text-[var(--ink)]">Protection Stack</span>
                       <span className="inline-flex items-center gap-1 font-mono font-semibold text-[var(--safe-ink)]">
                         <ShieldCheck className="h-3 w-3" />
-                        All-Browser · Ads · Admin
+                        Play Store · Other VPNs OK
                       </span>
                     </div>
                   </div>
@@ -674,6 +778,21 @@ export const AndroidAppShowcase: React.FC = () => {
                     <div className="flex items-center justify-between rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-2.5">
                       <div>
                         <p className="text-xs font-semibold text-[var(--ink)]">
+                          Clock &amp; Tamper Guard
+                        </p>
+                        <p className="text-[10px] text-[var(--ink-muted)]">
+                          Blocks Date/Time &amp; Force Stop bypass
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-[var(--safe-ink)]">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Armed
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] px-3 py-2.5">
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--ink)]">
                           Trusted Buddy Co-Lock
                         </p>
                         <p className="text-[10px] text-[var(--ink-muted)]">
@@ -690,34 +809,36 @@ export const AndroidAppShowcase: React.FC = () => {
             </div>
           )}
 
-          {/* In-Phone Floating Navigation Bar */}
-          <div className="shrink-0 border-t border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 py-2">
-            <div className="grid grid-cols-4 gap-1">
-              {tabs.map((tab) => {
-                const selected = activeTab === tab.id && !interventionOpen;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      setInterventionOpen(false);
-                      setActiveTab(tab.id);
-                    }}
-                    className={`flex cursor-pointer flex-col items-center justify-center rounded-xl py-1.5 transition-colors ${
-                      selected
-                        ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
-                        : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
-                    }`}
-                  >
-                    {tab.icon}
-                    <span className="mt-0.5 text-[9px] font-semibold leading-none">
-                      {tab.label}
-                    </span>
-                  </button>
-                );
-              })}
+          {/* In-Phone Floating Navigation Bar (hidden on full-screen Welcome stage) */}
+          {activeTab !== 'welcome' ? (
+            <div className="shrink-0 border-t border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 py-2">
+              <div className="grid grid-cols-4 gap-1">
+                {bottomNavTabs.map((tab) => {
+                  const selected = activeTab === tab.id && !interventionOpen;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setInterventionOpen(false);
+                        setActiveTab(tab.id);
+                      }}
+                      className={`flex cursor-pointer flex-col items-center justify-center rounded-xl py-1.5 transition-colors ${
+                        selected
+                          ? 'bg-[var(--active-fill)] text-[var(--active-content)]'
+                          : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                      }`}
+                    >
+                      {tab.icon}
+                      <span className="mt-0.5 text-[9px] font-semibold leading-none">
+                        {tab.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </div>

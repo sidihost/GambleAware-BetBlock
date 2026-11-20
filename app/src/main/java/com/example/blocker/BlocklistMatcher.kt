@@ -11,9 +11,11 @@ data class BlockFilterConfig(
     val strictKeywordFilter: Boolean = true,
     val searchGuardEnabled: Boolean = true,
     val adBlockerEnabled: Boolean = true,
+    val playStoreGuardEnabled: Boolean = true,
     val customBlockedDomains: Set<String> = emptySet(),
     val allowlistedDomains: Set<String> = emptySet(),
     val customBlockedPackages: Set<String> = emptySet(),
+    val customBlockedAppNames: Set<String> = emptySet(),
 )
 
 data class BlockMatchResult(
@@ -569,6 +571,12 @@ object BlocklistMatcher {
         val pkg = packageName.trim().lowercase()
         if (pkg.isEmpty()) return BlockMatchResult(isBlocked = false)
 
+        // Never block GambleAware itself or third-party VPN clients (Zero-VPN coexistence)
+        if (pkg == "com.imoogle.gambleaware" || pkg in GamblingRegistry.safeVpnAppPackages) {
+            return BlockMatchResult(isBlocked = false)
+        }
+
+        // User-selected custom blocked apps always take precedence over everyday allowlist
         if (config.customBlockedPackages.contains(pkg)) {
             return BlockMatchResult(
                 isBlocked = true,
@@ -587,7 +595,9 @@ object BlocklistMatcher {
             )
         }
 
-        if (pkg.startsWith("com.android.") || pkg.startsWith("com.google.android.") ||
+        // Never touch everyday non-betting apps, system apps, browsers, or banking apps
+        if (pkg in GamblingRegistry.safeEverydayAppPackages ||
+            pkg.startsWith("com.android.") || pkg.startsWith("com.google.android.") ||
             pkg.startsWith("com.chrome.") || pkg.startsWith("org.mozilla.") ||
             pkg.startsWith("com.sec.android.") || pkg.startsWith("com.microsoft.") ||
             pkg.startsWith("com.brave.") || pkg.startsWith("com.opera.") ||
@@ -609,7 +619,7 @@ object BlocklistMatcher {
         }
 
         val normalizedLabel = appLabel?.trim()?.lowercase().orEmpty()
-        if (normalizedLabel.isNotEmpty()) {
+        if (normalizedLabel.isNotEmpty() && !recoveryTerms.any { normalizedLabel.contains(it) }) {
             for (brand in GamblingRegistry.gamblingBrandTokens) {
                 if (normalizedLabel.contains(brand)) {
                     return BlockMatchResult(
@@ -617,6 +627,184 @@ object BlocklistMatcher {
                         matchedTarget = appLabel ?: pkg,
                         category = GamblingCategory.SPORTSBOOK,
                         reason = "Matched betting app name \"$brand\"",
+                    )
+                }
+            }
+        }
+
+        return BlockMatchResult(isBlocked = false)
+    }
+
+    private val storeActionSignals = listOf(
+        "install", "download", "get", "update", "play", "open",
+        "contains ads", "in-app purchases", "do you want to install",
+        "install this app", "install anyway", "package installer",
+        "sportsbook", "online casino", "betting", "gambling", "real money",
+    )
+
+    private val storeCategoryGamblingTitles = listOf(
+        "sports betting", "online casino", "live casino", "slot machine",
+        "real money slots", "crypto casino", "poker & casino", "betting app",
+        "aviator predictor", "aviator game", "crash casino",
+    )
+
+    /**
+     * Evaluates Google Play Store, OEM App Stores, and Android APK Package Installer screens
+     * to automatically block downloading or sideloading betting apps (and user-blocked apps)
+     * while leaving all non-betting apps, VPNs, banking apps, and recovery apps untouched.
+     */
+    fun matchAppStoreOrInstaller(
+        isApkInstaller: Boolean,
+        searchTexts: List<String>,
+        visibleTexts: List<String>,
+        config: BlockFilterConfig,
+    ): BlockMatchResult {
+        if (!config.playStoreGuardEnabled) return BlockMatchResult(isBlocked = false)
+
+        val cleanedSearch = searchTexts
+            .map { foldHomoglyphs(it.trim()).lowercase() }
+            .filter { it.length >= 3 }
+        val cleanedVisible = visibleTexts
+            .map { foldHomoglyphs(it.trim()).lowercase() }
+            .filter { it.isNotEmpty() }
+
+        val joinedVisible = cleanedVisible.joinToString(" ")
+
+        // Always protect recovery, self-exclusion, and GambleAware pages
+        if (cleanedSearch.any { s -> recoveryTerms.any { s.contains(it) } }) {
+            return BlockMatchResult(isBlocked = false)
+        }
+        if (joinedVisible.contains("gambleaware") || joinedVisible.contains("com.imoogle.gambleaware")) {
+            return BlockMatchResult(isBlocked = false)
+        }
+
+        // 1. Play Store / App Store search bar queries for betting apps or custom blocked apps
+        for (query in cleanedSearch) {
+            if (query.contains("vpn") && GamblingRegistry.gamblingBrandTokens.none { query.contains(it) }) {
+                continue
+            }
+            for (customName in config.customBlockedAppNames) {
+                val cleanCustom = customName.trim().lowercase()
+                if (cleanCustom.length >= 4 && containsWholeTokenOrDirectStem(query, query, cleanCustom)) {
+                    return BlockMatchResult(
+                        isBlocked = true,
+                        matchedTarget = customName,
+                        category = GamblingCategory.CUSTOM,
+                        reason = "Blocked Play Store search for custom blocked app \"$customName\"",
+                    )
+                }
+            }
+            for (brand in GamblingRegistry.gamblingBrandTokens) {
+                if (brand.length >= 4 && containsWholeTokenOrDirectStem(query, query, brand)) {
+                    return BlockMatchResult(
+                        isBlocked = true,
+                        matchedTarget = brand,
+                        category = GamblingCategory.SPORTSBOOK,
+                        reason = "Blocked Play Store search for betting app \"$brand\"",
+                    )
+                }
+            }
+            for ((stem, category) in unambiguousTypedStems) {
+                if (!isCategoryEnabled(category, config)) continue
+                if (containsWholeTokenOrDirectStem(query, query, stem)) {
+                    return BlockMatchResult(
+                        isBlocked = true,
+                        matchedTarget = stem,
+                        category = category,
+                        reason = "Blocked Play Store search for \"$stem\"",
+                    )
+                }
+            }
+            if (storeCategoryGamblingTitles.any { query.contains(it) }) {
+                val matchedPhrase = storeCategoryGamblingTitles.first { query.contains(it) }
+                return BlockMatchResult(
+                    isBlocked = true,
+                    matchedTarget = matchedPhrase,
+                    category = GamblingCategory.CASINO,
+                    reason = "Blocked Play Store gambling search \"$matchedPhrase\"",
+                )
+            }
+        }
+
+        if (cleanedVisible.isEmpty()) return BlockMatchResult(isBlocked = false)
+        if (recoveryTerms.any { joinedVisible.contains(it) }) {
+            return BlockMatchResult(isBlocked = false)
+        }
+
+        // Only trigger on actual app detail / download / APK installer screens (not generic Home feeds)
+        val hasInstallContext = isApkInstaller || storeActionSignals.any { joinedVisible.contains(it) }
+        if (!hasInstallContext) return BlockMatchResult(isBlocked = false)
+
+        // Focus primarily on prominent texts (app title, developer name, prompt header)
+        val prominentTexts = cleanedVisible.take(16)
+        val prominentJoined = prominentTexts.joinToString(" ")
+
+        // 2. Match user's custom blocked app names in store listing or APK installer
+        for (customName in config.customBlockedAppNames) {
+            val cleanCustom = customName.trim().lowercase()
+            if (cleanCustom.length >= 4 && containsWholeTokenOrDirectStem(prominentJoined, prominentJoined, cleanCustom)) {
+                return BlockMatchResult(
+                    isBlocked = true,
+                    matchedTarget = customName,
+                    category = GamblingCategory.CUSTOM,
+                    reason = if (isApkInstaller) {
+                        "Blocked sideloading custom blocked app \"$customName\""
+                    } else {
+                        "Blocked Play Store download of custom blocked app \"$customName\""
+                    },
+                )
+            }
+        }
+
+        // 3. Match known gambling brands in prominent store listing or APK install dialog
+        for (brand in GamblingRegistry.gamblingBrandTokens) {
+            if (brand.length >= 4 && containsWholeTokenOrDirectStem(prominentJoined, prominentJoined, brand)) {
+                return BlockMatchResult(
+                    isBlocked = true,
+                    matchedTarget = brand,
+                    category = GamblingCategory.SPORTSBOOK,
+                    reason = if (isApkInstaller) {
+                        "Blocked sideloading betting APK \"$brand\""
+                    } else {
+                        "Blocked Play Store download of betting app \"$brand\""
+                    },
+                )
+            }
+        }
+
+        // 4. Match unambiguous betting domain/brand stems (e.g. sportybet, bet9ja, betking, 1xbet, draftkings)
+        for ((stem, category) in unambiguousTypedStems) {
+            if (!isCategoryEnabled(category, config)) continue
+            if (containsWholeTokenOrDirectStem(prominentJoined, prominentJoined, stem)) {
+                return BlockMatchResult(
+                    isBlocked = true,
+                    matchedTarget = stem,
+                    category = category,
+                    reason = if (isApkInstaller) {
+                        "Blocked sideloading betting APK \"$stem\""
+                    } else {
+                        "Blocked Play Store download of \"$stem\""
+                    },
+                )
+            }
+        }
+
+        // 5. Generic casino/sportsbook app listing with explicit install button + gambling category title
+        val hasExplicitInstallBtn = cleanedVisible.any {
+            it == "install" || it == "download" || it == "get" || it.contains("do you want to install")
+        }
+        if (hasExplicitInstallBtn) {
+            for (phrase in storeCategoryGamblingTitles) {
+                if (prominentJoined.contains(phrase)) {
+                    return BlockMatchResult(
+                        isBlocked = true,
+                        matchedTarget = phrase,
+                        category = GamblingCategory.CASINO,
+                        reason = if (isApkInstaller) {
+                            "Blocked gambling APK installation ($phrase)"
+                        } else {
+                            "Blocked Play Store gambling app ($phrase)"
+                        },
                     )
                 }
             }

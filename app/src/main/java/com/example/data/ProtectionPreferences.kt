@@ -2,6 +2,8 @@ package com.example.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.SystemClock
+import com.example.blocker.CommitmentClockGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,8 +27,11 @@ data class ProtectionSettingsState(
     val appShieldEnabled: Boolean = true,
     val searchGuardEnabled: Boolean = true,
     val adBlockerEnabled: Boolean = true,
+    val playStoreGuardEnabled: Boolean = true,
     val antiTamperLockEnabled: Boolean = true,
     val lockUntilEpochMs: Long = 0L,
+    val lockRemainingAnchorMs: Long = 0L,
+    val lastElapsedRealtimeMs: Long = -1L,
     val hasPin: Boolean = false,
     val protectionStartedAtMs: Long = 0L,
     val dailyBetSpendEstimate: Int = 5000,
@@ -42,16 +47,34 @@ data class ProtectionSettingsState(
     val buddyPartnerName: String = "",
     val buddyChallengeCode: String = "",
 ) {
-    fun isTimeLocked(nowMs: Long = System.currentTimeMillis()): Boolean {
-        return lockUntilEpochMs > nowMs
+    fun isTimeLocked(
+        nowMs: Long = System.currentTimeMillis(),
+        nowElapsedMs: Long = safeElapsedRealtime(),
+    ): Boolean {
+        return remainingLockMs(nowMs, nowElapsedMs) > 0L
     }
 
     fun isAnyLockActive(nowMs: Long = System.currentTimeMillis()): Boolean {
         return isTimeLocked(nowMs) || hasPin
     }
 
-    fun remainingLockMs(nowMs: Long = System.currentTimeMillis()): Long {
-        return (lockUntilEpochMs - nowMs).coerceAtLeast(0L)
+    fun remainingLockMs(
+        nowMs: Long = System.currentTimeMillis(),
+        nowElapsedMs: Long = safeElapsedRealtime(),
+    ): Long {
+        return CommitmentClockGuard.computeEffectiveRemainingMs(
+            lockUntilEpochMs = lockUntilEpochMs,
+            lockRemainingAnchorMs = lockRemainingAnchorMs,
+            lastElapsedRealtimeMs = lastElapsedRealtimeMs,
+            nowWallMs = nowMs,
+            nowElapsedRealtimeMs = nowElapsedMs,
+        )
+    }
+
+    companion object {
+        private fun safeElapsedRealtime(): Long = runCatching {
+            SystemClock.elapsedRealtime()
+        }.getOrDefault(-1L)
     }
 }
 
@@ -85,8 +108,11 @@ class ProtectionPreferences private constructor(context: Context) {
             appShieldEnabled = prefs.getBoolean(KEY_APP_SHIELD, true),
             searchGuardEnabled = prefs.getBoolean(KEY_SEARCH_GUARD, true),
             adBlockerEnabled = prefs.getBoolean(KEY_AD_BLOCKER_ENABLED, true),
+            playStoreGuardEnabled = prefs.getBoolean(KEY_PLAY_STORE_GUARD, true),
             antiTamperLockEnabled = prefs.getBoolean(KEY_ANTI_TAMPER, true),
             lockUntilEpochMs = prefs.getLong(KEY_LOCK_UNTIL_MS, 0L),
+            lockRemainingAnchorMs = prefs.getLong(KEY_LOCK_REMAINING_ANCHOR_MS, 0L),
+            lastElapsedRealtimeMs = prefs.getLong(KEY_LAST_ELAPSED_REALTIME_MS, -1L),
             hasPin = !prefs.getString(KEY_PIN_HASH, null).isNullOrEmpty(),
             protectionStartedAtMs = prefs.getLong(KEY_STARTED_AT_MS, System.currentTimeMillis()),
             dailyBetSpendEstimate = prefs.getInt(KEY_DAILY_SPEND, 5000),
@@ -135,6 +161,7 @@ class ProtectionPreferences private constructor(context: Context) {
     fun setAppShieldEnabled(enabled: Boolean) = update { putBoolean(KEY_APP_SHIELD, enabled) }
     fun setSearchGuardEnabled(enabled: Boolean) = update { putBoolean(KEY_SEARCH_GUARD, enabled) }
     fun setAdBlockerEnabled(enabled: Boolean) = update { putBoolean(KEY_AD_BLOCKER_ENABLED, enabled) }
+    fun setPlayStoreGuardEnabled(enabled: Boolean) = update { putBoolean(KEY_PLAY_STORE_GUARD, enabled) }
     fun setAntiTamperLockEnabled(enabled: Boolean) = update { putBoolean(KEY_ANTI_TAMPER, enabled) }
     fun setDailyBetSpendEstimate(amount: Int) = update { putInt(KEY_DAILY_SPEND, amount.coerceIn(0, 10_000_000)) }
     fun setThemeMode(mode: ThemeMode) = update { putInt(KEY_THEME_MODE, mode.ordinal) }
@@ -173,6 +200,8 @@ class ProtectionPreferences private constructor(context: Context) {
     fun unlockCommitmentViaBuddyApproval() {
         update {
             putLong(KEY_LOCK_UNTIL_MS, 0L)
+            putLong(KEY_LOCK_REMAINING_ANCHOR_MS, 0L)
+            putLong(KEY_LAST_ELAPSED_REALTIME_MS, -1L)
             putBoolean(KEY_ANTI_TAMPER, false)
             remove(KEY_BUDDY_CHALLENGE_CODE)
         }
@@ -181,6 +210,7 @@ class ProtectionPreferences private constructor(context: Context) {
     fun completeInitialSetup(name: String, lockDays: Int, enableProtection: Boolean = true) {
         val safeDays = if (lockDays <= 0) 0 else lockDays.coerceIn(1, 730)
         val now = System.currentTimeMillis()
+        val elapsedNow = runCatching { SystemClock.elapsedRealtime() }.getOrDefault(-1L)
         val currentUntil = prefs.getLong(KEY_LOCK_UNTIL_MS, 0L)
         val cleanName = name.trim().take(40)
         update {
@@ -192,9 +222,11 @@ class ProtectionPreferences private constructor(context: Context) {
             putBoolean(KEY_PROTECTION_ENABLED, enableProtection || safeDays > 0)
             if (safeDays > 0) {
                 val durationMs = safeDays.toLong() * 24L * 60L * 60L * 1000L
-                val until = now + durationMs
+                val until = maxOf(currentUntil, now + durationMs)
                 putBoolean(KEY_ANTI_TAMPER, true)
-                putLong(KEY_LOCK_UNTIL_MS, maxOf(currentUntil, until))
+                putLong(KEY_LOCK_UNTIL_MS, until)
+                putLong(KEY_LOCK_REMAINING_ANCHOR_MS, (until - now).coerceAtLeast(0L))
+                putLong(KEY_LAST_ELAPSED_REALTIME_MS, elapsedNow)
             }
             if ((enableProtection || safeDays > 0) && prefs.getLong(KEY_STARTED_AT_MS, 0L) == 0L) {
                 putLong(KEY_STARTED_AT_MS, now)
@@ -210,14 +242,18 @@ class ProtectionPreferences private constructor(context: Context) {
     }
 
     fun activateTimeLock(durationMs: Long) {
-        val until = System.currentTimeMillis() + durationMs
+        val now = System.currentTimeMillis()
+        val elapsedNow = runCatching { SystemClock.elapsedRealtime() }.getOrDefault(-1L)
         val currentUntil = prefs.getLong(KEY_LOCK_UNTIL_MS, 0L)
+        val until = maxOf(currentUntil, now + durationMs)
         update {
-            putLong(KEY_LOCK_UNTIL_MS, maxOf(currentUntil, until))
+            putLong(KEY_LOCK_UNTIL_MS, until)
+            putLong(KEY_LOCK_REMAINING_ANCHOR_MS, (until - now).coerceAtLeast(0L))
+            putLong(KEY_LAST_ELAPSED_REALTIME_MS, elapsedNow)
             putBoolean(KEY_PROTECTION_ENABLED, true)
             putBoolean(KEY_ANTI_TAMPER, true)
             if (prefs.getLong(KEY_STARTED_AT_MS, 0L) == 0L) {
-                putLong(KEY_STARTED_AT_MS, System.currentTimeMillis())
+                putLong(KEY_STARTED_AT_MS, now)
             }
         }
     }
@@ -260,8 +296,11 @@ class ProtectionPreferences private constructor(context: Context) {
         private const val KEY_APP_SHIELD = "app_shield"
         private const val KEY_SEARCH_GUARD = "search_guard"
         private const val KEY_AD_BLOCKER_ENABLED = "ad_blocker_enabled"
+        private const val KEY_PLAY_STORE_GUARD = "play_store_guard"
         private const val KEY_ANTI_TAMPER = "anti_tamper"
         private const val KEY_LOCK_UNTIL_MS = "lock_until_ms"
+        private const val KEY_LOCK_REMAINING_ANCHOR_MS = "lock_remaining_anchor_ms"
+        private const val KEY_LAST_ELAPSED_REALTIME_MS = "last_elapsed_realtime_ms"
         private const val KEY_PIN_HASH = "pin_hash"
         private const val KEY_STARTED_AT_MS = "started_at_ms"
         private const val KEY_DAILY_SPEND = "daily_spend"

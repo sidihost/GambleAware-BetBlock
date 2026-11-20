@@ -26,22 +26,28 @@ export const SANDBOX_PRESETS: readonly SandboxPreset[] = [
     hint: 'Keystroke prefix block',
   },
   {
+    id: 'playstore-sportybet',
+    label: 'Play Store: SportyBet',
+    query: 'playstore: SportyBet',
+    hint: 'Play Store download guard',
+  },
+  {
     id: 'bet9ja-deposit',
     label: 'bet9ja.com/deposit?code=AB99X',
     query: 'bet9ja.com/deposit?code=AB99X',
     hint: 'Cashier & booking code',
   },
   {
-    id: 'stake-crypto',
-    label: 'stake.com',
-    query: 'stake.com',
-    hint: 'Crypto & crash casino',
-  },
-  {
     id: 'popads-tracker',
     label: 'popads.net',
     query: 'popads.net',
     hint: 'Betting popunder ad',
+  },
+  {
+    id: 'vpn-proton',
+    label: 'protonvpn.com (Allowed)',
+    query: 'protonvpn.com',
+    hint: 'VPN coexistence pass',
   },
   {
     id: 'gamcare-safe',
@@ -60,9 +66,11 @@ export const DEFAULT_SANDBOX_CONFIG: BlockFilterConfig = {
   strictKeywordFilter: true,
   searchGuardEnabled: true,
   adBlockerEnabled: true,
+  playStoreGuardEnabled: true,
   customBlockedDomains: new Set<string>(),
   allowlistedDomains: new Set<string>(),
   customBlockedPackages: new Set<string>(),
+  customBlockedAppNames: new Set<string>(),
 };
 
 export interface SandboxEvaluation {
@@ -80,6 +88,8 @@ export interface SandboxEvaluation {
 
 function classifyDetectionLayer(reason: string): string {
   const lower = reason.toLowerCase();
+  if (lower.includes('play store')) return 'Play Store Download Guard';
+  if (lower.includes('sideload') || lower.includes('apk')) return 'APK Install Guard';
   if (lower.includes('while typing')) return 'Keystroke Prefix Engine';
   if (lower.includes('redirect')) return 'Redirect Link Unwrapper';
   if (lower.includes('ad') || lower.includes('affiliate') || lower.includes('popunder')) {
@@ -104,8 +114,58 @@ export function evaluateSandboxQuery(
       matchedTarget: '',
       categoryLabel: '',
       detectionLayer: '',
-      reason: 'Enter any betting domain, prefix, booking link, or recovery site to inspect the on-device verdict.',
+      reason: 'Enter any betting domain, Play Store query (e.g. playstore: SportyBet), VPN app, or recovery helpline to inspect the on-device verdict.',
       latencyLabel: '<1 ms',
+      isSafeSupportAllowlisted: false,
+      brandIdentity: null,
+      promoReport: null,
+    };
+  }
+
+  const lower = trimmed.toLowerCase();
+  const isPlayStoreQuery = lower.startsWith('playstore:') || lower.startsWith('play store:');
+  const isApkQuery = lower.startsWith('apk:');
+
+  if (isPlayStoreQuery || isApkQuery) {
+    const appQuery = trimmed.slice(trimmed.indexOf(':') + 1).trim();
+    const storeMatch = BlocklistMatcher.matchAppStoreOrInstaller(
+      isApkQuery,
+      isApkQuery ? [] : [appQuery],
+      [appQuery, 'Install', isApkQuery ? 'Do you want to install this app?' : 'About this app'],
+      config,
+    );
+
+    if (storeMatch.isBlocked) {
+      const categoryLabel = GAMBLING_CATEGORY_META[storeMatch.category]?.displayName ?? 'Blocked App';
+      const detectionLayer = classifyDetectionLayer(storeMatch.reason);
+      const brandIdentity = resolveBettingBrand(storeMatch.matchedTarget || appQuery);
+      const promoReport = analyzePromoAndExpectedLoss(appQuery, assumedStakeNgn);
+
+      return {
+        status: 'BLOCKED',
+        query: trimmed,
+        matchedTarget: storeMatch.matchedTarget || appQuery,
+        categoryLabel,
+        detectionLayer,
+        reason: storeMatch.reason,
+        latencyLabel: '<9 ms',
+        isSafeSupportAllowlisted: false,
+        brandIdentity,
+        promoReport,
+      };
+    }
+
+    const isVpnApp = appQuery.toLowerCase().includes('vpn') || appQuery.toLowerCase().includes('warp');
+    return {
+      status: 'ALLOWED',
+      query: trimmed,
+      matchedTarget: appQuery || trimmed,
+      categoryLabel: isVpnApp ? 'Third-Party VPN Allowed' : 'Non-Betting App Allowed',
+      detectionLayer: isVpnApp ? 'VPN Coexistence Pass' : 'Play Store Safe Pass',
+      reason: isVpnApp
+        ? 'Third-party VPN apps download and run freely without affecting GambleAware or weakening your Commitment Lock.'
+        : 'Everyday, banking, and non-betting apps download normally from Play Store without interference.',
+      latencyLabel: '<4 ms',
       isSafeSupportAllowlisted: false,
       brandIdentity: null,
       promoReport: null,
@@ -141,12 +201,33 @@ export function evaluateSandboxQuery(
   }
 
   const normalizedHost = BlocklistMatcher.normalizeDomain(trimmed);
+  const isVpnSafe =
+    (normalizedHost.length > 0 && GamblingRegistry.safeVpnDomains.has(normalizedHost)) ||
+    lower.includes('protonvpn') ||
+    lower.includes('mullvad') ||
+    lower.includes('nordvpn');
+
+  if (isVpnSafe) {
+    return {
+      status: 'ALLOWED',
+      query: trimmed,
+      matchedTarget: normalizedHost || trimmed,
+      categoryLabel: 'Third-Party VPN Coexistence',
+      detectionLayer: 'VPN Coexistence Pass',
+      reason: 'GambleAware runs without using Android’s VPN slot — ProtonVPN, Mullvad, NordVPN, and WARP work freely without weakening your Commitment Lock.',
+      latencyLabel: '<3 ms',
+      isSafeSupportAllowlisted: false,
+      brandIdentity: null,
+      promoReport: null,
+    };
+  }
+
   const isSafeSupport =
     (normalizedHost.length > 0 && GamblingRegistry.safeDomains.has(normalizedHost)) ||
-    trimmed.toLowerCase().includes('gamcare') ||
-    trimmed.toLowerCase().includes('gambleaware') ||
-    trimmed.toLowerCase().includes('recovery') ||
-    trimmed.toLowerCase().includes('help');
+    lower.includes('gamcare') ||
+    lower.includes('gambleaware') ||
+    lower.includes('recovery') ||
+    lower.includes('help');
 
   return {
     status: 'ALLOWED',
@@ -156,7 +237,7 @@ export function evaluateSandboxQuery(
     detectionLayer: isSafeSupport ? 'Safe-Support Guard' : 'On-Device Filter Pass',
     reason: isSafeSupport
       ? 'Explicitly allowlisted so recovery, therapy, and helpline portals are never blocked.'
-      : 'No gambling operator, mirror domain, or betting ad tracker matched.',
+      : 'No gambling operator, mirror domain, or betting ad tracker matched. Everyday apps stay untouched.',
     latencyLabel: '<4 ms',
     isSafeSupportAllowlisted: isSafeSupport,
     brandIdentity: null,

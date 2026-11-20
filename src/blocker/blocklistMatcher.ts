@@ -10,9 +10,11 @@ export interface BlockFilterConfig {
   strictKeywordFilter: boolean;
   searchGuardEnabled: boolean;
   adBlockerEnabled?: boolean;
+  playStoreGuardEnabled?: boolean;
   customBlockedDomains: Set<string>;
   allowlistedDomains: Set<string>;
   customBlockedPackages: Set<string>;
+  customBlockedAppNames?: Set<string>;
 }
 
 export interface BlockMatchResult {
@@ -567,6 +569,10 @@ export const BlocklistMatcher = {
       return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
     }
 
+    if (pkg === 'com.imoogle.gambleaware' || pkg === 'com.example.gambleaware') {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
     if (config.customBlockedPackages.has(pkg)) {
       return {
         isBlocked: true,
@@ -574,6 +580,10 @@ export const BlocklistMatcher = {
         category: GamblingCategory.CUSTOM,
         reason: 'Blocked custom app',
       };
+    }
+
+    if (GamblingRegistry.safeVpnAppPackages.has(pkg)) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
     }
 
     if (GamblingRegistry.knownGamblingAppPackages.has(pkg)) {
@@ -586,6 +596,7 @@ export const BlocklistMatcher = {
     }
 
     if (
+      GamblingRegistry.safeEverydayAppPackages.has(pkg) ||
       pkg.startsWith('com.android.') ||
       pkg.startsWith('com.google.android.') ||
       pkg.startsWith('org.mozilla.') ||
@@ -624,4 +635,165 @@ export const BlocklistMatcher = {
 
     return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
   },
+
+  matchAppStoreOrInstaller(
+    isApkInstaller: boolean,
+    searchTexts: string[],
+    visibleTexts: string[],
+    config: BlockFilterConfig,
+  ): BlockMatchResult {
+    if (config.playStoreGuardEnabled === false) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const storeActionSignals = [
+      'install', 'download', 'get', 'update', 'about this app', 'contains ads',
+      'in-app purchases', 'do you want to install', 'install this app', 'package installer',
+    ];
+    const storeCategoryGamblingTitles = [
+      'sports betting', 'online casino', 'live casino', 'slot machine',
+      'real money slots', 'crypto casino', 'poker & casino', 'betting app',
+      'aviator predictor', 'aviator game', 'crash casino',
+    ];
+
+    const cleanedSearch = searchTexts
+      .map((s) => foldHomoglyphs(s.trim()).toLowerCase())
+      .filter((s) => s.length >= 3);
+    const cleanedVisible = visibleTexts
+      .map((s) => foldHomoglyphs(s.trim()).toLowerCase())
+      .filter((s) => s.length > 0);
+    const joinedVisible = cleanedVisible.join(' ');
+
+    if (cleanedSearch.some((s) => RECOVERY_TERMS.some((term) => s.includes(term)))) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+    if (joinedVisible.includes('gambleaware') || joinedVisible.includes('com.imoogle.gambleaware')) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const customNames = Array.from(config.customBlockedAppNames ?? []);
+    const unambiguousStems = getUnambiguousTypedStems();
+
+    for (const query of cleanedSearch) {
+      if (query.includes('vpn') && !GamblingRegistry.gamblingBrandTokens.some((b) => query.includes(b))) {
+        continue;
+      }
+      for (const customName of customNames) {
+        const cleanCustom = customName.trim().toLowerCase();
+        if (cleanCustom.length >= 4 && containsWholeTokenOrDirectStem(query, query, cleanCustom)) {
+          return {
+            isBlocked: true,
+            matchedTarget: customName,
+            category: GamblingCategory.CUSTOM,
+            reason: `Blocked Play Store search for custom blocked app "${customName}"`,
+          };
+        }
+      }
+      for (const brand of GamblingRegistry.gamblingBrandTokens) {
+        if (brand.length >= 4 && containsWholeTokenOrDirectStem(query, query, brand)) {
+          return {
+            isBlocked: true,
+            matchedTarget: brand,
+            category: GamblingCategory.SPORTSBOOK,
+            reason: `Blocked Play Store search for betting app "${brand}"`,
+          };
+        }
+      }
+      for (const [stem, category] of unambiguousStems) {
+        if (!isCategoryEnabled(category, config)) continue;
+        if (containsWholeTokenOrDirectStem(query, query, stem)) {
+          return {
+            isBlocked: true,
+            matchedTarget: stem,
+            category,
+            reason: `Blocked Play Store search for "${stem}"`,
+          };
+        }
+      }
+      const matchedPhrase = storeCategoryGamblingTitles.find((p) => query.includes(p));
+      if (matchedPhrase) {
+        return {
+          isBlocked: true,
+          matchedTarget: matchedPhrase,
+          category: GamblingCategory.CASINO,
+          reason: `Blocked Play Store gambling search "${matchedPhrase}"`,
+        };
+      }
+    }
+
+    if (cleanedVisible.length === 0) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+    if (RECOVERY_TERMS.some((term) => joinedVisible.includes(term))) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const hasInstallContext = isApkInstaller || storeActionSignals.some((sig) => joinedVisible.includes(sig));
+    if (!hasInstallContext) {
+      return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+    }
+
+    const prominentJoined = cleanedVisible.slice(0, 16).join(' ');
+
+    for (const customName of customNames) {
+      const cleanCustom = customName.trim().toLowerCase();
+      if (cleanCustom.length >= 4 && containsWholeTokenOrDirectStem(prominentJoined, prominentJoined, cleanCustom)) {
+        return {
+          isBlocked: true,
+          matchedTarget: customName,
+          category: GamblingCategory.CUSTOM,
+          reason: isApkInstaller
+            ? `Blocked sideloading custom blocked app "${customName}"`
+            : `Blocked Play Store download of custom blocked app "${customName}"`,
+        };
+      }
+    }
+
+    for (const brand of GamblingRegistry.gamblingBrandTokens) {
+      if (brand.length >= 4 && containsWholeTokenOrDirectStem(prominentJoined, prominentJoined, brand)) {
+        return {
+          isBlocked: true,
+          matchedTarget: brand,
+          category: GamblingCategory.SPORTSBOOK,
+          reason: isApkInstaller
+            ? `Blocked sideloading betting APK "${brand}"`
+            : `Blocked Play Store download of betting app "${brand}"`,
+        };
+      }
+    }
+
+    for (const [stem, category] of unambiguousStems) {
+      if (!isCategoryEnabled(category, config)) continue;
+      if (containsWholeTokenOrDirectStem(prominentJoined, prominentJoined, stem)) {
+        return {
+          isBlocked: true,
+          matchedTarget: stem,
+          category,
+          reason: isApkInstaller
+            ? `Blocked sideloading betting APK "${stem}"`
+            : `Blocked Play Store download of "${stem}"`,
+        };
+      }
+    }
+
+    const hasExplicitInstallBtn = cleanedVisible.some(
+      (t) => t === 'install' || t === 'download' || t === 'get' || t.includes('do you want to install'),
+    );
+    if (hasExplicitInstallBtn) {
+      const matchedPhrase = storeCategoryGamblingTitles.find((p) => prominentJoined.includes(p));
+      if (matchedPhrase) {
+        return {
+          isBlocked: true,
+          matchedTarget: matchedPhrase,
+          category: GamblingCategory.CASINO,
+          reason: isApkInstaller
+            ? `Blocked gambling APK installation (${matchedPhrase})`
+            : `Blocked Play Store gambling app (${matchedPhrase})`,
+        };
+      }
+    }
+
+    return { isBlocked: false, matchedTarget: '', category: GamblingCategory.CUSTOM, reason: '' };
+  },
 };
+

@@ -82,6 +82,7 @@ fun BlocklistScreen(
     onToggleSearchGuard: (Boolean) -> Unit,
     onToggleAdBlocker: (Boolean) -> Unit = {},
     onToggleDepositGuard: (Boolean) -> Unit = {},
+    onTogglePlayStoreGuard: (Boolean) -> Unit = {},
     onAddCustomDomain: (String, Boolean) -> Unit,
     onRemoveCustomDomain: (String, Boolean) -> Unit,
     onOpenAppPicker: () -> Unit,
@@ -237,8 +238,15 @@ fun BlocklistScreen(
                         testTag = "switch_ad_blocker",
                     )
                     CategorySwitchRow(
+                        title = "Play Store & APK Download Guard",
+                        subtitle = "Automatically stops betting app searches, Play Store downloads & sideloaded APKs",
+                        checked = state.settings.playStoreGuardEnabled,
+                        onCheckedChange = onTogglePlayStoreGuard,
+                        testTag = "switch_play_store_guard",
+                    )
+                    CategorySwitchRow(
                         title = "Betting App & Install Guard",
-                        subtitle = "Blocks 120+ betting APKs on launch & flags new gambling installs automatically",
+                        subtitle = "Detects installed betting apps, blocks launches & leaves banking, social & VPN apps untouched",
                         checked = state.settings.appShieldEnabled,
                         onCheckedChange = onToggleAppShield,
                         testTag = "switch_app_shield",
@@ -448,7 +456,7 @@ fun BlocklistScreen(
                                 color = MaterialTheme.colorScheme.onBackground,
                             )
                             Text(
-                                text = "Built-in list covers 120+ betting apps automatically",
+                                text = "Only betting apps & apps you choose here are blocked — VPNs and everyday apps stay untouched",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

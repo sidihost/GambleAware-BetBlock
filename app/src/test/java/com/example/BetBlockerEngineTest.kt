@@ -3,6 +3,7 @@ package com.example
 import com.example.blocker.BlockFilterConfig
 import com.example.blocker.BlocklistMatcher
 import com.example.blocker.BrandCatalog
+import com.example.blocker.CommitmentClockGuard
 import com.example.blocker.GamblingCategory
 import com.example.blocker.TiltRadarEngine
 import com.example.blocker.TiltRiskLevel
@@ -374,4 +375,144 @@ class BetBlockerEngineTest {
         assertTrue(TiltRadarEngine.verifyBuddyUnlockCode(challenge, "Tunde", token))
         assertFalse(TiltRadarEngine.verifyBuddyUnlockCode(challenge, "Other", token))
     }
+
+    @Test
+    fun blocksPlayStoreAndApkSideloadWhileAllowingVpnsAndEverydayApps() {
+        val config = BlockFilterConfig(
+            playStoreGuardEnabled = true,
+            customBlockedAppNames = setOf("LuckySpinPro"),
+        )
+
+        // Play Store search for betting app
+        assertTrue(
+            BlocklistMatcher.matchAppStoreOrInstaller(
+                isApkInstaller = false,
+                searchTexts = listOf("SportyBet"),
+                visibleTexts = listOf("Search apps & games", "SportyBet"),
+                config = config,
+            ).isBlocked,
+        )
+
+        // Play Store listing with Install button
+        assertTrue(
+            BlocklistMatcher.matchAppStoreOrInstaller(
+                isApkInstaller = false,
+                searchTexts = emptyList(),
+                visibleTexts = listOf("Bet9ja Mobile", "Sports Betting", "Install", "Contains ads"),
+                config = config,
+            ).isBlocked,
+        )
+
+        // APK Sideload installer dialog for betting app
+        assertTrue(
+            BlocklistMatcher.matchAppStoreOrInstaller(
+                isApkInstaller = true,
+                searchTexts = emptyList(),
+                visibleTexts = listOf("Do you want to install this app?", "1xBet", "Install", "Cancel"),
+                config = config,
+            ).isBlocked,
+        )
+
+        // Custom user-blocked app in Play Store
+        assertTrue(
+            BlocklistMatcher.matchAppStoreOrInstaller(
+                isApkInstaller = false,
+                searchTexts = listOf("LuckySpinPro"),
+                visibleTexts = listOf("LuckySpinPro", "Install"),
+                config = config,
+            ).isBlocked,
+        )
+
+        // Third-party VPN search & install MUST be allowed
+        assertFalse(
+            BlocklistMatcher.matchAppStoreOrInstaller(
+                isApkInstaller = false,
+                searchTexts = listOf("ProtonVPN"),
+                visibleTexts = listOf("Proton VPN: Fast & Secure", "Install"),
+                config = config,
+            ).isBlocked,
+        )
+
+        // Everyday / banking / recovery apps MUST be allowed
+        assertFalse(
+            BlocklistMatcher.matchAppStoreOrInstaller(
+                isApkInstaller = false,
+                searchTexts = listOf("WhatsApp Messenger"),
+                visibleTexts = listOf("WhatsApp Messenger", "Install"),
+                config = config,
+            ).isBlocked,
+        )
+        assertFalse(
+            BlocklistMatcher.matchAppStoreOrInstaller(
+                isApkInstaller = false,
+                searchTexts = listOf("GambleAware"),
+                visibleTexts = listOf("GambleAware", "Install"),
+                config = config,
+            ).isBlocked,
+        )
+    }
+
+    @Test
+    fun allowsThirdPartyVpnsAndEverydayAppsWhileBlockingBettingApps() {
+        val config = BlockFilterConfig(
+            customBlockedPackages = setOf("com.custom.triggerapp"),
+        )
+
+        // VPNs must never be blocked
+        assertFalse(BlocklistMatcher.matchAppPackage("ch.protonvpn.android", config, "Proton VPN").isBlocked)
+        assertFalse(BlocklistMatcher.matchAppPackage("net.mullvad.mullvadvpn", config, "Mullvad VPN").isBlocked)
+        assertFalse(BlocklistMatcher.matchAppPackage("com.nordvpn.android", config, "NordVPN").isBlocked)
+        assertFalse(BlocklistMatcher.matchAppPackage("com.cloudflare.onedotonedotonedotone", config, "1.1.1.1 WARP").isBlocked)
+
+        // Everyday / banking / social apps must never be blocked unless user explicitly adds them
+        assertFalse(BlocklistMatcher.matchAppPackage("com.whatsapp", config, "WhatsApp").isBlocked)
+        assertFalse(BlocklistMatcher.matchAppPackage("com.android.vending", config, "Google Play Store").isBlocked)
+
+        // User-selected custom blocked app IS blocked
+        assertTrue(BlocklistMatcher.matchAppPackage("com.custom.triggerapp", config, "Trigger App").isBlocked)
+    }
+
+    @Test
+    fun commitmentClockGuardPreventsForwardClockJumpBypass() {
+        val dayMs = 24L * 60 * 60 * 1000
+        val startWall = 1_700_000_000_000L
+        val lockDuration = 7L * dayMs
+        val lockUntil = startWall + lockDuration
+        val startUptime = 100_000L
+
+        // User jumps Android system clock forward by 10 days after only 2 minutes of uptime
+        val tamperedWall = startWall + 10L * dayMs
+        val nowUptime = startUptime + 120_000L
+        val remaining = CommitmentClockGuard.computeEffectiveRemainingMs(
+            lockUntilEpochMs = lockUntil,
+            lockRemainingAnchorMs = lockDuration,
+            lastElapsedRealtimeMs = startUptime,
+            nowWallMs = tamperedWall,
+            nowElapsedRealtimeMs = nowUptime,
+        )
+        assertTrue("Expected lock to stay active despite clock jump", remaining > 6L * dayMs)
+
+        // Legitimate completion: both wall clock and uptime pass 7 days
+        val legitimateRemaining = CommitmentClockGuard.computeEffectiveRemainingMs(
+            lockUntilEpochMs = lockUntil,
+            lockRemainingAnchorMs = lockDuration,
+            lastElapsedRealtimeMs = startUptime,
+            nowWallMs = lockUntil + 5_000L,
+            nowElapsedRealtimeMs = startUptime + lockDuration + 5_000L,
+        )
+        assertEquals(0L, legitimateRemaining)
+
+        // Date & Time tamper screen detection
+        assertTrue(
+            CommitmentClockGuard.isDateTimeTamperScreen(
+                listOf("Date & time", "Set time automatically", "Set date", "Set time"),
+            ),
+        )
+        assertFalse(
+            CommitmentClockGuard.isDateTimeTamperScreen(
+                listOf("Display", "Dark theme", "Brightness level"),
+            ),
+        )
+    }
 }
+

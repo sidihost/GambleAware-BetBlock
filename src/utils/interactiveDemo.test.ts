@@ -73,3 +73,23 @@ test('getRegistryMetrics returns truthful non-zero counts from GamblingRegistry'
   assert.ok(metrics.adTrackerCount >= 40);
   assert.ok(metrics.brandCount >= 30);
 });
+
+test('evaluateSandboxQuery blocks Play Store & APK betting downloads while allowing VPNs', () => {
+  const playStoreBet = evaluateSandboxQuery('playstore: SportyBet');
+  assert.equal(playStoreBet.status, 'BLOCKED');
+  assert.equal(playStoreBet.detectionLayer, 'Play Store Download Guard');
+  assert.equal(playStoreBet.brandIdentity?.displayName, 'SportyBet');
+
+  const apkBet = evaluateSandboxQuery('apk: 1xBet');
+  assert.equal(apkBet.status, 'BLOCKED');
+  assert.equal(apkBet.detectionLayer, 'APK Install Guard');
+
+  const playStoreVpn = evaluateSandboxQuery('playstore: ProtonVPN');
+  assert.equal(playStoreVpn.status, 'ALLOWED');
+  assert.equal(playStoreVpn.detectionLayer, 'VPN Coexistence Pass');
+
+  const vpnDomain = evaluateSandboxQuery('protonvpn.com');
+  assert.equal(vpnDomain.status, 'ALLOWED');
+  assert.equal(vpnDomain.detectionLayer, 'VPN Coexistence Pass');
+});
+
