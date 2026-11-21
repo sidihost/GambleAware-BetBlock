@@ -15,6 +15,24 @@ enum class ThemeMode(val label: String) {
     DARK("Black & Pink"),
 }
 
+enum class GoalCategory(val label: String) {
+    STREAK("Streak"),
+    SAVINGS("Savings"),
+    MILESTONE("Milestone"),
+}
+
+data class RecoveryGoalItem(
+    val id: String,
+    val title: String,
+    val category: GoalCategory = GoalCategory.STREAK,
+    val targetDays: Int = 30,
+    val targetAmountNgn: Int = 0,
+    val whyNote: String = "",
+    val isPrimary: Boolean = false,
+    val isCompleted: Boolean = false,
+    val createdAtMs: Long = System.currentTimeMillis(),
+)
+
 data class ProtectionSettingsState(
     val isProtectionEnabled: Boolean = true,
     val blockSportsbooks: Boolean = true,
@@ -46,6 +64,16 @@ data class ProtectionSettingsState(
     val depositGuardEnabled: Boolean = true,
     val buddyPartnerName: String = "",
     val buddyChallengeCode: String = "",
+    val rateLimitEnabled: Boolean = true,
+    val maxAttemptsPer10Min: Int = 3,
+    val dailyAttemptCap: Int = 10,
+    val cooldownMinutes: Int = 15,
+    val rateLimitCooldownUntilMs: Long = 0L,
+    val lateNightGuardEnabled: Boolean = true,
+    val matchdayGuardEnabled: Boolean = true,
+    val paydayGuardEnabled: Boolean = true,
+    val goals: List<RecoveryGoalItem> = emptyList(),
+    val completedBankChecks: Set<String> = emptySet(),
 ) {
     fun isTimeLocked(
         nowMs: Long = System.currentTimeMillis(),
@@ -127,6 +155,16 @@ class ProtectionPreferences private constructor(context: Context) {
             depositGuardEnabled = prefs.getBoolean(KEY_DEPOSIT_GUARD_ENABLED, true),
             buddyPartnerName = prefs.getString(KEY_BUDDY_PARTNER_NAME, "").orEmpty(),
             buddyChallengeCode = prefs.getString(KEY_BUDDY_CHALLENGE_CODE, "").orEmpty(),
+            rateLimitEnabled = prefs.getBoolean(KEY_RATE_LIMIT_ENABLED, true),
+            maxAttemptsPer10Min = prefs.getInt(KEY_RATE_LIMIT_BURST, 3).coerceIn(2, 20),
+            dailyAttemptCap = prefs.getInt(KEY_RATE_LIMIT_DAILY_CAP, 10).coerceIn(3, 100),
+            cooldownMinutes = prefs.getInt(KEY_RATE_LIMIT_COOLDOWN_MIN, 15).coerceIn(5, 120),
+            rateLimitCooldownUntilMs = prefs.getLong(KEY_RATE_LIMIT_COOLDOWN_UNTIL, 0L),
+            lateNightGuardEnabled = prefs.getBoolean(KEY_LATE_NIGHT_GUARD, true),
+            matchdayGuardEnabled = prefs.getBoolean(KEY_MATCHDAY_GUARD, true),
+            paydayGuardEnabled = prefs.getBoolean(KEY_PAYDAY_GUARD, true),
+            goals = decodeGoals(prefs.getString(KEY_RECOVERY_GOALS, null)),
+            completedBankChecks = prefs.getStringSet(KEY_BANK_FREEZE_CHECKS, emptySet()).orEmpty().toSet(),
         )
     }
 
@@ -171,6 +209,63 @@ class ProtectionPreferences private constructor(context: Context) {
     fun setLastNotifiedMilestoneDay(day: Int) = update { putInt(KEY_LAST_MILESTONE_DAY, day) }
     fun setDepositGuardEnabled(enabled: Boolean) = update { putBoolean(KEY_DEPOSIT_GUARD_ENABLED, enabled) }
 
+    fun setRateLimitConfig(
+        enabled: Boolean = _state.value.rateLimitEnabled,
+        maxAttemptsPer10Min: Int = _state.value.maxAttemptsPer10Min,
+        dailyAttemptCap: Int = _state.value.dailyAttemptCap,
+        cooldownMinutes: Int = _state.value.cooldownMinutes,
+    ) {
+        update {
+            putBoolean(KEY_RATE_LIMIT_ENABLED, enabled)
+            putInt(KEY_RATE_LIMIT_BURST, maxAttemptsPer10Min.coerceIn(2, 20))
+            putInt(KEY_RATE_LIMIT_DAILY_CAP, dailyAttemptCap.coerceIn(3, 100))
+            putInt(KEY_RATE_LIMIT_COOLDOWN_MIN, cooldownMinutes.coerceIn(5, 120))
+            if (!enabled) {
+                putLong(KEY_RATE_LIMIT_COOLDOWN_UNTIL, 0L)
+            }
+        }
+    }
+
+    fun setRateLimitCooldownUntil(untilMs: Long) {
+        update {
+            putLong(KEY_RATE_LIMIT_COOLDOWN_UNTIL, untilMs.coerceAtLeast(0L))
+        }
+    }
+
+    fun setHighRiskSchedule(
+        lateNight: Boolean = _state.value.lateNightGuardEnabled,
+        matchday: Boolean = _state.value.matchdayGuardEnabled,
+        payday: Boolean = _state.value.paydayGuardEnabled,
+    ) {
+        update {
+            putBoolean(KEY_LATE_NIGHT_GUARD, lateNight)
+            putBoolean(KEY_MATCHDAY_GUARD, matchday)
+            putBoolean(KEY_PAYDAY_GUARD, payday)
+        }
+    }
+
+    fun saveGoals(goals: List<RecoveryGoalItem>) {
+        update {
+            putString(KEY_RECOVERY_GOALS, encodeGoals(goals))
+        }
+    }
+
+    fun toggleBankFreezeCheck(itemId: String) {
+        val current = _state.value.completedBankChecks.toMutableSet()
+        if (!current.add(itemId)) {
+            current.remove(itemId)
+        }
+        update {
+            putStringSet(KEY_BANK_FREEZE_CHECKS, current)
+        }
+    }
+
+    fun replayWelcomeSetup() {
+        update {
+            putBoolean(KEY_HAS_COMPLETED_INITIAL_SETUP, false)
+        }
+    }
+
     fun bankUrgeStake(amountNgn: Int) {
         val safeAmount = amountNgn.coerceIn(100, 10_000_000)
         val currentSavings = prefs.getInt(KEY_BANKED_URGE_SAVINGS_NGN, 0)
@@ -207,15 +302,54 @@ class ProtectionPreferences private constructor(context: Context) {
         }
     }
 
-    fun completeInitialSetup(name: String, lockDays: Int, enableProtection: Boolean = true) {
+    fun completeInitialSetup(
+        name: String,
+        lockDays: Int,
+        enableProtection: Boolean = true,
+        dailyStakeNgn: Int? = null,
+        starterGoalTitle: String? = null,
+        starterGoalDays: Int = 30,
+        starterGoalAmountNgn: Int = 0,
+        maxAttemptsPer10Min: Int? = null,
+        cooldownMinutes: Int? = null,
+    ) {
         val safeDays = if (lockDays <= 0) 0 else lockDays.coerceIn(1, 730)
         val now = System.currentTimeMillis()
         val elapsedNow = runCatching { SystemClock.elapsedRealtime() }.getOrDefault(-1L)
         val currentUntil = prefs.getLong(KEY_LOCK_UNTIL_MS, 0L)
         val cleanName = name.trim().take(40)
+        val existingGoals = _state.value.goals
+        val updatedGoals = if (!starterGoalTitle.isNullOrBlank()) {
+            val newGoal = RecoveryGoalItem(
+                id = "goal_$now",
+                title = starterGoalTitle.trim().take(80),
+                category = if (starterGoalAmountNgn > 0) GoalCategory.SAVINGS else GoalCategory.STREAK,
+                targetDays = starterGoalDays.coerceIn(1, 730),
+                targetAmountNgn = starterGoalAmountNgn.coerceIn(0, 100_000_000),
+                whyNote = "Set during GambleAware Welcome setup",
+                isPrimary = true,
+                isCompleted = false,
+                createdAtMs = now,
+            )
+            listOf(newGoal) + existingGoals.map { it.copy(isPrimary = false) }
+        } else {
+            existingGoals
+        }
         update {
             if (cleanName.isNotEmpty()) {
                 putString(KEY_PREFERRED_NAME, cleanName)
+            }
+            if (dailyStakeNgn != null && dailyStakeNgn >= 0) {
+                putInt(KEY_DAILY_SPEND, dailyStakeNgn.coerceIn(0, 10_000_000))
+            }
+            if (maxAttemptsPer10Min != null) {
+                putInt(KEY_RATE_LIMIT_BURST, maxAttemptsPer10Min.coerceIn(2, 20))
+            }
+            if (cooldownMinutes != null) {
+                putInt(KEY_RATE_LIMIT_COOLDOWN_MIN, cooldownMinutes.coerceIn(5, 120))
+            }
+            if (updatedGoals.isNotEmpty()) {
+                putString(KEY_RECOVERY_GOALS, encodeGoals(updatedGoals))
             }
             putBoolean(KEY_HAS_COMPLETED_INITIAL_SETUP, true)
             putBoolean(KEY_HAS_COMPLETED_TOUR, true)
@@ -283,6 +417,45 @@ class ProtectionPreferences private constructor(context: Context) {
         return bytes.joinToString("") { "%02x".format(it) }
     }
 
+    private fun sanitizeField(raw: String): String =
+        raw.replace("||", " ").replace("\n", " ").replace("\r", " ").trim()
+
+    private fun encodeGoals(goals: List<RecoveryGoalItem>): String {
+        return goals.take(20).joinToString("\n") { g ->
+            listOf(
+                sanitizeField(g.id),
+                sanitizeField(g.title),
+                g.category.name,
+                g.targetDays.toString(),
+                g.targetAmountNgn.toString(),
+                sanitizeField(g.whyNote),
+                if (g.isPrimary) "1" else "0",
+                if (g.isCompleted) "1" else "0",
+                g.createdAtMs.toString(),
+            ).joinToString("||")
+        }
+    }
+
+    private fun decodeGoals(raw: String?): List<RecoveryGoalItem> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return raw.lines().mapNotNull { line ->
+            val parts = line.split("||")
+            if (parts.size < 9) return@mapNotNull null
+            val category = runCatching { GoalCategory.valueOf(parts[2]) }.getOrDefault(GoalCategory.STREAK)
+            RecoveryGoalItem(
+                id = parts[0].ifBlank { "goal_${parts[8]}" },
+                title = parts[1].ifBlank { return@mapNotNull null },
+                category = category,
+                targetDays = parts[3].toIntOrNull()?.coerceIn(1, 730) ?: 30,
+                targetAmountNgn = parts[4].toIntOrNull()?.coerceIn(0, 100_000_000) ?: 0,
+                whyNote = parts[5],
+                isPrimary = parts[6] == "1",
+                isCompleted = parts[7] == "1",
+                createdAtMs = parts[8].toLongOrNull() ?: System.currentTimeMillis(),
+            )
+        }
+    }
+
     companion object {
         private const val PREFS_NAME = "gambleaware_protection_prefs"
         private const val KEY_PROTECTION_ENABLED = "protection_enabled"
@@ -315,6 +488,16 @@ class ProtectionPreferences private constructor(context: Context) {
         private const val KEY_DEPOSIT_GUARD_ENABLED = "deposit_guard_enabled"
         private const val KEY_BUDDY_PARTNER_NAME = "buddy_partner_name"
         private const val KEY_BUDDY_CHALLENGE_CODE = "buddy_challenge_code"
+        private const val KEY_RATE_LIMIT_ENABLED = "rate_limit_enabled"
+        private const val KEY_RATE_LIMIT_BURST = "rate_limit_burst"
+        private const val KEY_RATE_LIMIT_DAILY_CAP = "rate_limit_daily_cap"
+        private const val KEY_RATE_LIMIT_COOLDOWN_MIN = "rate_limit_cooldown_min"
+        private const val KEY_RATE_LIMIT_COOLDOWN_UNTIL = "rate_limit_cooldown_until"
+        private const val KEY_LATE_NIGHT_GUARD = "late_night_guard"
+        private const val KEY_MATCHDAY_GUARD = "matchday_guard"
+        private const val KEY_PAYDAY_GUARD = "payday_guard"
+        private const val KEY_RECOVERY_GOALS = "recovery_goals_v1"
+        private const val KEY_BANK_FREEZE_CHECKS = "bank_freeze_checks_v1"
 
         @Volatile
         private var INSTANCE: ProtectionPreferences? = null

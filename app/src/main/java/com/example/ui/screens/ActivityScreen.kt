@@ -60,7 +60,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CheckBox
+import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarOutline
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.blocker.RateLimitSeverity
+import com.example.blocker.RateLimiterEngine
 import com.example.data.BlockedEventEntity
+import com.example.data.GoalCategory
+import com.example.data.RecoveryGoalItem
 import com.example.ui.GroupedBlockedTarget
 import com.example.ui.MainUiState
 import com.example.ui.RECOVERY_MILESTONES
@@ -89,6 +104,15 @@ fun ActivityScreen(
     onShareStreak: () -> Unit = {},
     onOpenUrgeJournal: () -> Unit,
     onLaunchCalmReset: () -> Unit,
+    onToggleRateLimit: (Boolean) -> Unit = {},
+    onUpdateRateLimitThresholds: (Int, Int, Int) -> Unit = { _, _, _ -> },
+    onUpdateHighRiskSchedule: (Boolean, Boolean, Boolean) -> Unit = { _, _, _ -> },
+    onClearCooldown: () -> Unit = {},
+    onSimulateRateLimitAttempt: () -> Unit = {},
+    onAddGoal: (String, GoalCategory, Int, Int, String) -> Unit = { _, _, _, _, _ -> },
+    onSetPrimaryGoal: (String) -> Unit = {},
+    onToggleGoalCompleted: (String) -> Unit = {},
+    onDeleteGoal: (String) -> Unit = {},
     activeTourKey: String? = null,
     bottomContentPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
@@ -160,12 +184,12 @@ fun ActivityScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Recovery Progress",
+                                text = "Goals & Rate Limits",
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.onBackground,
                             )
                             Text(
-                                text = "Betting-free streak, savings & shield activity",
+                                text = "Burst cooldowns, recovery goals, streak & shield logs",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -329,6 +353,576 @@ fun ActivityScreen(
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold,
                             )
+                        }
+                    }
+                }
+            }
+
+            // Item 0B: Sliding-Window Rate Limiter & Cooldown Control Center
+            item {
+                val rl = state.rateLimitStatus
+                val burstPresets = listOf(2, 3, 5)
+                val dailyPresets = listOf(5, 10, 20)
+                val cooldownPresets = listOf(5, 15, 30, 60)
+
+                LiquidGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("rate_limiter_control_card"),
+                    fillColor = if (rl.isInCooldown) liquid.softAccentFill else liquid.glassFill,
+                    borderColor = if (rl.isInCooldown) liquid.activeFill.copy(alpha = 0.45f) else liquid.glassBorder,
+                    contentPadding = 18.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "RATE LIMITING & COOLDOWN",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = liquid.accentInk,
+                            )
+                            Text(
+                                text = if (rl.isInCooldown) {
+                                    "Cooldown Active • ${RateLimiterEngine.formatCooldownMmSs(rl.cooldownRemainingMs)}"
+                                } else {
+                                    "Burst Attempt Limiter"
+                                },
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
+                        Switch(
+                            checked = state.settings.rateLimitEnabled,
+                            onCheckedChange = onToggleRateLimit,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = liquid.activeContent,
+                                checkedTrackColor = liquid.activeFill,
+                            ),
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        ProgressMiniStat(
+                            label = "10m Burst",
+                            value = "${rl.attemptsInWindow}/${rl.effectiveBurstLimit}",
+                            modifier = Modifier.weight(1f),
+                        )
+                        ProgressMiniStat(
+                            label = "Daily Cap",
+                            value = "${rl.attemptsToday}/${rl.dailyAttemptCap}",
+                            modifier = Modifier.weight(1f),
+                        )
+                        ProgressMiniStat(
+                            label = "Cooldown",
+                            value = if (rl.isInCooldown) RateLimiterEngine.formatCooldownMmSs(rl.cooldownRemainingMs) else "${state.settings.cooldownMinutes}m",
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Max attempts per 10 min",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        burstPresets.forEach { preset ->
+                            val selected = state.settings.maxAttemptsPer10Min == preset
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (selected) liquid.activeFill else liquid.mutedFill)
+                                    .border(1.dp, if (selected) liquid.activeFill else liquid.subtleBorder, RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        onUpdateRateLimitThresholds(
+                                            preset,
+                                            state.settings.dailyAttemptCap,
+                                            state.settings.cooldownMinutes,
+                                        )
+                                    }
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "$preset / 10m",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Daily attempt cap",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        dailyPresets.forEach { cap ->
+                            val selected = state.settings.dailyAttemptCap == cap
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (selected) liquid.activeFill else liquid.mutedFill)
+                                    .border(1.dp, if (selected) liquid.activeFill else liquid.subtleBorder, RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        onUpdateRateLimitThresholds(
+                                            state.settings.maxAttemptsPer10Min,
+                                            cap,
+                                            state.settings.cooldownMinutes,
+                                        )
+                                    }
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "$cap / day",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Cooldown lockout duration",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        cooldownPresets.forEach { mins ->
+                            val selected = state.settings.cooldownMinutes == mins
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (selected) liquid.activeFill else liquid.mutedFill)
+                                    .border(1.dp, if (selected) liquid.activeFill else liquid.subtleBorder, RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        onUpdateRateLimitThresholds(
+                                            state.settings.maxAttemptsPer10Min,
+                                            state.settings.dailyAttemptCap,
+                                            mins,
+                                        )
+                                    }
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "${mins}m",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "High-Risk Schedule Strictness (-1 burst limit when active)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        listOf(
+                            Triple("Late Night", state.settings.lateNightGuardEnabled) {
+                                onUpdateHighRiskSchedule(
+                                    !state.settings.lateNightGuardEnabled,
+                                    state.settings.matchdayGuardEnabled,
+                                    state.settings.paydayGuardEnabled,
+                                )
+                            },
+                            Triple("Matchday", state.settings.matchdayGuardEnabled) {
+                                onUpdateHighRiskSchedule(
+                                    state.settings.lateNightGuardEnabled,
+                                    !state.settings.matchdayGuardEnabled,
+                                    state.settings.paydayGuardEnabled,
+                                )
+                            },
+                            Triple("Payday", state.settings.paydayGuardEnabled) {
+                                onUpdateHighRiskSchedule(
+                                    state.settings.lateNightGuardEnabled,
+                                    state.settings.matchdayGuardEnabled,
+                                    !state.settings.paydayGuardEnabled,
+                                )
+                            },
+                        ).forEach { (label, active, toggle) ->
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (active) liquid.softAccentFill else liquid.mutedFill)
+                                    .border(1.dp, if (active) liquid.activeFill else liquid.subtleBorder, RoundedCornerShape(12.dp))
+                                    .clickable(onClick = toggle)
+                                    .padding(vertical = 8.dp, horizontal = 6.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (active) liquid.accentInk else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Button(
+                            onClick = onSimulateRateLimitAttempt,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = liquid.activeFill,
+                                contentColor = liquid.activeContent,
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                        ) {
+                            Text("Test Burst Limit", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        if (rl.isInCooldown) {
+                            OutlinedButton(
+                                onClick = onClearCooldown,
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                shape = RoundedCornerShape(14.dp),
+                            ) {
+                                Text("Reset")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Item 0C: Recovery Goals CRUD Card
+            item {
+                var showAddGoalForm by remember { mutableStateOf(false) }
+                var goalTitle by remember { mutableStateOf("") }
+                var goalCategory by remember { mutableStateOf(GoalCategory.STREAK) }
+                var goalTargetDays by remember { mutableStateOf("30") }
+                var goalTargetAmount by remember { mutableStateOf("150000") }
+                var goalWhyNote by remember { mutableStateOf("") }
+                val nairaFmt = remember { NumberFormat.getIntegerInstance(Locale("en", "NG")) }
+
+                LiquidGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("recovery_goals_card"),
+                    contentPadding = 18.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "GOAL SETTING",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = liquid.accentInk,
+                            )
+                            Text(
+                                text = "Recovery Goals (${state.settings.goals.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { showAddGoalForm = !showAddGoalForm },
+                            border = BorderStroke(1.dp, liquid.subtleBorder),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(if (showAddGoalForm) "Close" else "New Goal")
+                        }
+                    }
+
+                    if (showAddGoalForm) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(liquid.mutedFill)
+                                .border(1.dp, liquid.subtleBorder, RoundedCornerShape(16.dp))
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                GoalCategory.entries.forEach { cat ->
+                                    val selected = goalCategory == cat
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (selected) liquid.activeFill else liquid.glassFill)
+                                            .border(1.dp, if (selected) liquid.activeFill else liquid.subtleBorder, RoundedCornerShape(10.dp))
+                                            .clickable { goalCategory = cat }
+                                            .padding(vertical = 7.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = cat.label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    }
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = goalTitle,
+                                onValueChange = { goalTitle = it },
+                                label = { Text("Goal title (e.g. 30 Days Bet-Free)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                            )
+
+                            if (goalCategory == GoalCategory.SAVINGS) {
+                                OutlinedTextField(
+                                    value = goalTargetAmount,
+                                    onValueChange = { goalTargetAmount = it.filter(Char::isDigit).take(9) },
+                                    label = { Text("Savings target (₦)") },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                )
+                            } else {
+                                OutlinedTextField(
+                                    value = goalTargetDays,
+                                    onValueChange = { goalTargetDays = it.filter(Char::isDigit).take(3) },
+                                    label = { Text("Target clean days") },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                )
+                            }
+
+                            OutlinedTextField(
+                                value = goalWhyNote,
+                                onValueChange = { goalWhyNote = it },
+                                label = { Text("Personal Why (optional)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                            )
+
+                            Button(
+                                onClick = {
+                                    val days = goalTargetDays.toIntOrNull()?.coerceIn(1, 730) ?: 30
+                                    val amount = if (goalCategory == GoalCategory.SAVINGS) {
+                                        goalTargetAmount.toIntOrNull()?.coerceIn(1000, 100_000_000) ?: 100_000
+                                    } else {
+                                        0
+                                    }
+                                    onAddGoal(goalTitle, goalCategory, days, amount, goalWhyNote)
+                                    if (goalTitle.trim().length >= 3) {
+                                        goalTitle = ""
+                                        goalWhyNote = ""
+                                        showAddGoalForm = false
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = liquid.activeFill,
+                                    contentColor = liquid.activeContent,
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Text("Save Recovery Goal", fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (state.settings.goals.isEmpty()) {
+                        Text(
+                            text = "No personal goals yet. Tap a preset below or create your own target:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    onAddGoal("30 Days Bet-Free", GoalCategory.STREAK, 30, 0, "Build lasting freedom")
+                                },
+                                modifier = Modifier.weight(1f),
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Text("30d Streak", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    onAddGoal("Save ₦150,000", GoalCategory.SAVINGS, 30, 150_000, "Keep money in my pocket")
+                                },
+                                modifier = Modifier.weight(1f),
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Text("Save ₦150k", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            state.settings.goals.forEach { goal ->
+                                val progress = if (goal.category == GoalCategory.SAVINGS && goal.targetAmountNgn > 0) {
+                                    (state.estimatedSavedAmount.toFloat() / goal.targetAmountNgn.toFloat()).coerceIn(0f, 1f)
+                                } else {
+                                    (state.cleanExactDays / goal.targetDays.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+                                }
+                                val pct = if (goal.isCompleted) 100 else (progress * 100f).toInt().coerceIn(0, 100)
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (goal.isPrimary) liquid.softAccentFill else liquid.mutedFill)
+                                        .border(
+                                            1.dp,
+                                            if (goal.isPrimary) liquid.activeFill.copy(alpha = 0.45f) else liquid.subtleBorder,
+                                            RoundedCornerShape(16.dp),
+                                        )
+                                        .padding(12.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Icon(
+                                                imageVector = if (goal.isCompleted) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
+                                                contentDescription = "Toggle complete",
+                                                tint = if (goal.isCompleted) liquid.activeFill else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .clickable { onToggleGoalCompleted(goal.id) },
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = goal.title,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                )
+                                                Text(
+                                                    text = if (goal.category == GoalCategory.SAVINGS && goal.targetAmountNgn > 0) {
+                                                        "₦${nairaFmt.format(state.estimatedSavedAmount)} / ₦${nairaFmt.format(goal.targetAmountNgn)} • $pct%"
+                                                    } else {
+                                                        "Day ${state.cleanDays} / ${goal.targetDays}d • $pct%"
+                                                    },
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        }
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Icon(
+                                                imageVector = if (goal.isPrimary) Icons.Rounded.Star else Icons.Rounded.StarOutline,
+                                                contentDescription = "Pin primary goal",
+                                                tint = if (goal.isPrimary) liquid.activeFill else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .clickable { onSetPrimaryGoal(goal.id) },
+                                            )
+                                            Icon(
+                                                imageVector = Icons.Rounded.DeleteOutline,
+                                                contentDescription = "Delete goal",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .clickable { onDeleteGoal(goal.id) },
+                                            )
+                                        }
+                                    }
+                                    if (goal.whyNote.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = goal.whyNote,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(5.dp)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(liquid.glassFill),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth((if (goal.isCompleted) 1f else progress).coerceAtLeast(0.04f))
+                                                .height(5.dp)
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(liquid.activeFill),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

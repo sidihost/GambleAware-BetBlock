@@ -68,7 +68,11 @@ const NAV_LINKS = [
   { href: '#install', id: 'install', label: 'Install' },
 ];
 
-export const AppHeader: React.FC = () => {
+interface AppHeaderProps {
+  onOpenMainApp?: () => void;
+}
+
+export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenMainApp }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
@@ -172,6 +176,17 @@ export const AppHeader: React.FC = () => {
 
           {/* Zone 3: Primary CTA + Responsive Mobile Menu Trigger */}
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            {onOpenMainApp ? (
+              <button
+                type="button"
+                data-testid="header-open-main-app-btn"
+                onClick={onOpenMainApp}
+                className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--surface)] px-3 text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors hover:border-[var(--glass-border)] sm:h-10 sm:px-3.5"
+              >
+                Open App
+              </button>
+            ) : null}
+
             <a
               href={ANDROID_APK_DOWNLOAD_URL}
               download={APK_DOWNLOAD_FILENAME}
@@ -224,7 +239,19 @@ export const AppHeader: React.FC = () => {
                 );
               })}
 
-              <div className="mt-2 border-t border-[var(--subtle-border)] pt-3">
+              <div className="mt-2 space-y-2 border-t border-[var(--subtle-border)] pt-3">
+                {onOpenMainApp ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenMainApp();
+                    }}
+                    className="flex h-11 w-full cursor-pointer items-center justify-center rounded-full border border-[var(--subtle-border)] bg-[var(--control-bg)] px-4 text-xs font-semibold text-[var(--ink)]"
+                  >
+                    Open Interactive Web App
+                  </button>
+                ) : null}
                 <a
                   href={ANDROID_APK_DOWNLOAD_URL}
                   download={APK_DOWNLOAD_FILENAME}

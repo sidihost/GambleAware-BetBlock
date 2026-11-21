@@ -1,17 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Activity,
   ArrowRight,
   Ban,
+  BookOpen,
   Check,
   Clock,
+  Gauge,
   KeyRound,
   Lock,
+  Phone,
   Shield,
   ShieldAlert,
   ShieldCheck,
   ShoppingBag,
   SlidersHorizontal,
+  Target,
   TrendingUp,
   Unlock,
   Wind,
@@ -26,7 +29,7 @@ import {
   LOCK_DURATION_PRESETS,
 } from '../utils/lockDurations';
 
-type PhoneTab = 'welcome' | 'shield' | 'rules' | 'progress' | 'lock';
+type PhoneTab = 'welcome' | 'shield' | 'rules' | 'goals' | 'resources' | 'lock';
 type SimulationMode = 'browser' | 'playstore';
 
 interface RuleToggleItem {
@@ -162,14 +165,16 @@ export const AndroidAppShowcase: React.FC = () => {
     { id: 'welcome', num: '00', label: 'Welcome' },
     { id: 'shield', num: '01', label: 'Shield' },
     { id: 'rules', num: '02', label: 'Rules' },
-    { id: 'progress', num: '03', label: 'Progress' },
-    { id: 'lock', num: '04', label: 'Lock' },
+    { id: 'goals', num: '03', label: 'Goals' },
+    { id: 'resources', num: '04', label: 'Resources' },
+    { id: 'lock', num: '05', label: 'Lock' },
   ];
 
   const bottomNavTabs: Array<{ id: Exclude<PhoneTab, 'welcome'>; label: string; icon: React.ReactNode }> = [
     { id: 'shield', label: 'Shield', icon: <Shield className="h-3.5 w-3.5" /> },
     { id: 'rules', label: 'Rules', icon: <SlidersHorizontal className="h-3.5 w-3.5" /> },
-    { id: 'progress', label: 'Progress', icon: <Activity className="h-3.5 w-3.5" /> },
+    { id: 'goals', label: 'Goals', icon: <Target className="h-3.5 w-3.5" /> },
+    { id: 'resources', label: 'Help', icon: <BookOpen className="h-3.5 w-3.5" /> },
     { id: 'lock', label: 'Lock', icon: <Lock className="h-3.5 w-3.5" /> },
   ];
 
@@ -323,11 +328,11 @@ export const AndroidAppShowcase: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setInterventionOpen(false);
-                    setActiveTab('progress');
+                    setActiveTab('goals');
                   }}
                   className="w-full cursor-pointer py-1 text-center text-[11px] font-medium text-[var(--ink-muted)] hover:text-[var(--ink)]"
                 >
-                  View updated savings in Progress →
+                  View updated savings &amp; goals →
                 </button>
               </div>
             </div>
@@ -573,15 +578,31 @@ export const AndroidAppShowcase: React.FC = () => {
                 </div>
               ) : null}
 
-              {activeTab === 'progress' ? (
-                <div className="space-y-3" data-testid="phone-screen-progress">
+              {activeTab === 'goals' ? (
+                <div className="space-y-3" data-testid="phone-screen-goals">
                   <div className="pt-1">
                     <p className="font-display text-sm font-bold text-[var(--ink)]">
-                      Recovery Progress
+                      Goals &amp; Rate Limits
                     </p>
                     <p className="text-[11px] text-[var(--ink-muted)]">
-                      Savings &amp; intercepted attempts over 14 days
+                      Burst cooldowns, recovery goals &amp; 14-day savings
                     </p>
+                  </div>
+
+                  {/* Burst Rate Limiter Strip */}
+                  <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-3">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="inline-flex items-center gap-1 font-semibold text-[var(--ink)]">
+                        <Gauge className="h-3 w-3 text-[var(--accent-ink)]" />
+                        Burst Rate Limit
+                      </span>
+                      <span className="font-mono font-bold text-[var(--accent-ink)]">
+                        1/3 (10m) · 15m Cooldown
+                      </span>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--subtle-border)]">
+                      <div className="h-full w-1/3 bg-[var(--active-fill)]" />
+                    </div>
                   </div>
 
                   {/* Savings Summary */}
@@ -653,7 +674,7 @@ export const AndroidAppShowcase: React.FC = () => {
 
                   {/* Recent Intercepted Brands */}
                   <div className="space-y-1.5">
-                    {RECENT_BLOCKED_EVENTS.slice(0, 3).map((ev) => (
+                    {RECENT_BLOCKED_EVENTS.slice(0, 2).map((ev) => (
                       <div
                         key={ev.target}
                         className="flex items-center justify-between gap-2 rounded-xl border border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 py-2"
@@ -674,6 +695,59 @@ export const AndroidAppShowcase: React.FC = () => {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {activeTab === 'resources' ? (
+                <div className="space-y-2.5" data-testid="phone-screen-resources">
+                  <div className="pt-1">
+                    <p className="font-display text-sm font-bold text-[var(--ink)]">
+                      Recovery Resources
+                    </p>
+                    <p className="text-[11px] text-[var(--ink-muted)]">
+                      Bank freezes, self-exclusion &amp; 24/7 helplines
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-3">
+                    <p className="font-mono text-[9px] font-bold text-[var(--accent-ink)] uppercase">
+                      24/7 Confidential Helpline
+                    </p>
+                    <p className="mt-0.5 text-xs font-bold text-[var(--ink)]">
+                      MANI Nigeria &amp; GamCare UK
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--ink-muted)]">
+                      Always allowlisted even while Shield &amp; Commitment Lock are armed.
+                    </p>
+                    <div className="mt-2 inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-[var(--accent-ink)]">
+                      <Phone className="h-3 w-3" />
+                      <span>+234 809 111 6264 · 0808 8020 133</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-3">
+                    <p className="font-mono text-[9px] font-bold text-[var(--accent-ink)] uppercase">
+                      Bank &amp; Card Blocks
+                    </p>
+                    <p className="mt-0.5 text-xs font-bold text-[var(--ink)]">
+                      MCC 7995 Freeze &amp; Transfer Limits
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--ink-muted)]">
+                      Step-by-step guides for Monzo, Revolut, GTWorld, Kuda, OPay &amp; Zenith.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--subtle-border)] bg-[var(--surface)] p-3">
+                    <p className="font-mono text-[9px] font-bold text-[var(--accent-ink)] uppercase">
+                      Self-Exclusion
+                    </p>
+                    <p className="mt-0.5 text-xs font-bold text-[var(--ink)]">
+                      GAMSTOP &amp; BetStop Registers
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--ink-muted)]">
+                      Combine national legal exclusion with GambleAware on-device blocking.
+                    </p>
                   </div>
                 </div>
               ) : null}
@@ -810,8 +884,8 @@ export const AndroidAppShowcase: React.FC = () => {
 
           {/* In-Phone Floating Navigation Bar (hidden on full-screen Welcome stage) */}
           {activeTab !== 'welcome' ? (
-            <div className="shrink-0 border-t border-[var(--subtle-border)] bg-[var(--surface)] px-2.5 py-2">
-              <div className="grid grid-cols-4 gap-1">
+            <div className="shrink-0 border-t border-[var(--subtle-border)] bg-[var(--surface)] px-1.5 py-2">
+              <div className="grid grid-cols-5 gap-0.5">
                 {bottomNavTabs.map((tab) => {
                   const selected = activeTab === tab.id && !interventionOpen;
                   return (

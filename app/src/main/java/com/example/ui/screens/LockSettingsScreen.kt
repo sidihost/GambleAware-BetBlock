@@ -90,6 +90,7 @@ fun LockSettingsScreen(
     onSelectTheme: (ThemeMode) -> Unit,
     onResetStreak: () -> Unit,
     onReplayTour: () -> Unit,
+    onReplayWelcomeSetup: () -> Unit = {},
     hasNotificationPermission: Boolean,
     onToggleNotifications: (Boolean) -> Unit,
     onSendTestNotification: () -> Unit,
@@ -848,6 +849,22 @@ fun LockSettingsScreen(
                         ),
                     ) {
                         Text("Replay Guided Tour")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = onReplayWelcomeSetup,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("replay_welcome_button"),
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.dp, liquid.subtleBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                        ),
+                    ) {
+                        Text("Replay Welcome Setup")
                     }
                 }
             }

@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.MainActivity
 import com.example.blocker.BrandCatalog
+import com.example.blocker.RateLimiterEngine
 import com.example.data.ProtectionPreferences
 import com.example.ui.components.BettingBrandLogo
 import com.example.ui.components.BrandGEmblem
@@ -92,6 +93,8 @@ class BlockedInterventionActivity : ComponentActivity() {
 
         val prefsManager = ProtectionPreferences.getInstance(this)
         val prefs = prefsManager.currentSnapshot()
+        val extraCooldown = intent.getLongExtra(EXTRA_COOLDOWN_UNTIL_MS, 0L)
+        val cooldownUntilMs = maxOf(extraCooldown, prefs.rateLimitCooldownUntilMs)
         val days = if (prefs.protectionStartedAtMs > 0L) {
             ((System.currentTimeMillis() - prefs.protectionStartedAtMs).coerceAtLeast(0L) /
                 (24L * 60 * 60 * 1000)).toInt()
@@ -109,6 +112,7 @@ class BlockedInterventionActivity : ComponentActivity() {
                     isAntiTamper = isAntiTamper,
                     autoStartBreathing = autoStartBreathing,
                     blockedPackageName = blockedPackageName,
+                    cooldownUntilMs = cooldownUntilMs,
                     cleanDays = days,
                     stakeNgn = stakeNgn,
                     onBankUrgeStake = {
@@ -151,6 +155,7 @@ class BlockedInterventionActivity : ComponentActivity() {
         const val EXTRA_IS_ANTI_TAMPER = "extra_is_anti_tamper"
         const val EXTRA_START_BREATHING = "extra_start_breathing"
         const val EXTRA_PACKAGE_NAME = "extra_package_name"
+        const val EXTRA_COOLDOWN_UNTIL_MS = "extra_cooldown_until_ms"
     }
 }
 
@@ -162,6 +167,7 @@ private fun InterventionScreen(
     isAntiTamper: Boolean,
     autoStartBreathing: Boolean,
     blockedPackageName: String,
+    cooldownUntilMs: Long,
     cleanDays: Int,
     stakeNgn: Int,
     onBankUrgeStake: () -> Unit,
@@ -173,6 +179,17 @@ private fun InterventionScreen(
     var isBreathingActive by remember { mutableStateOf(autoStartBreathing) }
     var calmSecondsLeft by remember { mutableIntStateOf(60) }
     var bankedThisUrge by remember { mutableStateOf(false) }
+    var cooldownRemainingMs by remember(cooldownUntilMs) {
+        mutableStateOf((cooldownUntilMs - System.currentTimeMillis()).coerceAtLeast(0L))
+    }
+
+    LaunchedEffect(cooldownUntilMs) {
+        while (cooldownUntilMs > System.currentTimeMillis()) {
+            cooldownRemainingMs = (cooldownUntilMs - System.currentTimeMillis()).coerceAtLeast(0L)
+            delay(1000L)
+        }
+        cooldownRemainingMs = 0L
+    }
     val brandIdentity = remember(target) { BrandCatalog.resolve(target) }
     val nairaFmt = remember { NumberFormat.getIntegerInstance(Locale("en", "NG")) }
     val expectedThirtyBetLoss = remember(stakeNgn) { ((stakeNgn * 30) * 0.065).toInt() }
@@ -288,6 +305,33 @@ private fun InterventionScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                         )
+
+                        if (cooldownRemainingMs > 0L) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(liquid.softAccentFill)
+                                    .border(1.dp, liquid.activeFill.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(
+                                    text = "RATE LIMIT COOLDOWN • ${RateLimiterEngine.formatCooldownMmSs(cooldownRemainingMs)}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = liquid.accentInk,
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Multiple rapid attempts detected. Step away while your Shield stays locked.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 

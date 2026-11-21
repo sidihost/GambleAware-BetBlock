@@ -65,6 +65,7 @@ export interface ProtectionSettingsState {
   appShieldEnabled: boolean;
   searchGuardEnabled: boolean;
   adBlockerEnabled: boolean;
+  playStoreGuardEnabled: boolean;
   antiTamperLockEnabled: boolean;
   lockUntilEpochMs: number;
   pinHash: string | null;
@@ -77,6 +78,15 @@ export interface ProtectionSettingsState {
   lastNotifiedMilestoneDay: number;
   goalReminderEnabled: boolean;
   highRiskSchedule: HighRiskScheduleConfig;
+  rateLimitConfig: {
+    enabled: boolean;
+    maxAttemptsPer10Min: number;
+    dailyAttemptCap: number;
+    cooldownMinutes: number;
+    pinMaxRetries: number;
+    pinLockoutSeconds: number;
+  };
+  rateLimitCooldownUntilMs: number;
   bankedUrgeSavingsNgn: number;
   bankedUrgeCount: number;
   depositGuardEnabled: boolean;

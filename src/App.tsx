@@ -7,9 +7,20 @@ import { loadStore, saveStore } from './data/storage';
 import { ThemeMode } from './data/types';
 import './firebase';
 import { DownloadScreen } from './screens/DownloadScreen';
+import { MainAppScreen } from './screens/MainAppScreen';
 import { shouldSkipPreloader } from './utils/platformCompatibility';
 
+type SurfaceView = 'app' | 'download';
+
+function resolveInitialView(): SurfaceView {
+  if (typeof window === 'undefined') return 'app';
+  const params = new URLSearchParams(window.location.search);
+  return params.get('view') === 'download' ? 'download' : 'app';
+}
+
 export function App() {
+  const [surfaceView, setSurfaceView] = useState<SurfaceView>(resolveInitialView);
+
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     try {
       return loadStore().settings.themeMode;
@@ -66,14 +77,41 @@ export function App() {
     }
   }, []);
 
+  const switchSurface = useCallback((nextView: SurfaceView) => {
+    setSurfaceView(nextView);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (nextView === 'download') {
+        url.searchParams.set('view', 'download');
+      } else {
+        url.searchParams.delete('view');
+      }
+      window.history.replaceState({}, '', url.toString());
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, []);
+
   const dismissPreloader = useCallback(() => {
     setShowPreloader(false);
   }, []);
 
+  if (surfaceView === 'app') {
+    return (
+      <LiquidGlassBackdrop isProtected>
+        <AppPreloader visible={showPreloader} onDismiss={dismissPreloader} />
+        <MainAppScreen
+          isDarkTheme={isDarkTheme}
+          onUpdateTheme={updateTheme}
+          onOpenDownloadPage={() => switchSurface('download')}
+        />
+      </LiquidGlassBackdrop>
+    );
+  }
+
   return (
     <LiquidGlassBackdrop isProtected>
       <AppPreloader visible={showPreloader} onDismiss={dismissPreloader} />
-      <AppHeader />
+      <AppHeader onOpenMainApp={() => switchSurface('app')} />
 
       <main className="min-h-[calc(100vh-8rem)]">
         <DownloadScreen />
@@ -92,6 +130,13 @@ export function App() {
           </div>
 
           <nav aria-label="Footer sections" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-[var(--ink-muted)]">
+            <button
+              type="button"
+              onClick={() => switchSurface('app')}
+              className="cursor-pointer font-semibold text-[var(--accent-ink)] hover:underline"
+            >
+              Open Web App
+            </button>
             <a href="#live-filter" className="hover:text-[var(--ink)]">
               Live Filter
             </a>

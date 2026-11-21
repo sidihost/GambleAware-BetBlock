@@ -434,7 +434,7 @@ fun LiquidFloatingNavBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 4.dp, vertical = 5.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -459,14 +459,14 @@ fun LiquidFloatingNavBar(
                         modifier = Modifier
                             .weight(1f)
                             .minimumInteractiveComponentSize()
-                            .clip(RoundedCornerShape(26.dp))
+                            .clip(RoundedCornerShape(24.dp))
                             .background(pillColor)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = ripple(),
                                 onClick = { onSelect(item.route) },
                             )
-                            .padding(vertical = 8.dp, horizontal = 6.dp)
+                            .padding(vertical = 8.dp, horizontal = 2.dp)
                             .testTag(item.testTag),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -478,12 +478,12 @@ fun LiquidFloatingNavBar(
                                 imageVector = if (selected) item.activeIcon else item.inactiveIcon,
                                 contentDescription = item.label,
                                 tint = contentColor,
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(20.dp),
                             )
                             Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = item.label,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                                 color = contentColor,
                                 maxLines = 1,

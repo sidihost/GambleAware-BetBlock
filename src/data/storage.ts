@@ -1,4 +1,5 @@
 import { DEFAULT_HIGH_RISK_SCHEDULE } from '../utils/highRiskGuard';
+import { DEFAULT_RATE_LIMIT_CONFIG } from '../utils/rateLimiter';
 import type { EvaluatedSurveyProfile } from '../utils/recoverySurvey';
 import {
   BlockedAppEntity,
@@ -237,6 +238,7 @@ export function createDefaultStore(): PersistedStore {
       appShieldEnabled: true,
       searchGuardEnabled: true,
       adBlockerEnabled: true,
+      playStoreGuardEnabled: true,
       antiTamperLockEnabled: true,
       lockUntilEpochMs: 0,
       pinHash: null,
@@ -249,6 +251,8 @@ export function createDefaultStore(): PersistedStore {
       lastNotifiedMilestoneDay: 0,
       goalReminderEnabled: true,
       highRiskSchedule: { ...DEFAULT_HIGH_RISK_SCHEDULE },
+      rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG },
+      rateLimitCooldownUntilMs: 0,
       bankedUrgeSavingsNgn: 0,
       bankedUrgeCount: 0,
       depositGuardEnabled: true,
@@ -297,6 +301,18 @@ export function normalizeStoreShape(parsed: Partial<PersistedStore>): PersistedS
       typeof parsed.settings?.adBlockerEnabled === 'boolean'
         ? parsed.settings.adBlockerEnabled
         : true,
+    playStoreGuardEnabled:
+      typeof parsed.settings?.playStoreGuardEnabled === 'boolean'
+        ? parsed.settings.playStoreGuardEnabled
+        : true,
+    rateLimitConfig: {
+      ...DEFAULT_RATE_LIMIT_CONFIG,
+      ...(parsed.settings?.rateLimitConfig ?? {}),
+    },
+    rateLimitCooldownUntilMs:
+      typeof parsed.settings?.rateLimitCooldownUntilMs === 'number'
+        ? Math.max(0, parsed.settings.rateLimitCooldownUntilMs)
+        : 0,
     buddyPartnerName:
       typeof parsed.settings?.buddyPartnerName === 'string'
         ? parsed.settings.buddyPartnerName

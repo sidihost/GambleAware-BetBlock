@@ -12,14 +12,18 @@ import com.example.blocker.GamblingCategory
 import com.example.blocker.GamblingRegistry
 import com.example.blocker.MlRiskEvaluation
 import com.example.blocker.MlRiskPredictor
+import com.example.blocker.RateLimitStatus
+import com.example.blocker.RateLimiterEngine
 import com.example.blocker.TiltRadarEngine
 import com.example.blocker.TiltRadarEvaluation
 import com.example.data.AnchorRepository
 import com.example.data.BlockedAppEntity
 import com.example.data.BlockedDomainEntity
 import com.example.data.BlockedEventEntity
+import com.example.data.GoalCategory
 import com.example.data.InstalledAppInfo
 import com.example.data.ProtectionSettingsState
+import com.example.data.RecoveryGoalItem
 import com.example.data.ThemeMode
 import com.example.data.UrgeLogEntity
 import com.example.service.GambleAwareAccessibilityService
@@ -324,6 +328,19 @@ data class MainUiState(
             isLockedNow = isTimeLockedNow,
             nowMs = currentTimeMs,
         )
+
+    val rateLimitStatus: RateLimitStatus
+        get() = RateLimiterEngine.evaluate(
+            events = recentEvents,
+            todayBlockedCount = todayBlockedCount,
+            settings = settings,
+            nowMs = currentTimeMs,
+        )
+
+    val primaryGoal: RecoveryGoalItem?
+        get() = settings.goals.firstOrNull { it.isPrimary && !it.isCompleted }
+            ?: settings.goals.firstOrNull { !it.isCompleted }
+            ?: settings.goals.firstOrNull()
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -563,9 +580,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.prefs.setPreferredName(name)
     }
 
-    fun completeInitialSetup(name: String, lockDays: Int, enableProtection: Boolean = true) {
+    fun completeInitialSetup(
+        name: String,
+        lockDays: Int,
+        enableProtection: Boolean = true,
+        dailyStakeNgn: Int? = null,
+        starterGoalTitle: String? = null,
+        starterGoalDays: Int = 30,
+        starterGoalAmountNgn: Int = 0,
+        maxAttemptsPer10Min: Int? = null,
+        cooldownMinutes: Int? = null,
+    ) {
         val safeDays = if (lockDays <= 0) 0 else lockDays.coerceIn(1, 730)
-        repository.prefs.completeInitialSetup(name, safeDays, enableProtection)
+        repository.prefs.completeInitialSetup(
+            name = name,
+            lockDays = safeDays,
+            enableProtection = enableProtection,
+            dailyStakeNgn = dailyStakeNgn,
+            starterGoalTitle = starterGoalTitle,
+            starterGoalDays = starterGoalDays,
+            starterGoalAmountNgn = starterGoalAmountNgn,
+            maxAttemptsPer10Min = maxAttemptsPer10Min,
+            cooldownMinutes = cooldownMinutes,
+        )
         refreshSystemServiceStatus()
         val first = name.trim().split(Regex("\\s+")).firstOrNull().orEmpty()
         bannerFlow.value = if (safeDays > 0) {
@@ -582,6 +619,118 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.prefs.skipInitialSetup()
         refreshSystemServiceStatus()
         bannerFlow.value = "Exploring freely — enable Shield or Lock anytime"
+    }
+
+    fun replayWelcomeSetup() {
+        repository.prefs.replayWelcomeSetup()
+    }
+
+    fun setRateLimitEnabled(enabled: Boolean) {
+        repository.prefs.setRateLimitConfig(enabled = enabled)
+        bannerFlow.value = if (enabled) "Burst Rate Limiter enabled" else "Burst Rate Limiter paused"
+    }
+
+    fun setRateLimitThresholds(maxBurst: Int, dailyCap: Int, cooldownMinutes: Int) {
+        repository.prefs.setRateLimitConfig(
+            maxAttemptsPer10Min = maxBurst,
+            dailyAttemptCap = dailyCap,
+            cooldownMinutes = cooldownMinutes,
+        )
+        bannerFlow.value = "Rate limit updated ($maxBurst/10m • ${cooldownMinutes}m cooldown)"
+    }
+
+    fun setHighRiskSchedule(lateNight: Boolean, matchday: Boolean, payday: Boolean) {
+        repository.prefs.setHighRiskSchedule(lateNight = lateNight, matchday = matchday, payday = payday)
+    }
+
+    fun clearRateLimitCooldown() {
+        repository.prefs.setRateLimitCooldownUntil(0L)
+        bannerFlow.value = "Cooldown timer cleared"
+    }
+
+    fun simulateRateLimitAttempt() {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            repository.logBlockedEvent(
+                target = "sportybet.com",
+                source = "Rate Limiter Test",
+                category = GamblingCategory.SPORTSBOOK,
+            )
+            val state = uiState.value
+            val nextWindowCount = state.rateLimitStatus.attemptsInWindow + 1
+            val nextTodayCount = state.todayBlockedCount + 1
+            val nextCooldownUntil = RateLimiterEngine.computeNextCooldownUntilMs(
+                attemptsInWindow = nextWindowCount,
+                attemptsToday = nextTodayCount,
+                settings = state.settings,
+                nowMs = now,
+            )
+            if (nextCooldownUntil > now) {
+                repository.prefs.setRateLimitCooldownUntil(nextCooldownUntil)
+                bannerFlow.value = "Burst limit reached — ${state.settings.cooldownMinutes}m Calm Cooldown armed"
+            } else {
+                bannerFlow.value = "Blocked attempt logged ($nextWindowCount/${state.rateLimitStatus.effectiveBurstLimit} in 10m)"
+            }
+        }
+    }
+
+    fun addRecoveryGoal(
+        title: String,
+        category: GoalCategory,
+        targetDays: Int,
+        targetAmountNgn: Int,
+        whyNote: String,
+    ) {
+        val cleanTitle = title.trim().take(80)
+        if (cleanTitle.length < 3) {
+            bannerFlow.value = "Enter a goal title (at least 3 characters)"
+            return
+        }
+        val current = repository.prefs.currentSnapshot().goals
+        val now = System.currentTimeMillis()
+        val newGoal = RecoveryGoalItem(
+            id = "goal_$now",
+            title = cleanTitle,
+            category = category,
+            targetDays = targetDays.coerceIn(1, 730),
+            targetAmountNgn = targetAmountNgn.coerceIn(0, 100_000_000),
+            whyNote = whyNote.trim().take(160),
+            isPrimary = current.isEmpty(),
+            isCompleted = false,
+            createdAtMs = now,
+        )
+        repository.prefs.saveGoals(listOf(newGoal) + current)
+        bannerFlow.value = "Goal saved: $cleanTitle"
+    }
+
+    fun setPrimaryGoal(goalId: String) {
+        val updated = repository.prefs.currentSnapshot().goals.map { g ->
+            g.copy(isPrimary = g.id == goalId)
+        }
+        repository.prefs.saveGoals(updated)
+        bannerFlow.value = "Primary goal updated"
+    }
+
+    fun toggleGoalCompleted(goalId: String) {
+        val updated = repository.prefs.currentSnapshot().goals.map { g ->
+            if (g.id == goalId) g.copy(isCompleted = !g.isCompleted) else g
+        }
+        repository.prefs.saveGoals(updated)
+    }
+
+    fun deleteGoal(goalId: String) {
+        val remaining = repository.prefs.currentSnapshot().goals.filterNot { it.id == goalId }
+        val normalized = if (remaining.isNotEmpty() && remaining.none { it.isPrimary }) {
+            remaining.mapIndexed { idx, g -> g.copy(isPrimary = idx == 0) }
+        } else {
+            remaining
+        }
+        repository.prefs.saveGoals(normalized)
+        bannerFlow.value = "Goal removed"
+    }
+
+    fun toggleBankFreezeCheck(itemId: String) {
+        repository.prefs.toggleBankFreezeCheck(itemId)
     }
 
     fun updateCategory(category: GamblingCategory, enabled: Boolean) {

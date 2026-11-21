@@ -55,6 +55,7 @@ import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.SupportAgent
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Block
@@ -66,6 +67,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Shop
+import androidx.compose.material.icons.rounded.SupportAgent
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.VpnKey
@@ -136,6 +138,7 @@ import com.example.ui.components.TourTargetRegistry
 import com.example.ui.screens.ActivityScreen
 import com.example.ui.screens.BlocklistScreen
 import com.example.ui.screens.LockSettingsScreen
+import com.example.ui.screens.ResourcesScreen
 import com.example.ui.screens.ShieldScreen
 import com.example.ui.theme.AnchorTheme
 import com.example.ui.theme.LiquidDialogContent
@@ -146,6 +149,7 @@ object AnchorRoutes {
     const val SHIELD = "shield"
     const val BLOCKLIST = "blocklist"
     const val ACTIVITY = "activity"
+    const val RESOURCES = "resources"
     const val LOCK = "lock"
 }
 
@@ -327,17 +331,24 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
             ),
             LiquidNavItem(
                 route = AnchorRoutes.BLOCKLIST,
-                label = "Blocklist",
+                label = "Rules",
                 activeIcon = Icons.Rounded.Block,
                 inactiveIcon = Icons.Outlined.Block,
                 testTag = "nav_blocklist",
             ),
             LiquidNavItem(
                 route = AnchorRoutes.ACTIVITY,
-                label = "Progress",
+                label = "Goals",
                 activeIcon = Icons.Rounded.Insights,
                 inactiveIcon = Icons.Outlined.Insights,
                 testTag = "nav_activity",
+            ),
+            LiquidNavItem(
+                route = AnchorRoutes.RESOURCES,
+                label = "Help",
+                activeIcon = Icons.Rounded.SupportAgent,
+                inactiveIcon = Icons.Outlined.SupportAgent,
+                testTag = "nav_resources",
             ),
             LiquidNavItem(
                 route = AnchorRoutes.LOCK,
@@ -367,8 +378,17 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                             onEnableAccessibilityShield = { showShieldDisclosure = true },
                             onEnableDeviceAdmin = { handleDeviceAdminLockToggle() },
                             onRequestNotifications = { handleToggleNotifications(true) },
-                            onCompleteSetup = { name, days ->
-                                viewModel.completeInitialSetup(name, days, enableProtection = state.isAccessibilityEnabled)
+                            onCompleteSetup = { name, days, starterGoalTitle, starterGoalDays, starterGoalAmount, burstLimit, cooldownMins ->
+                                viewModel.completeInitialSetup(
+                                    name = name,
+                                    lockDays = days,
+                                    enableProtection = state.isAccessibilityEnabled,
+                                    starterGoalTitle = starterGoalTitle,
+                                    starterGoalDays = starterGoalDays,
+                                    starterGoalAmountNgn = starterGoalAmount,
+                                    maxAttemptsPer10Min = burstLimit,
+                                    cooldownMinutes = cooldownMins,
+                                )
                             },
                             onSkipSetup = { viewModel.skipInitialSetup() },
                         )
@@ -412,6 +432,13 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                         },
                                         onNavigateToActivity = {
                                             navController.navigate(AnchorRoutes.ACTIVITY) {
+                                                popUpTo(AnchorRoutes.SHIELD) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        },
+                                        onNavigateToResources = {
+                                            navController.navigate(AnchorRoutes.RESOURCES) {
                                                 popUpTo(AnchorRoutes.SHIELD) { saveState = true }
                                                 launchSingleTop = true
                                                 restoreState = true
@@ -548,8 +575,41 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                     },
                                     onLaunchCalmReset = { launchSosCalmReset() },
                                     onOpenUrgeJournal = { showUrgeJournalSheet = true },
+                                    onToggleRateLimit = { enabled ->
+                                        if (enabled) {
+                                            viewModel.setRateLimitEnabled(true)
+                                        } else {
+                                            guardRestrictedAction { viewModel.setRateLimitEnabled(false) }
+                                        }
+                                    },
+                                    onUpdateRateLimitThresholds = { burst, daily, cooldown ->
+                                        viewModel.setRateLimitThresholds(burst, daily, cooldown)
+                                    },
+                                    onUpdateHighRiskSchedule = { lateNight, matchday, payday ->
+                                        viewModel.setHighRiskSchedule(lateNight, matchday, payday)
+                                    },
+                                    onClearCooldown = {
+                                        guardRestrictedAction { viewModel.clearRateLimitCooldown() }
+                                    },
+                                    onSimulateRateLimitAttempt = { viewModel.simulateRateLimitAttempt() },
+                                    onAddGoal = { title, cat, days, amount, why ->
+                                        viewModel.addRecoveryGoal(title, cat, days, amount, why)
+                                    },
+                                    onSetPrimaryGoal = { id -> viewModel.setPrimaryGoal(id) },
+                                    onToggleGoalCompleted = { id -> viewModel.toggleGoalCompleted(id) },
+                                    onDeleteGoal = { id -> viewModel.deleteGoal(id) },
                                     activeTourKey = activeTourKey,
                                     bottomContentPadding = navBarReserve,
+                                )
+                            }
+
+                            composable(AnchorRoutes.RESOURCES) {
+                                ResourcesScreen(
+                                    uiState = state,
+                                    onToggleBankFreezeCheck = { itemId ->
+                                        viewModel.toggleBankFreezeCheck(itemId)
+                                    },
+                                    onStartCalmReset = { launchSosCalmReset() },
                                 )
                             }
 
@@ -585,6 +645,10 @@ fun AnchorApp(viewModel: MainViewModel = viewModel()) {
                                         tourSessionId += 1
                                         activeTourStep = SPOTLIGHT_TOUR_STEPS.first()
                                         viewModel.replayTour()
+                                    },
+                                    onReplayWelcomeSetup = {
+                                        showWelcomeHero = true
+                                        viewModel.replayWelcomeSetup()
                                     },
                                     hasNotificationPermission = hasNotificationPermission,
                                     onToggleNotifications = { enabled -> handleToggleNotifications(enabled) },
@@ -1411,14 +1475,30 @@ private fun MandatoryThreeStepSetupScreen(
     onEnableAccessibilityShield: () -> Unit,
     onEnableDeviceAdmin: () -> Unit,
     onRequestNotifications: () -> Unit,
-    onCompleteSetup: (name: String, lockDays: Int) -> Unit,
+    onCompleteSetup: (
+        name: String,
+        lockDays: Int,
+        starterGoalTitle: String?,
+        starterGoalDays: Int,
+        starterGoalAmount: Int,
+        burstLimit: Int,
+        cooldownMins: Int,
+    ) -> Unit,
     onSkipSetup: () -> Unit,
 ) {
     val liquid = LocalLiquidColors.current
     var setupName by remember { mutableStateOf(state.settings.preferredName) }
     var setupLockDays by remember { mutableIntStateOf(0) }
+    var selectedGoalIndex by remember { mutableIntStateOf(0) }
+    var selectedBurstLimit by remember { mutableIntStateOf(3) }
+    var selectedCooldownMins by remember { mutableIntStateOf(15) }
     var showVisualGuide by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    val goalPresets = listOf(
+        Triple("30 Days Bet-Free", 30, 0),
+        Triple("Save ₦150,000", 30, 150_000),
+        Triple("90 Days Rewired", 90, 0),
+    )
 
     val step1Done = state.isAccessibilityEnabled || state.isShieldServiceRunning
     val stepAdminDone = state.isDeviceAdminEnabled
@@ -1719,10 +1799,99 @@ private fun MandatoryThreeStepSetupScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Step 5: Starter Recovery Goal & Burst Rate Limiter
+            LiquidGlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                cornerRadius = 18.dp,
+                fillColor = liquid.controlFill,
+                borderColor = liquid.subtleBorder,
+                contentPadding = 14.dp,
+            ) {
+                Text(
+                    text = "STARTER GOAL & RATE LIMITER",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = liquid.accentInk,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    goalPresets.forEachIndexed { idx, preset ->
+                        val selected = selectedGoalIndex == idx
+                        LiquidGlassCard(
+                            cornerRadius = 14.dp,
+                            fillColor = if (selected) liquid.activeFill else liquid.glassFill,
+                            borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
+                            contentPadding = 0.dp,
+                            onClick = { selectedGoalIndex = idx },
+                        ) {
+                            Text(
+                                text = preset.first,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                                color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Burst cooldown trigger ($selectedBurstLimit attempts / 10m → ${selectedCooldownMins}m cooldown)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    listOf(2 to 30, 3 to 15, 5 to 10).forEach { (burst, mins) ->
+                        val selected = selectedBurstLimit == burst
+                        LiquidGlassCard(
+                            modifier = Modifier.weight(1f),
+                            cornerRadius = 12.dp,
+                            fillColor = if (selected) liquid.activeFill else liquid.glassFill,
+                            borderColor = if (selected) liquid.activeFill else liquid.subtleBorder,
+                            contentPadding = 0.dp,
+                            onClick = {
+                                selectedBurstLimit = burst
+                                selectedCooldownMins = mins
+                            },
+                        ) {
+                            Text(
+                                text = "$burst / ${mins}m",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (selected) liquid.activeContent else MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(vertical = 7.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { onCompleteSetup(setupName, setupLockDays) },
+                onClick = {
+                    val chosenGoal = goalPresets.getOrNull(selectedGoalIndex)
+                    onCompleteSetup(
+                        setupName,
+                        setupLockDays,
+                        chosenGoal?.first,
+                        chosenGoal?.second ?: 30,
+                        chosenGoal?.third ?: 0,
+                        selectedBurstLimit,
+                        selectedCooldownMins,
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)

@@ -70,7 +70,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.blocker.BrandCatalog
 import com.example.blocker.MlRiskRegime
+import com.example.blocker.RateLimitSeverity
+import com.example.blocker.RateLimiterEngine
 import com.example.blocker.TiltRiskLevel
+import com.example.data.GoalCategory
 import com.example.ui.MainUiState
 import com.example.ui.components.BettingBrandLogo
 import com.example.ui.components.BrandGEmblem
@@ -98,6 +101,7 @@ fun ShieldScreen(
     onTestQueryChanged: (String) -> Unit,
     onNavigateToBlocklist: () -> Unit,
     onNavigateToActivity: () -> Unit,
+    onNavigateToResources: () -> Unit = {},
     onNavigateToLock: () -> Unit,
     onLaunchCalmReset: () -> Unit,
     onOpenUrgeJournal: () -> Unit,
@@ -478,6 +482,204 @@ fun ShieldScreen(
                         subtitle = "${state.totalUrgeResistedCount} resisted",
                         modifier = Modifier.weight(1f),
                     )
+                }
+            }
+
+            // Rate Limiter & Active Goal Overview Cards
+            item {
+                val rl = state.rateLimitStatus
+                val goal = state.primaryGoal
+                val nairaFmt = NumberFormat.getIntegerInstance(Locale("en", "NG"))
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LiquidGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("shield_rate_limiter_card"),
+                        fillColor = if (rl.isInCooldown) liquid.softAccentFill else liquid.glassFill,
+                        borderColor = if (rl.isInCooldown) liquid.activeFill.copy(alpha = 0.45f) else liquid.glassBorder,
+                        contentPadding = 16.dp,
+                        onClick = onNavigateToActivity,
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "BURST RATE LIMITER",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = liquid.accentInk,
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = when (rl.severity) {
+                                        RateLimitSeverity.COOLDOWN_ACTIVE ->
+                                            "Cooldown Active • ${RateLimiterEngine.formatCooldownMmSs(rl.cooldownRemainingMs)}"
+                                        RateLimitSeverity.WARNING -> "Approaching 10m Burst Limit"
+                                        RateLimitSeverity.CALM ->
+                                            if (rl.isEnabled) "Burst & Daily Guard Armed" else "Rate Limiter Paused"
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
+                            }
+                            Text(
+                                text = "${rl.attemptsInWindow}/${rl.effectiveBurstLimit}",
+                                fontFamily = MonoFontFamily,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (rl.severity == RateLimitSeverity.CALM) MaterialTheme.colorScheme.onBackground else liquid.accentInk,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(liquid.mutedFill),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(rl.burstProgressFraction.coerceAtLeast(if (rl.attemptsInWindow > 0) 0.06f else 0f))
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(liquid.activeFill),
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = "Today: ${rl.attemptsToday}/${rl.dailyAttemptCap} cap",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = rl.activeRiskLabel ?: "Tap to configure",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = liquid.accentInk,
+                            )
+                        }
+                    }
+
+                    LiquidGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("shield_primary_goal_card"),
+                        contentPadding = 16.dp,
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "ACTIVE RECOVERY GOAL",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = liquid.accentInk,
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = goal?.title ?: "Set your first betting-free goal",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            if (goal != null) {
+                                val pct = if (goal.category == GoalCategory.SAVINGS && goal.targetAmountNgn > 0) {
+                                    ((state.estimatedSavedAmount.toFloat() / goal.targetAmountNgn.toFloat()) * 100f)
+                                        .toInt().coerceIn(0, 100)
+                                } else {
+                                    ((state.cleanExactDays / goal.targetDays.coerceAtLeast(1).toFloat()) * 100f)
+                                        .toInt().coerceIn(0, 100)
+                                }
+                                Text(
+                                    text = "$pct%",
+                                    fontFamily = MonoFontFamily,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = liquid.accentInk,
+                                )
+                            }
+                        }
+                        if (goal != null) {
+                            val progress = if (goal.category == GoalCategory.SAVINGS && goal.targetAmountNgn > 0) {
+                                (state.estimatedSavedAmount.toFloat() / goal.targetAmountNgn.toFloat()).coerceIn(0f, 1f)
+                            } else {
+                                (state.cleanExactDays / goal.targetDays.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(liquid.mutedFill),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(progress.coerceAtLeast(0.04f))
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(liquid.activeFill),
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = if (goal.category == GoalCategory.SAVINGS && goal.targetAmountNgn > 0) {
+                                    "₦${nairaFmt.format(state.estimatedSavedAmount)} of ₦${nairaFmt.format(goal.targetAmountNgn)} target"
+                                } else {
+                                    "Day ${state.cleanDays} of ${goal.targetDays} days"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Create streak or savings targets and configure burst cooldowns in Goals & Limits.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = onNavigateToActivity,
+                                modifier = Modifier.weight(1f),
+                                border = BorderStroke(1.dp, liquid.subtleBorder),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Text("Manage Goals", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            Button(
+                                onClick = onNavigateToResources,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = liquid.activeFill,
+                                    contentColor = liquid.activeContent,
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Text("Resources", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
                 }
             }
 

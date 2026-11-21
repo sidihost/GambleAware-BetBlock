@@ -14,12 +14,14 @@ import androidx.core.content.ContextCompat
 import com.example.blocker.BlockMatchResult
 import com.example.blocker.BlocklistMatcher
 import com.example.blocker.CommitmentClockGuard
+import com.example.blocker.RateLimiterEngine
 import com.example.data.AnchorRepository
 import com.example.ui.BlockedInterventionActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.util.ArrayDeque
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
@@ -28,6 +30,8 @@ class GambleAwareAccessibilityService : AccessibilityService() {
     private val repository by lazy { AnchorRepository.getInstance(applicationContext) }
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val recentInterventions = ConcurrentHashMap<String, Long>()
+    private val burstAttemptTimestamps = ArrayDeque<Long>()
+    private val burstLock = Any()
     private var dynamicInstallReceiver: PackageInstallReceiver? = null
     @Volatile
     private var lastAntiTamperTriggerMs: Long = 0L
@@ -336,6 +340,25 @@ class GambleAwareAccessibilityService : AccessibilityService() {
         if (prev != null && now - prev < 2_500L) return
         recentInterventions[normalizedKey] = now
 
+        val settings = repository.prefs.currentSnapshot()
+        val recentBurstCount = synchronized(burstLock) {
+            val cutoff = now - RateLimiterEngine.BURST_WINDOW_MS
+            while (burstAttemptTimestamps.isNotEmpty() && burstAttemptTimestamps.peekFirst() < cutoff) {
+                burstAttemptTimestamps.removeFirst()
+            }
+            burstAttemptTimestamps.addLast(now)
+            burstAttemptTimestamps.size
+        }
+        val nextCooldownUntil = RateLimiterEngine.computeNextCooldownUntilMs(
+            attemptsInWindow = recentBurstCount,
+            attemptsToday = recentBurstCount,
+            settings = settings,
+            nowMs = now,
+        )
+        if (nextCooldownUntil > settings.rateLimitCooldownUntilMs) {
+            repository.prefs.setRateLimitCooldownUntil(nextCooldownUntil)
+        }
+
         serviceScope.launch {
             repository.logBlockedEvent(
                 target = normalizedKey,
@@ -349,6 +372,9 @@ class GambleAwareAccessibilityService : AccessibilityService() {
             putExtra(BlockedInterventionActivity.EXTRA_TARGET, rawTarget)
             putExtra(BlockedInterventionActivity.EXTRA_SOURCE, source)
             putExtra(BlockedInterventionActivity.EXTRA_CATEGORY, match.category.displayName)
+            if (nextCooldownUntil > now) {
+                putExtra(BlockedInterventionActivity.EXTRA_COOLDOWN_UNTIL_MS, nextCooldownUntil)
+            }
             if (blockedPackageName.isNotBlank()) {
                 putExtra(BlockedInterventionActivity.EXTRA_PACKAGE_NAME, blockedPackageName)
             }
